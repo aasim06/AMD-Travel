@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   Plane,
@@ -518,7 +518,7 @@ function SkeletonCard() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams();
   const router       = useRouter();
 
@@ -899,5 +899,13 @@ export default function SearchPage() {
       />
     )}
     </>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SearchContent />
+    </Suspense>
   );
 }
