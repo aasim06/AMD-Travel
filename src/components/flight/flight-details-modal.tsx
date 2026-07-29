@@ -2,7 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { X, Plane, Check, Luggage, ShieldCheck, Users, ArrowRight } from "lucide-react";
+import {
+  X, Plane, Check, Luggage, ShieldCheck, Users,
+  ArrowRight, ChevronDown,
+} from "lucide-react";
 import type { FlightOffer } from "@/types/flight";
 import { AIRLINE_NAMES, AIRCRAFT_NAMES } from "@/types/flight";
 import { useCurrency } from "@/context/currency-context";
@@ -52,7 +55,7 @@ function AirlineLogo({ code, className = "" }: { code: string; className?: strin
   );
 }
 
-// ─── Flight Segment (minimal timeline) ───────────────────────────────────────
+// ─── Flight Segment ───────────────────────────────────────────────────────────
 
 function FlightSegment({
   seg, offer, carriers, isLast,
@@ -70,22 +73,22 @@ function FlightSegment({
       {/* Timeline spine */}
       <div className="flex flex-col items-center shrink-0 pt-1">
         <div className="h-2.5 w-2.5 rounded-full border-2 border-primary bg-white" />
-        <div className="w-px flex-1 bg-slate-200 my-1" style={{ minHeight: 56 }} />
+        <div className="w-px flex-1 bg-slate-200 my-1" style={{ minHeight: 52 }} />
         <div className="h-2.5 w-2.5 rounded-full border-2 border-primary bg-white" />
       </div>
 
       {/* Content */}
       <div className="flex-1 pb-2">
         {/* Departure */}
-        <div className="flex items-baseline gap-2 mb-1">
-          <span className="text-2xl font-bold text-slate-900 leading-none">{fmtTime(seg.departure.at)}</span>
+        <div className="flex items-baseline gap-2 mb-0.5">
+          <span className="text-xl font-bold text-slate-900 leading-none">{fmtTime(seg.departure.at)}</span>
           <span className="text-xs text-slate-400">{fmtDateShort(seg.departure.at)}</span>
         </div>
         <p className="text-xs text-slate-500 mb-3">
           {seg.departure.iataCode}{seg.departure.terminal ? ` · Terminal ${seg.departure.terminal}` : ""}
         </p>
 
-        {/* Airline + duration row */}
+        {/* Airline + duration */}
         <div className="flex items-center gap-2 mb-3">
           <AirlineLogo code={seg.carrierCode} className="h-7 w-14 shrink-0" />
           <div className="flex flex-col">
@@ -98,17 +101,17 @@ function FlightSegment({
         </div>
 
         {/* Arrival */}
-        <div className="flex items-baseline gap-2 mb-1">
-          <span className="text-2xl font-bold text-slate-900 leading-none">{fmtTime(seg.arrival.at)}</span>
+        <div className="flex items-baseline gap-2 mb-0.5">
+          <span className="text-xl font-bold text-slate-900 leading-none">{fmtTime(seg.arrival.at)}</span>
           <span className="text-xs text-slate-400">{fmtDateShort(seg.arrival.at)}</span>
         </div>
         <p className="text-xs text-slate-500">
           {seg.arrival.iataCode}{seg.arrival.terminal ? ` · Terminal ${seg.arrival.terminal}` : ""}
         </p>
 
-        {/* Baggage row — only on last segment */}
+        {/* Baggage — last segment only */}
         {isLast && (
-          <div className="flex items-center gap-2 mt-4 flex-wrap">
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
             {[
               { label: "Personal item", ok: true },
               { label: "Cabin bag", ok: true },
@@ -137,60 +140,99 @@ function FlightSegment({
   );
 }
 
-// ─── Itinerary Leg ────────────────────────────────────────────────────────────
+// ─── Accordion Leg ────────────────────────────────────────────────────────────
 
-function ItineraryLeg({
-  offer, legIndex, carriers,
+function AccordionLeg({
+  offer, legIndex, carriers, defaultOpen,
 }: {
   offer: FlightOffer;
   legIndex: number;
   carriers: Record<string, string>;
+  defaultOpen: boolean;
 }) {
-  const leg = offer.itineraries[legIndex];
+  const [open, setOpen] = useState(defaultOpen);
+  const leg      = offer.itineraries[legIndex];
   if (!leg) return null;
 
-  const firstSeg = leg.segments[0];
-  const lastSeg  = leg.segments[leg.segments.length - 1];
-  const legLabel = legIndex === 0 ? "Outbound" : "Return";
+  const firstSeg  = leg.segments[0];
+  const lastSeg   = leg.segments[leg.segments.length - 1];
+  const legLabel  = legIndex === 0 ? "Outbound" : "Return";
+  const stops     = leg.segments.length - 1;
+  const stopLabel = stops === 0 ? "Direct" : `${stops} stop${stops > 1 ? "s" : ""}`;
+  const depTime   = fmtTime(firstSeg.departure.at);
+  const arrTime   = fmtTime(lastSeg.arrival.at);
 
   return (
-    <div>
-      {/* Leg header */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{legLabel}</span>
-          <span className="text-slate-300">·</span>
-          <span className="text-sm font-bold text-slate-800">{firstSeg.departure.iataCode}</span>
-          <ArrowRight className="h-3.5 w-3.5 text-slate-400" />
-          <span className="text-sm font-bold text-slate-800">{lastSeg.arrival.iataCode}</span>
-        </div>
-        <span className="text-xs font-semibold text-primary bg-primary/8 border border-primary/15 px-2.5 py-1 rounded-full">
-          {parseDuration(leg.duration)}
-        </span>
-      </div>
+    <div className="rounded-xl border border-slate-200 overflow-hidden">
+      {/* ── Accordion header (always visible) ── */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-3.5 bg-slate-50 hover:bg-slate-100/80 transition-colors text-left"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Direction badge */}
+          <span className={`shrink-0 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${
+            legIndex === 0
+              ? "bg-primary/10 text-primary"
+              : "bg-amber-50 text-amber-600"
+          }`}>
+            {legLabel}
+          </span>
 
-      {/* Segments */}
-      <div className="space-y-0">
-        {leg.segments.map((seg, si) => {
-          const nextSeg   = leg.segments[si + 1];
-          const loverMins = nextSeg ? layoverMins(seg.arrival.at, nextSeg.departure.at) : 0;
-          const isLast    = si === leg.segments.length - 1;
-          return (
-            <div key={seg.id}>
-              <FlightSegment seg={seg} offer={offer} carriers={carriers} isLast={isLast} />
-              {nextSeg && (
-                <div className="flex items-center gap-3 my-3 ml-[18px]">
-                  <div className="h-px flex-1 bg-slate-100" />
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-600 bg-amber-50 border border-amber-100 px-3 py-1 rounded-full shrink-0">
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                    Layover · {seg.arrival.iataCode} · {minsToLabel(loverMins)}
-                  </span>
-                  <div className="h-px flex-1 bg-slate-100" />
-                </div>
-              )}
-            </div>
-          );
-        })}
+          {/* Route summary */}
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-sm font-bold text-slate-800">{firstSeg.departure.iataCode}</span>
+            <ArrowRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+            <span className="text-sm font-bold text-slate-800">{lastSeg.arrival.iataCode}</span>
+          </div>
+
+          {/* Time summary */}
+          <span className="hidden sm:block text-xs text-slate-500 shrink-0">
+            {depTime} → {arrTime}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2.5 shrink-0 ml-3">
+          {/* Duration pill */}
+          <span className="text-xs font-semibold text-primary bg-primary/8 border border-primary/15 px-2.5 py-1 rounded-full">
+            {parseDuration(leg.duration)}
+          </span>
+          {/* Stop badge */}
+          <span className={`hidden sm:block text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+            stops === 0 ? "text-emerald-700 bg-emerald-50" : "text-amber-700 bg-amber-50"
+          }`}>
+            {stopLabel}
+          </span>
+          {/* Chevron */}
+          <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        </div>
+      </button>
+
+      {/* ── Accordion body ── */}
+      <div className={`accordion-body ${open ? "open" : ""}`}>
+        <div className="px-5 py-5 space-y-0 bg-white">
+          {leg.segments.map((seg, si) => {
+            const nextSeg   = leg.segments[si + 1];
+            const loverMins = nextSeg ? layoverMins(seg.arrival.at, nextSeg.departure.at) : 0;
+            const isLast    = si === leg.segments.length - 1;
+            return (
+              <div key={seg.id}>
+                <FlightSegment seg={seg} offer={offer} carriers={carriers} isLast={isLast} />
+                {nextSeg && (
+                  <div className="flex items-center gap-3 my-3 ml-[18px]">
+                    <div className="h-px flex-1 bg-slate-100" />
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-600 bg-amber-50 border border-amber-100 px-3 py-1 rounded-full shrink-0">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                      Layover · {seg.arrival.iataCode} · {minsToLabel(loverMins)}
+                    </span>
+                    <div className="h-px flex-1 bg-slate-100" />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -210,20 +252,19 @@ function FareCard({ type, price, onSelect }: { type: FareType; price: number; on
 
   return (
     <div
-      className={`rounded-[10px] border p-5 transition-all ${
+      className={`rounded-[10px] border p-4 transition-all ${
         isGuarantee
           ? "border-primary/30 bg-primary/[0.03] ring-1 ring-primary/20"
           : "border-slate-200 bg-white"
       }`}
     >
-      {/* Card top */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className={`h-9 w-9 rounded-[10px] flex items-center justify-center shrink-0 ${
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-2.5">
+          <div className={`h-8 w-8 rounded-[10px] flex items-center justify-center shrink-0 ${
             isGuarantee ? "bg-primary/10" : "bg-slate-100"
           }`}>
             {isGuarantee
-              ? <ShieldCheck className="h-4.5 w-4.5 text-primary" />
+              ? <ShieldCheck className="h-4 w-4 text-primary" />
               : <Plane className="h-4 w-4 text-slate-500" />
             }
           </div>
@@ -237,15 +278,14 @@ function FareCard({ type, price, onSelect }: { type: FareType; price: number; on
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className={`text-xl font-bold ${isGuarantee ? "text-primary" : "text-slate-800"}`}>
+          <p className={`text-lg font-bold ${isGuarantee ? "text-primary" : "text-slate-800"}`}>
             {formatPrice(price)}
           </p>
           <p className="text-[11px] text-slate-400">per person</p>
         </div>
       </div>
 
-      {/* Features */}
-      <ul className="space-y-2 mb-5">
+      <ul className="space-y-1.5 mb-4">
         {features.map((f) => (
           <li key={f} className="flex items-center gap-2">
             <span className={`h-4 w-4 rounded-full flex items-center justify-center shrink-0 ${
@@ -258,7 +298,6 @@ function FareCard({ type, price, onSelect }: { type: FareType; price: number; on
         ))}
       </ul>
 
-      {/* CTA */}
       <button
         type="button"
         onClick={onSelect}
@@ -290,10 +329,17 @@ export function FlightDetailsModal({
   const firstSeg = offer.itineraries[0].segments[0];
   const lastLeg  = offer.itineraries[offer.itineraries.length - 1];
   const lastSeg  = lastLeg.segments[lastLeg.segments.length - 1];
+  const isRound  = offer.itineraries.length > 1;
 
   useEffect(() => {
     const t = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(t);
+  }, []);
+
+  // Lock body scroll while modal is open
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
   }, []);
 
   function handleClose() {
@@ -313,16 +359,18 @@ export function FlightDetailsModal({
       onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
       <div
-        className={`relative w-full max-w-4xl max-h-[95vh] sm:max-h-[88vh] bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ease-out ${
+        className={`relative w-full max-w-4xl bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl flex flex-col transition-all duration-300 ease-out ${
           visible ? "opacity-100 translate-y-0 sm:scale-100" : "opacity-0 translate-y-8 sm:scale-95"
         }`}
+        style={{ maxHeight: "85vh" }}
       >
-        {/* ── Header ── */}
+        {/* ── Header (sticky) ── */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
           <div>
             <h2 className="text-xl font-semibold text-slate-900">Trip Details</h2>
             <p className="text-xs text-slate-400 mt-0.5">
               {firstSeg.departure.iataCode} → {lastSeg.arrival.iataCode}
+              {isRound && " · Round trip"}
             </p>
           </div>
 
@@ -343,22 +391,25 @@ export function FlightDetailsModal({
           </div>
         </div>
 
-        {/* ── Body ── */}
-        <div className="flex flex-col lg:flex-row flex-1 overflow-hidden min-h-0">
+        {/* ── Body (scrollable) ── */}
+        <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
 
-          {/* Left: Itinerary */}
-          <div className="lg:w-[48%] border-b lg:border-b-0 lg:border-r border-slate-100 overflow-y-auto no-scrollbar px-6 py-6 space-y-8">
+          {/* Left: Accordion itinerary — scrollable */}
+          <div className="lg:w-[52%] border-b lg:border-b-0 lg:border-r border-slate-100 overflow-y-auto no-scrollbar px-5 py-5 space-y-3">
             {offer.itineraries.map((_, i) => (
-              <div key={i}>
-                {i > 0 && <div className="border-t border-dashed border-slate-200 mb-6" />}
-                <ItineraryLeg offer={offer} legIndex={i} carriers={carriers} />
-              </div>
+              <AccordionLeg
+                key={i}
+                offer={offer}
+                legIndex={i}
+                carriers={carriers}
+                defaultOpen={i === 0}
+              />
             ))}
           </div>
 
-          {/* Right: Fare selection */}
-          <div className="lg:w-[52%] overflow-y-auto no-scrollbar px-6 py-6 bg-slate-50/50">
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Select a fare</p>
+          {/* Right: Fare selection — sticky, non-scrolling on desktop */}
+          <div className="lg:w-[48%] overflow-y-auto no-scrollbar px-5 py-5 bg-slate-50/50 flex flex-col">
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3 shrink-0">Select a fare</p>
 
             <div className="space-y-3">
               <FareCard
@@ -374,7 +425,7 @@ export function FlightDetailsModal({
             </div>
 
             {/* Trust strip */}
-            <div className="flex flex-wrap gap-x-5 gap-y-2 mt-5 pt-4 border-t border-slate-200">
+            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 pt-4 border-t border-slate-200">
               {["Secure payment", "Price guarantee", "24/7 support"].map((t) => (
                 <span key={t} className="flex items-center gap-1.5 text-[11px] text-slate-400">
                   <Check className="h-3 w-3 text-primary" />{t}
