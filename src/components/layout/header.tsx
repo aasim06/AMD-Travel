@@ -731,7 +731,7 @@ function CompactSearchBar() {
             className="text-xs text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
           <button type="button" onClick={handleSearch}
             disabled={tripType === "multi-city" ? !mcLegs.every(l => l.from && l.to && l.date) : !fromCode || !toCode || !dept}
-            className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#0891b2] hover:bg-cyan-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-all active:scale-95">
+            className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-primary-foreground text-sm font-semibold transition-all active:scale-95">
             <Search className="h-3.5 w-3.5" /> Search Flights
           </button>
         </div>
@@ -769,7 +769,7 @@ function CompactSearchBar() {
           <span className="max-w-[130px] truncate">{paxLabel}</span>
         </Pill>
         <button type="button" onClick={handleSearch}
-          className="flex items-center gap-1 px-4 py-1.5 rounded-[5px] bg-[#0891b2] hover:bg-cyan-700 text-white text-xs font-semibold transition-colors active:scale-95">
+          className="flex items-center gap-1 px-4 py-1.5 rounded-[5px] bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold transition-colors active:scale-95">
           <Search className="h-3 w-3" /> Search
         </button>
       </div>

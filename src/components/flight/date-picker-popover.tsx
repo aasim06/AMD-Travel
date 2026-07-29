@@ -229,7 +229,7 @@ function MonthGrid({
                   isPast
                     ? "opacity-30 cursor-not-allowed"
                     : isSelected
-                    ? "bg-[#1A6FFD] text-white"
+                    ? "bg-primary text-primary-foreground"
                     : isHov
                     ? "bg-blue-50 text-slate-900"
                     : inRange
@@ -493,7 +493,7 @@ export function DatePickerPopover({ value, onChange, isRoundTrip, mobileSheet }:
               <button
                 type="button"
                 onClick={prevMonth}
-                className="h-8 w-8 rounded-full flex items-center justify-center border border-slate-200 text-slate-500 hover:text-[#1A6FFD] hover:border-[#1A6FFD] transition-all"
+                className="h-8 w-8 rounded-full flex items-center justify-center border border-slate-200 text-slate-500 hover:text-primary hover:border-primary transition-all"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -504,7 +504,7 @@ export function DatePickerPopover({ value, onChange, isRoundTrip, mobileSheet }:
               <button
                 type="button"
                 onClick={nextMonth}
-                className="h-8 w-8 rounded-full flex items-center justify-center border border-slate-200 text-slate-500 hover:text-[#1A6FFD] hover:border-[#1A6FFD] transition-all"
+                className="h-8 w-8 rounded-full flex items-center justify-center border border-slate-200 text-slate-500 hover:text-primary hover:border-primary transition-all"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -544,7 +544,7 @@ export function DatePickerPopover({ value, onChange, isRoundTrip, mobileSheet }:
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="bg-[#1A6FFD] hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg text-sm transition-all"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-6 py-2 rounded-lg text-sm transition-all"
             >
               Apply
             </button>
