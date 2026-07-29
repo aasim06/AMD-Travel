@@ -5,7 +5,7 @@
 @layer base {
   :root {
     /* === Core Brand Palette (HSL, no hsl() wrapper — Tailwind adds it) === */
-    --primary: 207 90% 54%#;          /* #2196f3 Material Blue 500 */
+    --primary: 207 90% 54%#2196f3;          /* #2196f3 Material Blue 500 */
     --primary-foreground: 210 40% 98%;
 
     --secondary: 38 92% 50%;         /* Warm Amber / Gold */
