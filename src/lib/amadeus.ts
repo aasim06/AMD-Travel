@@ -2,7 +2,7 @@ const AMADEUS_TOKEN_URL = "https://test.api.amadeus.com/v1/security/oauth2/token
 export const AMADEUS_API_BASE = "https://test.api.amadeus.com";
 export const amadeusBaseUrl = AMADEUS_API_BASE;
 
-export async function amadeusHeaders(token: string) {
+export function amadeusHeaders(token: string) {
   return {
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",

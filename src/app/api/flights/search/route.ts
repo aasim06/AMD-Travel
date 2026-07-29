@@ -400,7 +400,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ...mockFlightResponse(body), mock: true }, { headers: MOCK_HEADERS });
   }
 
-  const baseUrl = amadeusBaseUrl();
+  const baseUrl = amadeusBaseUrl;
   let amadeusRes: Response;
   try {
     const controller = new AbortController();
@@ -514,7 +514,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 5. Call Amadeus flight-offers
-  const baseUrl = amadeusBaseUrl();
+  const baseUrl = amadeusBaseUrl;
   const payload = buildPayload(body);
   let amadeusRes: Response;
   try {
