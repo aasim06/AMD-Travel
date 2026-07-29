@@ -5,7 +5,7 @@
 @layer base {
   :root {
     /* === Core Brand Palette (HSL, no hsl() wrapper — Tailwind adds it) === */
-    --primary: 192 91% 36%;          /* Cyan #0891b2 */
+    --primary: 210 63% 45%;          /* #1976d2 Material Blue */
     --primary-foreground: 210 40% 98%;
 
     --secondary: 38 92% 50%;         /* Warm Amber / Gold */
@@ -34,7 +34,7 @@
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 192 91% 36%;
+    --ring: 210 63% 45%;
 
     --radius: 0.625rem; /* 10px */
 
@@ -51,7 +51,7 @@
   }
 
   .dark {
-    --primary: 217 91% 65%;
+    --primary: 210 63% 60%;          /* #1976d2 lighter for dark mode */
     --primary-foreground: 222 84% 4.9%;
 
     --secondary: 38 92% 55%;
@@ -80,7 +80,7 @@
 
     --border: 217 33% 18%;
     --input: 217 33% 18%;
-    --ring: 217 91% 65%;
+    --ring: 210 63% 60%;
 
     --glass-bg: 222 40% 9%;
     --glass-bg-opacity: 0.55;
