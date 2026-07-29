@@ -8,13 +8,23 @@ import type {
   Currency,
 } from "@/types/flight";
 
-// ─── Travel class map → SerpApi travel_class param ───────────────────────────
+// ─── Travel class map ─────────────────────────────────────────────────────────
+// SerpApi: 1=Economy, 2=Premium Economy, 3=Business, 4=First
 
 const SERP_CLASS: Record<TravelClass, string> = {
   ECONOMY:         "1",
   PREMIUM_ECONOMY: "2",
   BUSINESS:        "3",
   FIRST:           "4",
+};
+
+// ─── SerpApi type param ───────────────────────────────────────────────────────
+// SerpApi: type=1 → Round trip, type=2 → One-way, type=3 → Multi-city
+
+const SERP_TRIP_TYPE: Record<string, string> = {
+  "round-trip": "1",
+  "one-way":    "2",
+  "multi-city": "3",
 };
 
 // ─── Request body ─────────────────────────────────────────────────────────────
@@ -36,38 +46,43 @@ interface SearchBody {
 interface SerpFlight {
   departure_airport: { id: string; name: string; time: string };
   arrival_airport:   { id: string; name: string; time: string };
-  duration:          number; // minutes
+  duration:          number;
   airplane:          string;
   airline:           string;
   airline_logo:      string;
   flight_number:     string;
-  often_delayed_by_over_30_min?: boolean;
-}
-
-interface SerpLayover {
-  duration:  number;
-  name:      string;
-  id:        string;
-  overnight?: boolean;
 }
 
 interface SerpOffer {
-  flights:           SerpFlight[];
-  layovers?:         SerpLayover[];
-  total_duration:    number; // minutes
-  price:             number;
-  type:              string;
-  airline_logo:      string;
-  departure_token?:  string;
-  booking_token?:    string;
-  carbon_emissions?: { this_flight: number };
+  flights:          SerpFlight[];
+  layovers?:        { duration: number; name: string; id: string }[];
+  total_duration:   number;
+  price:            number;
+  type:             string;
+  airline_logo:     string;
+  departure_token?: string;
+  booking_token?:   string;
+  // Round-trip only: SerpApi nests return leg inside each outbound offer
+  return_flights?:  SerpOffer[];
+}
+
+interface SerpApiResponse {
+  best_flights?:  SerpOffer[];
+  other_flights?: SerpOffer[];
+  error?:         string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** "2025-07-31T19:40" → "2025-07-31T19:40:00" (ISO-safe) */
-function toISO(serpTime: string): string {
-  return serpTime.includes("T") ? `${serpTime}:00` : serpTime;
+/** "2025-07-31T19:40" → "2025-07-31T19:40:00" */
+function toISO(t: string): string {
+  if (!t) return t;
+  // Already has seconds
+  if (/T\d{2}:\d{2}:\d{2}/.test(t)) return t;
+  // Has T but no seconds
+  if (t.includes("T")) return `${t}:00`;
+  // Date only — shouldn't happen but guard anyway
+  return t;
 }
 
 /** minutes → "PT7H30M" */
@@ -77,18 +92,19 @@ function minsToDuration(mins: number): string {
   return m > 0 ? `PT${h}H${m}M` : `PT${h}H`;
 }
 
-/** Extract IATA carrier code from flight_number e.g. "EK 501" → "EK" */
+/** "EK 501" → "EK" */
 function carrierCode(flightNumber: string): string {
-  return flightNumber.split(" ")[0] ?? flightNumber.slice(0, 2).toUpperCase();
+  const parts = flightNumber.trim().split(/\s+/);
+  return parts[0] ?? flightNumber.slice(0, 2).toUpperCase();
 }
 
-/** Map one SerpApi offer (outbound or return) into our Itinerary shape */
-function mapItinerary(offer: SerpOffer): Itinerary {
-  const segments: FlightSegment[] = offer.flights.map((f, i) => ({
+/** Map a SerpApi flights array into our Itinerary */
+function mapItinerary(serpOffer: SerpOffer): Itinerary {
+  const segments: FlightSegment[] = serpOffer.flights.map((f, i) => ({
     id:           String(i + 1),
     carrierCode:  carrierCode(f.flight_number),
     flightNumber: f.flight_number.replace(/\s+/g, ""),
-    aircraft:     f.airplane ?? "---",
+    aircraft:     f.airplane || "---",
     departure: {
       iataCode: f.departure_airport.id,
       at:       toISO(f.departure_airport.time),
@@ -102,32 +118,41 @@ function mapItinerary(offer: SerpOffer): Itinerary {
   }));
 
   return {
-    duration: minsToDuration(offer.total_duration),
+    duration: minsToDuration(serpOffer.total_duration),
     segments,
   };
 }
 
-/** Build a FlightOffer from outbound + optional return SerpApi offer */
+/**
+ * Build a FlightOffer from one SerpApi outbound offer.
+ *
+ * For round-trips SerpApi returns `return_flights` nested inside each
+ * outbound offer. We pick the first (cheapest/best) return option and
+ * attach it as the second itinerary. The `price` on the outbound offer
+ * already represents the combined round-trip price.
+ */
 function mapOffer(
   outbound: SerpOffer,
-  returnOffer: SerpOffer | null,
+  isRoundTrip: boolean,
   currency: Currency,
   passengers: number,
   idx: number,
 ): FlightOffer {
   const itineraries: Itinerary[] = [mapItinerary(outbound)];
-  if (returnOffer) itineraries.push(mapItinerary(returnOffer));
 
-  const totalPrice  = outbound.price + (returnOffer?.price ?? 0);
-  const perPax      = Math.round(totalPrice / passengers);
-  const basePrice   = Math.round(totalPrice * 0.88);
+  // Attach return leg if present
+  if (isRoundTrip && outbound.return_flights && outbound.return_flights.length > 0) {
+    // Pick the first return option (SerpApi sorts by best)
+    itineraries.push(mapItinerary(outbound.return_flights[0]));
+  }
 
-  const firstFlight = outbound.flights[0];
-  const lastFlight  = outbound.flights[outbound.flights.length - 1];
-  const carrier     = carrierCode(firstFlight.flight_number);
+  const totalPrice = outbound.price;
+  const perPax     = Math.round(totalPrice / Math.max(passengers, 1));
+  const basePrice  = Math.round(totalPrice * 0.88);
+  const carrier    = carrierCode(outbound.flights[0].flight_number);
 
   return {
-    id:     `serp-${idx}-${outbound.departure_token ?? idx}`,
+    id:     `serp-${idx}-${outbound.departure_token ?? String(idx)}`,
     source: "GDS",
     price: {
       total:        String(totalPrice),
@@ -138,9 +163,32 @@ function mapOffer(
     itineraries,
     validatingAirlineCodes: [carrier],
     numberOfBookableSeats:  9,
-    lastTicketingDate:      firstFlight.departure_airport.time.slice(0, 10),
+    lastTicketingDate:      outbound.flights[0].departure_airport.time.slice(0, 10),
     baggageAllowance:       { quantity: 1, weight: 23, weightUnit: "KG" },
   };
+}
+
+/** Collect carrier + aircraft dictionaries from all offers */
+function buildDictionaries(offers: SerpOffer[], isRoundTrip: boolean) {
+  const carriers: Record<string, string> = {};
+  const aircraft: Record<string, string> = {};
+
+  const collectFlights = (flights: SerpFlight[]) => {
+    flights.forEach((f) => {
+      const code = carrierCode(f.flight_number);
+      if (!carriers[code]) carriers[code] = f.airline;
+      if (f.airplane && !aircraft[f.airplane]) aircraft[f.airplane] = f.airplane;
+    });
+  };
+
+  offers.forEach((o) => {
+    collectFlights(o.flights);
+    if (isRoundTrip && o.return_flights) {
+      o.return_flights.forEach((r) => collectFlights(r.flights));
+    }
+  });
+
+  return { carriers, aircraft };
 }
 
 // ─── In-memory cache (10-minute TTL) ─────────────────────────────────────────
@@ -161,38 +209,35 @@ function cacheSet(key: string, data: object) {
 
 // ─── SerpApi fetcher ──────────────────────────────────────────────────────────
 
-async function fetchSerpFlights(params: URLSearchParams): Promise<SerpOffer[]> {
+async function fetchSerpFlights(params: URLSearchParams): Promise<SerpApiResponse> {
   const url = `https://serpapi.com/search.json?${params.toString()}`;
   console.log("[SerpApi] GET", url.replace(/api_key=[^&]+/, "api_key=***"));
 
-  const res = await fetch(url, { method: "GET" });
+  const res = await fetch(url);
 
   if (!res.ok) {
-    const body = await res.text();
-    console.error("[SerpApi] HTTP error", res.status, body);
-    throw new Error(`SerpApi responded with HTTP ${res.status}: ${body.slice(0, 200)}`);
+    const text = await res.text();
+    console.error("[SerpApi] HTTP error", res.status, text.slice(0, 300));
+    throw new Error(`SerpApi HTTP ${res.status}: ${text.slice(0, 200)}`);
   }
 
-  const json = await res.json() as {
-    best_flights?:  SerpOffer[];
-    other_flights?: SerpOffer[];
-    error?:         string;
-  };
+  const json = await res.json() as SerpApiResponse;
 
   if (json.error) {
     console.error("[SerpApi] API error:", json.error);
     throw new Error(`SerpApi error: ${json.error}`);
   }
 
-  const offers = [...(json.best_flights ?? []), ...(json.other_flights ?? [])];
-  console.log("[SerpApi] Received", offers.length, "offers");
-  return offers;
+  const count = (json.best_flights?.length ?? 0) + (json.other_flights?.length ?? 0);
+  console.log("[SerpApi] Received best:", json.best_flights?.length ?? 0, "other:", json.other_flights?.length ?? 0);
+
+  return json;
 }
 
 // ─── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  // 1. Parse + validate body
+  // 1. Parse body
   let body: SearchBody;
   try {
     body = await request.json();
@@ -209,14 +254,22 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 2. Check API key
-  const apiKey = process.env.SERPAPI_KEY;
-  if (!apiKey) {
-    console.error("[SerpApi] SERPAPI_KEY is not set");
-    return NextResponse.json({ success: false, error: "SERPAPI_KEY environment variable is not configured" }, { status: 500 });
+  // 2. Validate round-trip has return date
+  if (tripType === "round-trip" && !returnDate) {
+    return NextResponse.json(
+      { success: false, error: "returnDate is required for round-trip searches" },
+      { status: 400 }
+    );
   }
 
-  // 3. Cache lookup
+  // 3. API key check
+  const apiKey = process.env.SERPAPI_KEY;
+  if (!apiKey) {
+    console.error("[SerpApi] SERPAPI_KEY not set");
+    return NextResponse.json({ success: false, error: "SERPAPI_KEY is not configured" }, { status: 500 });
+  }
+
+  // 4. Cache
   const cacheKey = [tripType, origin, destination, departureDate, returnDate ?? "", passengers, travelClass, currency].join(":");
   const cached = cacheGet(cacheKey);
   if (cached) {
@@ -224,68 +277,65 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ...cached, cached: true });
   }
 
-  // 4. Build SerpApi params
-  const baseParams: Record<string, string> = {
+  const isRoundTrip = tripType === "round-trip";
+
+  // 5. Build params
+  // SerpApi type: "1" = Round trip, "2" = One-way, "3" = Multi-city
+  const params = new URLSearchParams({
     engine:        "google_flights",
     api_key:       apiKey,
     departure_id:  origin.toUpperCase(),
     arrival_id:    destination.toUpperCase(),
     outbound_date: departureDate,
+    type:          SERP_TRIP_TYPE[tripType] ?? "2",
     travel_class:  SERP_CLASS[travelClass] ?? "1",
     adults:        String(passengers),
     currency:      currency,
     hl:            "en",
-    type:          tripType === "round-trip" ? "1" : "2", // 1=round-trip, 2=one-way
-  };
+  });
 
-  if (tripType === "round-trip" && returnDate) {
-    baseParams.return_date = returnDate;
+  // return_date only for round-trip
+  if (isRoundTrip && returnDate) {
+    params.set("return_date", returnDate);
   }
 
   try {
-    // 5. Fetch outbound flights
-    const outboundOffers = await fetchSerpFlights(new URLSearchParams(baseParams));
+    // 6. Fetch
+    const serpData = await fetchSerpFlights(params);
+    const rawOffers = [...(serpData.best_flights ?? []), ...(serpData.other_flights ?? [])];
 
-    if (outboundOffers.length === 0) {
-      const response: FlightSearchResponse = {
+    if (rawOffers.length === 0) {
+      console.log("[SerpApi] No flights found for:", cacheKey);
+      const empty: FlightSearchResponse = {
         data: [],
         meta: { count: 0, currency, origin: origin.toUpperCase(), destination: destination.toUpperCase(), departureDate },
         dictionaries: { carriers: {}, aircraft: {}, locations: {} },
       };
-      return NextResponse.json(response, { headers: { "X-Data-Source": "SERPAPI" } });
+      return NextResponse.json(empty, { headers: { "X-Data-Source": "SERPAPI" } });
     }
 
-    // 6. Map to FlightOffer[]
-    const offers: FlightOffer[] = outboundOffers
+    // 7. Map offers — round-trip return leg comes from offer.return_flights[0]
+    const offers: FlightOffer[] = rawOffers
       .slice(0, 25)
-      .map((o, i) => mapOffer(o, null, currency, passengers, i));
+      .map((o, i) => mapOffer(o, isRoundTrip, currency, passengers, i));
 
-    // 7. Build dictionaries from mapped offers
-    const carriers: Record<string, string>  = {};
-    const aircraft: Record<string, string>  = {};
-
-    outboundOffers.slice(0, 25).forEach((o) => {
-      o.flights.forEach((f) => {
-        const code = carrierCode(f.flight_number);
-        if (!carriers[code]) carriers[code] = f.airline;
-        if (f.airplane && !aircraft[f.airplane]) aircraft[f.airplane] = f.airplane;
-      });
-    });
+    // 8. Dictionaries
+    const { carriers, aircraft } = buildDictionaries(rawOffers.slice(0, 25), isRoundTrip);
 
     const response: FlightSearchResponse = {
       data: offers,
       meta: {
-        count:         offers.length,
+        count:       offers.length,
         currency,
-        origin:        origin.toUpperCase(),
-        destination:   destination.toUpperCase(),
+        origin:      origin.toUpperCase(),
+        destination: destination.toUpperCase(),
         departureDate,
       },
       dictionaries: { carriers, aircraft, locations: {} },
     };
 
     cacheSet(cacheKey, response);
-    console.log("[SerpApi] Returning", offers.length, "offers");
+    console.log("[SerpApi] Returning", offers.length, "offers, round-trip:", isRoundTrip);
     return NextResponse.json(response, { headers: { "X-Data-Source": "SERPAPI" } });
 
   } catch (err) {
@@ -295,7 +345,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// ─── GET handler (optional convenience) ──────────────────────────────────────
+// ─── GET ──────────────────────────────────────────────────────────────────────
 
 export async function GET() {
   return NextResponse.json({ success: false, error: "Use POST /api/flights/search" }, { status: 405 });
