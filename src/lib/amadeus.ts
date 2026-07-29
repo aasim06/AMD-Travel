@@ -23,13 +23,12 @@ export async function getAmadeusToken(): Promise<string> {
   console.log("[Amadeus] Requesting token — client_id:", clientId.slice(0, 6) + "...");
 
   let res: Response;
-  try {
-    res = await fetch(AMADEUS_TOKEN_URL, {
-      method:  "POST",
+  res = await fetch(AMADEUS_TOKEN_URL, {
+      method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body:    new URLSearchParams({
-        grant_type:    "client_credentials",
-        client_id:     clientId,
+      body: new URLSearchParams({
+        grant_type: "client_credentials",
+        client_id: clientId,
         client_secret: clientSecret,
       }).toString(),
     });
