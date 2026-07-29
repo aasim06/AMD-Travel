@@ -697,13 +697,7 @@ function SearchContent() {
     setSortedResults(applySort(results, key, carriers));
   }
 
-  // Stable cache key string — primitives only, no object references
-  const cacheKey = useMemo(
-    () => [tripType, from, to, dept, ret ?? "", passengers, travelClass, JSON.stringify(parsedLegs)].join("|"),
-    [tripType, from, to, dept, ret, passengers, travelClass, parsedLegs]
-  );
-
-  const fetchFlights = useCallback(async () => {
+const fetchFlights = useCallback(async () => {
     const isMultiCity = tripType === "multi-city";
 
     if (isMultiCity) {
@@ -721,32 +715,31 @@ function SearchContent() {
     setLoading(true);
     setError(null);
 
-    // 15-second hard timeout
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15_000);
+    const payload = {
+      tripType,
+      origin:        isMultiCity ? parsedLegs![0].from : from,
+      destination:   isMultiCity ? parsedLegs![parsedLegs!.length - 1].to : to,
+      departureDate: isMultiCity ? parsedLegs![0].date : dept,
+      returnDate:    ret,
+      passengers,
+      travelClass,
+      currency,
+      ...(isMultiCity && {
+        legs: parsedLegs!.map((l) => ({
+          origin:        l.from,
+          destination:   l.to,
+          departureDate: l.date,
+        })),
+      }),
+    };
+
+    console.log("Fetching flights from API...", payload);
 
     try {
       const res = await fetch("/api/flights/search", {
-        method: "POST",
-        signal: controller.signal,
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tripType,
-          origin:        isMultiCity ? parsedLegs![0].from : from,
-          destination:   isMultiCity ? parsedLegs![parsedLegs!.length - 1].to : to,
-          departureDate: isMultiCity ? parsedLegs![0].date : dept,
-          returnDate:    ret,
-          passengers,
-          travelClass,
-          currency,
-          ...(isMultiCity && {
-            legs: parsedLegs!.map((l) => ({
-              origin:        l.from,
-              destination:   l.to,
-              departureDate: l.date,
-            })),
-          }),
-        }),
+        body:    JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -761,19 +754,17 @@ function SearchContent() {
       setFromCache(data.cached === true);
       setSortedResults(applySort(fetched, sortKey, data.dictionaries?.carriers ?? {}));
     } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") {
-        setError("Search timed out. Please try again.");
-      } else {
-        setError(err instanceof Error ? err.message : "Something went wrong.");
-      }
+      setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
-      clearTimeout(timeout);
       setLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cacheKey]);
+  }, [from, to, dept, ret, passengers, travelClass, tripType, parsedLegs]);
 
-  useEffect(() => { fetchFlights(); }, [fetchFlights]);
+  useEffect(() => {
+    console.log("Search params changed, triggering fetchFlights", { from, to, dept });
+    fetchFlights();
+  }, [fetchFlights]);
 
   return (
     <>
