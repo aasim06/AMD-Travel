@@ -1,0 +1,134 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getAmadeusToken } from "@/lib/amadeus";
+import COUNTRY_ALIASES from "@/lib/countryAliases";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface AirportSuggestion {
+  code:           string;
+  name:           string;
+  city:           string;
+  country:        string;
+  type:           "AIRPORT" | "CITY";
+  isCountryMatch?: boolean;
+  groupLabel?:    string;
+}
+
+// ─── Local fallback dataset ───────────────────────────────────────────────────
+
+const FALLBACK_AIRPORTS: AirportSuggestion[] = [
+  { code: "JFK", name: "John F. Kennedy International", city: "New York",     country: "United States",      type: "AIRPORT" },
+  { code: "EWR", name: "Newark Liberty International",  city: "New York",     country: "United States",      type: "AIRPORT" },
+  { code: "LAX", name: "Los Angeles International",     city: "Los Angeles",  country: "United States",      type: "AIRPORT" },
+  { code: "ORD", name: "O'Hare International",          city: "Chicago",      country: "United States",      type: "AIRPORT" },
+  { code: "MIA", name: "Miami International",           city: "Miami",        country: "United States",      type: "AIRPORT" },
+  { code: "LHR", name: "Heathrow Airport",              city: "London",       country: "United Kingdom",     type: "AIRPORT" },
+  { code: "LGW", name: "Gatwick Airport",               city: "London",       country: "United Kingdom",     type: "AIRPORT" },
+  { code: "MAN", name: "Manchester Airport",            city: "Manchester",   country: "United Kingdom",     type: "AIRPORT" },
+  { code: "DXB", name: "Dubai International Airport",   city: "Dubai",        country: "UAE",                type: "AIRPORT" },
+  { code: "AUH", name: "Abu Dhabi International",       city: "Abu Dhabi",    country: "UAE",                type: "AIRPORT" },
+  { code: "IST", name: "Istanbul Airport",              city: "Istanbul",     country: "Turkey",             type: "AIRPORT" },
+  { code: "CDG", name: "Charles de Gaulle Airport",     city: "Paris",        country: "France",             type: "AIRPORT" },
+  { code: "FRA", name: "Frankfurt Airport",             city: "Frankfurt",    country: "Germany",            type: "AIRPORT" },
+  { code: "MUC", name: "Munich Airport",                city: "Munich",       country: "Germany",            type: "AIRPORT" },
+  { code: "AMS", name: "Amsterdam Schiphol",            city: "Amsterdam",    country: "Netherlands",        type: "AIRPORT" },
+  { code: "DOH", name: "Hamad International Airport",   city: "Doha",         country: "Qatar",              type: "AIRPORT" },
+  { code: "JED", name: "King Abdulaziz International",  city: "Jeddah",       country: "Saudi Arabia",       type: "AIRPORT" },
+  { code: "RUH", name: "King Khalid International",     city: "Riyadh",       country: "Saudi Arabia",       type: "AIRPORT" },
+  { code: "MED", name: "Prince Mohammad Bin Abdulaziz", city: "Madinah",      country: "Saudi Arabia",       type: "AIRPORT" },
+  { code: "LHE", name: "Allama Iqbal International",    city: "Lahore",       country: "Pakistan",           type: "AIRPORT" },
+  { code: "KHI", name: "Jinnah International",          city: "Karachi",      country: "Pakistan",           type: "AIRPORT" },
+  { code: "ISB", name: "Islamabad International",       city: "Islamabad",    country: "Pakistan",           type: "AIRPORT" },
+  { code: "DEL", name: "Indira Gandhi International",   city: "New Delhi",    country: "India",              type: "AIRPORT" },
+  { code: "BOM", name: "Chhatrapati Shivaji Maharaj",   city: "Mumbai",       country: "India",              type: "AIRPORT" },
+  { code: "SIN", name: "Changi Airport",                city: "Singapore",    country: "Singapore",          type: "AIRPORT" },
+  { code: "KUL", name: "Kuala Lumpur International",    city: "Kuala Lumpur", country: "Malaysia",           type: "AIRPORT" },
+  { code: "BKK", name: "Suvarnabhumi Airport",          city: "Bangkok",      country: "Thailand",           type: "AIRPORT" },
+  { code: "NRT", name: "Narita International",          city: "Tokyo",        country: "Japan",              type: "AIRPORT" },
+  { code: "SYD", name: "Sydney Kingsford Smith",        city: "Sydney",       country: "Australia",          type: "AIRPORT" },
+  { code: "YYZ", name: "Toronto Pearson International", city: "Toronto",      country: "Canada",             type: "AIRPORT" },
+  { code: "FCO", name: "Leonardo da Vinci–Fiumicino",   city: "Rome",         country: "Italy",              type: "AIRPORT" },
+  { code: "MAD", name: "Adolfo Suárez Madrid–Barajas",  city: "Madrid",       country: "Spain",              type: "AIRPORT" },
+  { code: "BCN", name: "Barcelona–El Prat Airport",     city: "Barcelona",    country: "Spain",              type: "AIRPORT" },
+  { code: "PEK", name: "Beijing Capital International", city: "Beijing",      country: "China",              type: "AIRPORT" },
+  { code: "PVG", name: "Shanghai Pudong International", city: "Shanghai",     country: "China",              type: "AIRPORT" },
+];
+
+function localFallback(keyword: string): AirportSuggestion[] {
+  const q = keyword.toLowerCase();
+  return FALLBACK_AIRPORTS.filter(
+    (a) =>
+      a.code.toLowerCase().includes(q) ||
+      a.city.toLowerCase().includes(q) ||
+      a.name.toLowerCase().includes(q) ||
+      a.country.toLowerCase().includes(q)
+  ).slice(0, 8);
+}
+
+// ─── GET handler ──────────────────────────────────────────────────────────────
+
+export async function GET(request: NextRequest) {
+  const keyword = new URL(request.url).searchParams.get("keyword")?.trim() ?? "";
+
+  if (keyword.length < 2) return NextResponse.json([], { status: 200 });
+
+  // ── Step A: static country alias lookup ──────────────────────────────────
+  const entry = COUNTRY_ALIASES[keyword.toUpperCase()];
+  if (entry) {
+    const results: AirportSuggestion[] = entry.airports.map((a) => ({
+      ...a,
+      isCountryMatch: true,
+      groupLabel: entry.groupLabel,
+    }));
+    return NextResponse.json(results);
+  }
+
+  // ── Step B: Amadeus live search ───────────────────────────────────────────
+  let token: string;
+  try {
+    token = await getAmadeusToken();
+  } catch (err) {
+    console.warn("[/api/airports] Token error — using local fallback:", err);
+    return NextResponse.json(localFallback(keyword));
+  }
+
+  const url = new URL("https://test.api.amadeus.com/v1/reference-data/locations");
+  url.searchParams.set("subType",     "CITY,AIRPORT");
+  url.searchParams.set("keyword",     keyword);
+  url.searchParams.set("page[limit]", "8");
+  url.searchParams.set("view",        "LIGHT");
+
+  let res: Response;
+  try {
+    res = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch (err) {
+    console.warn("[/api/airports] Network error — using local fallback:", err);
+    return NextResponse.json(localFallback(keyword));
+  }
+
+  if (!res.ok) {
+    console.warn(`[/api/airports] Amadeus HTTP ${res.status} — using local fallback`);
+    return NextResponse.json(localFallback(keyword));
+  }
+
+  let json: { data?: unknown[] };
+  try {
+    json = await res.json();
+  } catch {
+    return NextResponse.json(localFallback(keyword));
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const suggestions: AirportSuggestion[] = ((json.data ?? []) as any[]).map((loc) => ({
+    code:    loc.iataCode,
+    name:    loc.name,
+    city:    loc.address?.cityName ?? loc.name,
+    country: loc.address?.countryName ?? "",
+    type:    loc.subType as "AIRPORT" | "CITY",
+  }));
+
+  // Fallback if Amadeus returned an empty set
+  return NextResponse.json(suggestions.length ? suggestions : localFallback(keyword));
+}
