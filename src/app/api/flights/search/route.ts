@@ -90,6 +90,7 @@ function mapItinerary(serpOffer: SerpOffer): Itinerary {
     carrierCode:  carrierCode(f.flight_number),
     flightNumber: f.flight_number.replace(/\s+/g, ""),
     aircraft:     f.airplane || "---",
+    airlineLogo:  f.airline_logo || undefined,
     departure: {
       iataCode: f.departure_airport.id,
       at:       toISO(f.departure_airport.time),
@@ -150,7 +151,12 @@ async function serpFetch(params: URLSearchParams): Promise<SerpApiResponse> {
   }
 
   const json = await res.json() as SerpApiResponse;
-  if (json.error) throw new Error(`SerpApi error: ${json.error}`);
+  if (json.error) {
+    if (json.error.toLowerCase().includes("hasn't returned any results") || json.error.toLowerCase().includes("no results")) {
+      return { best_flights: [], other_flights: [] };
+    }
+    throw new Error(`SerpApi error: ${json.error}`);
+  }
 
   console.log("[SerpApi] best:", json.best_flights?.length ?? 0, "other:", json.other_flights?.length ?? 0);
   return json;
@@ -177,14 +183,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: "SERPAPI_KEY not configured" }, { status: 500 });
   }
 
-  const isRoundTrip = tripType === "round-trip";
+  const isRoundTrip  = tripType === "round-trip";
+  const isMultiCity  = tripType === "multi-city";
 
   if (isRoundTrip && !returnDate) {
     return NextResponse.json({ success: false, error: "returnDate required for round-trip" }, { status: 400 });
   }
 
+  if (isMultiCity && (!body.legs || body.legs.length < 2)) {
+    return NextResponse.json({ success: false, error: "At least 2 legs required for multi-city" }, { status: 400 });
+  }
+
   // Cache check
-  const cacheKey = [tripType, origin, destination, departureDate, returnDate ?? "", passengers, travelClass, currency].join(":");
+  const cacheKey = [tripType, origin, destination, departureDate, returnDate ?? "", passengers, travelClass, currency,
+    isMultiCity ? JSON.stringify(body.legs) : ""].join(":");
   const cached = cacheGet(cacheKey);
   if (cached) {
     console.log("[SerpApi] Cache HIT:", cacheKey);
@@ -202,85 +214,126 @@ export async function POST(request: NextRequest) {
   };
 
   try {
-    // ── Step 1: Fetch outbound flights ────────────────────────────────────────
-    const outboundParams = new URLSearchParams({
-      ...baseParams,
-      departure_id:  origin.toUpperCase(),
-      arrival_id:    destination.toUpperCase(),
-      outbound_date: departureDate,
-      type:          SERP_TRIP_TYPE[tripType] ?? "2",
-      ...(isRoundTrip && returnDate ? { return_date: returnDate } : {}),
-    });
+    let outboundOffers: SerpOffer[] = [];
+    let allOffers: SerpOffer[]      = [];
+    let returnOfferMap = new Map<string, SerpOffer>();
+    let failedLegLabels: string[]   = [];
 
-    const outboundData   = await serpFetch(outboundParams);
-    const outboundOffers = [...(outboundData.best_flights ?? []), ...(outboundData.other_flights ?? [])].slice(0, 15);
+    // ── Multi-city ────────────────────────────────────────────────────────────
+    if (isMultiCity) {
+      const sortedLegs = [...body.legs!].sort(
+        (a, b) => new Date(a.departureDate).getTime() - new Date(b.departureDate).getTime()
+      );
 
-    if (outboundOffers.length === 0) {
-      const empty: FlightSearchResponse = {
-        data: [],
-        meta: { count: 0, currency, origin: origin.toUpperCase(), destination: destination.toUpperCase(), departureDate },
-        dictionaries: { carriers: {}, aircraft: {}, locations: {} },
-      };
-      return NextResponse.json(empty, { headers: { "X-Data-Source": "SERPAPI" } });
-    }
+      // Fetch top 5 options per leg in parallel
+      const legResults = await Promise.all(
+        sortedLegs.map((l) =>
+          serpFetch(new URLSearchParams({
+            ...baseParams,
+            departure_id:  l.origin.toUpperCase(),
+            arrival_id:    l.destination.toUpperCase(),
+            outbound_date: l.departureDate,
+            type:          "2",
+          })).catch(() => ({ best_flights: [], other_flights: [] } as SerpApiResponse))
+        )
+      );
 
-    // ── Step 2 (Round-trip only): fetch return flights per departure_token ────
-    // SerpApi round-trip flow:
-    //   - First call with type=1 + return_date returns outbound options
-    //   - Each outbound offer has a departure_token
-    //   - Second call with departure_token returns the matching return options
-    //   - We pick the best (first) return offer for each outbound
+      // Pick top 5 offers per leg (fallback to empty array if none)
+      const legOptionsList = legResults.map((data, i) => {
+        const options = [...(data.best_flights ?? []), ...(data.other_flights ?? [])].slice(0, 5);
+        console.log(`[SerpApi] Leg ${i}: ${options.length} options`);
+        return options;
+      });
 
-    let returnOfferMap = new Map<string, SerpOffer>(); // departure_token → best return offer
+      // Track which legs failed
+      const failedLegIndexes = legOptionsList
+        .map((opts, i) => opts.length === 0 ? i : -1)
+        .filter(i => i >= 0);
+      failedLegLabels = failedLegIndexes.map(i => `${sortedLegs[i].origin}→${sortedLegs[i].destination}`);
 
-    if (isRoundTrip) {
-      // Fetch return flights for the first outbound offer's token
-      // (SerpApi returns the same return pool regardless of which token you use,
-      //  so one call is enough — we reuse it for all outbound offers)
-      const firstToken = outboundOffers.find((o) => o.departure_token)?.departure_token;
+      // Filter out legs with no results, build combos from available legs only
+      const availableLegs = legOptionsList.filter((opts) => opts.length > 0);
+      console.log(`[SerpApi] Multi-city — ${availableLegs.length}/${legOptionsList.length} legs have results, failed: ${failedLegLabels.join(", ") || "none"}`);
 
-      if (firstToken) {
-        const returnParams = new URLSearchParams({
-          ...baseParams,
-          departure_id:    origin.toUpperCase(),
-          arrival_id:      destination.toUpperCase(),
-          outbound_date:   departureDate,
-          return_date:     returnDate!,
-          type:            "1",
-          departure_token: firstToken,
-        });
+      if (availableLegs.length === 0) {
+        outboundOffers = [];
+      } else {
+        const maxCombos = Math.min(5, Math.max(...availableLegs.map((o) => o.length)));
+        for (let ci = 0; ci < maxCombos; ci++) {
+          const combo = availableLegs.map((opts) => opts[Math.min(ci, opts.length - 1)]);
+          const merged: SerpOffer & { _legOffers?: SerpOffer[] } = {
+            flights:        combo[0].flights,
+            total_duration: combo.reduce((sum, o) => sum + o.total_duration, 0),
+            price:          combo.reduce((sum, o) => sum + o.price, 0),
+            type:           "multi-city",
+            airline_logo:   combo[0].airline_logo,
+            _legOffers:     combo,
+          };
+          outboundOffers.push(merged);
+        }
+      }
 
-        try {
-          const returnData    = await serpFetch(returnParams);
-          const returnOffers  = [...(returnData.best_flights ?? []), ...(returnData.other_flights ?? [])];
+    // ── One-way / Round-trip ──────────────────────────────────────────────────
+    } else {
+      const outboundParams = new URLSearchParams({
+        ...baseParams,
+        departure_id:  origin.toUpperCase(),
+        arrival_id:    destination.toUpperCase(),
+        outbound_date: departureDate,
+        type:          SERP_TRIP_TYPE[tripType] ?? "2",
+        ...(isRoundTrip && returnDate ? { return_date: returnDate } : {}),
+      });
 
-          console.log("[SerpApi] Return offers fetched:", returnOffers.length);
+      const outboundData = await serpFetch(outboundParams);
+      outboundOffers = [...(outboundData.best_flights ?? []), ...(outboundData.other_flights ?? [])].slice(0, 15);
 
-          // Map every outbound token to the same pool of return offers
-          // (UI will show the best return per outbound)
-          outboundOffers.forEach((o) => {
-            if (o.departure_token) {
-              // Assign the best return offer (index 0) to each outbound
-              const bestReturn = returnOffers[0];
-              if (bestReturn) returnOfferMap.set(o.departure_token, bestReturn);
-            }
+      // Round-trip: fetch return leg
+      if (isRoundTrip && outboundOffers.length > 0) {
+        const firstToken = outboundOffers.find((o) => o.departure_token)?.departure_token;
+        if (firstToken) {
+          const returnParams = new URLSearchParams({
+            ...baseParams,
+            departure_id:    origin.toUpperCase(),
+            arrival_id:      destination.toUpperCase(),
+            outbound_date:   departureDate,
+            return_date:     returnDate!,
+            type:            "1",
+            departure_token: firstToken,
           });
-        } catch (returnErr) {
-          // Non-fatal: if return fetch fails, show outbound-only
-          console.warn("[SerpApi] Return fetch failed:", returnErr instanceof Error ? returnErr.message : returnErr);
+          try {
+            const returnData   = await serpFetch(returnParams);
+            const returnOffers = [...(returnData.best_flights ?? []), ...(returnData.other_flights ?? [])];
+            outboundOffers.forEach((o) => {
+              if (o.departure_token && returnOffers[0]) {
+                returnOfferMap.set(o.departure_token, returnOffers[0]);
+              }
+            });
+          } catch (e) {
+            console.warn("[SerpApi] Return fetch failed:", e instanceof Error ? e.message : e);
+          }
         }
       }
     }
 
-    // ── Step 3: Build FlightOffer[] ───────────────────────────────────────────
-    const allOffers: SerpOffer[] = [];
+    if (outboundOffers.length === 0) {
+      const empty = {
+        data: [],
+        meta: { count: 0, currency, origin: origin.toUpperCase(), destination: destination.toUpperCase(), departureDate },
+        dictionaries: { carriers: {}, aircraft: {}, locations: {} },
+        failedLegs: failedLegLabels,
+      };
+      return NextResponse.json(empty, { headers: { "X-Data-Source": "SERPAPI" } });
+    }
 
+    // ── Build FlightOffer[] ───────────────────────────────────────────────────
     const offers: FlightOffer[] = outboundOffers.map((outbound, i) => {
       allOffers.push(outbound);
 
-      const itineraries: Itinerary[] = [mapItinerary(outbound)];
+      const legOffers = (outbound as SerpOffer & { _legOffers?: SerpOffer[] })._legOffers;
+      const itineraries: Itinerary[] = legOffers
+        ? legOffers.map((leg) => mapItinerary(leg))
+        : [mapItinerary(outbound)];
 
-      // Attach return itinerary if we have one
       const returnOffer = outbound.departure_token
         ? returnOfferMap.get(outbound.departure_token)
         : undefined;
@@ -292,7 +345,9 @@ export async function POST(request: NextRequest) {
 
       const totalPrice = outbound.price + (isRoundTrip && returnOffer ? returnOffer.price : 0);
       const perPax     = Math.round(totalPrice / Math.max(passengers, 1));
-      const carrier    = carrierCode(outbound.flights[0].flight_number);
+      const allCarriers = [...new Set(
+        (legOffers ?? [outbound]).flatMap((o) => o.flights.map((f) => carrierCode(f.flight_number)))
+      )];
 
       return {
         id:     `serp-${i}-${outbound.departure_token ?? i}`,
@@ -304,24 +359,25 @@ export async function POST(request: NextRequest) {
           perPassenger: String(perPax),
         },
         itineraries,
-        validatingAirlineCodes: [carrier],
+        validatingAirlineCodes: allCarriers,
         numberOfBookableSeats:  9,
         lastTicketingDate:      outbound.flights[0].departure_airport.time.slice(0, 10),
         baggageAllowance:       { quantity: 1, weight: 23, weightUnit: "KG" },
       };
     });
 
-    // ── Step 4: Dictionaries ──────────────────────────────────────────────────
+    // ── Dictionaries ──────────────────────────────────────────────────────────
     const { carriers, aircraft } = buildDictionaries(allOffers);
 
-    const response: FlightSearchResponse = {
+    const response = {
       data: offers,
       meta: { count: offers.length, currency, origin: origin.toUpperCase(), destination: destination.toUpperCase(), departureDate },
       dictionaries: { carriers, aircraft, locations: {} },
+      failedLegs: failedLegLabels,
     };
 
     cacheSet(cacheKey, response);
-    console.log("[SerpApi] Done — offers:", offers.length, "round-trip:", isRoundTrip, "return leg attached:", returnOfferMap.size > 0);
+    console.log("[SerpApi] Done — offers:", offers.length, "tripType:", tripType);
     return NextResponse.json(response, { headers: { "X-Data-Source": "SERPAPI" } });
 
   } catch (err) {

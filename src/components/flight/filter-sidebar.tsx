@@ -393,7 +393,7 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
                 </button>
                 <span className="text-slate-200">|</span>
                 <button type="button"
-                  onClick={() => set({ selectedAirlines: new Set(availableAirlines.map(a => a.code)) })}
+                  onClick={() => set({ selectedAirlines: new Set() })}
                   className="text-slate-400 hover:text-red-500 transition-colors">
                   Clear
                 </button>

@@ -32,6 +32,7 @@ export interface FlightSegment {
   carrierCode: string;
   flightNumber: string;
   aircraft: string;
+  airlineLogo?: string;
   departure: {
     iataCode: string;
     terminal?: string;
@@ -104,13 +105,25 @@ export const AIRLINE_NAMES: Record<string, string> = {
   EK: "Emirates",
   QR: "Qatar Airways",
   SV: "Saudia",
-  PK: "PIA - Pakistan International Airlines",
+  PK: "PIA",
   TK: "Turkish Airlines",
   FZ: "flydubai",
   G9: "Air Arabia",
   WY: "Oman Air",
   EY: "Etihad Airways",
   AI: "Air India",
+  "9P": "Fly Jinnah",
+  PF: "Air Sial",
+  PA: "Airblue",
+  ER: "SERENE Air",
+};
+
+// Fallback logo URLs for airlines not on Duffel CDN
+export const AIRLINE_LOGO_FALLBACKS: Record<string, string> = {
+  "9P": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Fly_Jinnah_logo.svg/320px-Fly_Jinnah_logo.svg.png",
+  PF:  "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Air_Sial_logo.svg/320px-Air_Sial_logo.svg.png",
+  PA:  "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Airblue_logo.svg/320px-Airblue_logo.svg.png",
+  ER:  "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Serene_Air_logo.svg/320px-Serene_Air_logo.svg.png",
 };
 
 export const AIRCRAFT_NAMES: Record<string, string> = {

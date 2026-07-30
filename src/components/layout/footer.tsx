@@ -136,14 +136,14 @@ export function Footer() {
             <div className="mt-4 flex flex-wrap gap-2">
 
               {/* Visa */}
-              <div className="h-8 px-2.5 rounded-md border border-border bg-white flex items-center justify-center">
+              <div className="h-8 px-2.5 border border-border bg-white flex items-center justify-center">
                 <svg viewBox="0 0 48 16" className="h-4 w-auto" aria-label="Visa">
                   <text x="0" y="13" fontFamily="Arial" fontWeight="900" fontSize="15" fill="#1A1F71" letterSpacing="-0.5">VISA</text>
                 </svg>
               </div>
 
               {/* Mastercard */}
-              <div className="h-8 px-2 rounded-md border border-border bg-white flex items-center justify-center gap-0">
+              <div className="h-8 px-2  border border-border bg-white flex items-center justify-center gap-0">
                 <svg viewBox="0 0 38 24" className="h-6 w-auto" aria-label="Mastercard">
                   <circle cx="13" cy="12" r="10" fill="#EB001B" />
                   <circle cx="25" cy="12" r="10" fill="#F79E1B" />
@@ -152,14 +152,14 @@ export function Footer() {
               </div>
 
               {/* Amex */}
-              <div className="h-8 px-2.5 rounded-md border border-border bg-[#2E77BC] flex items-center justify-center">
+              <div className="h-8 px-2.5  border border-border bg-[#2E77BC] flex items-center justify-center">
                 <svg viewBox="0 0 60 16" className="h-3.5 w-auto" aria-label="American Express">
                   <text x="0" y="13" fontFamily="Arial" fontWeight="800" fontSize="12" fill="white" letterSpacing="0.5">AMEX</text>
                 </svg>
               </div>
 
               {/* PayPal */}
-              <div className="h-8 px-2.5 rounded-md border border-border bg-white flex items-center justify-center">
+              <div className="h-8 px-2.5  border border-border bg-white flex items-center justify-center">
                 <svg viewBox="0 0 60 20" className="h-5 w-auto" aria-label="PayPal">
                   <text x="0" y="15" fontFamily="Arial" fontWeight="800" fontSize="14" fill="#003087">Pay</text>
                   <text x="22" y="15" fontFamily="Arial" fontWeight="800" fontSize="14" fill="#009CDE">Pal</text>
@@ -167,7 +167,7 @@ export function Footer() {
               </div>
 
               {/* Apple Pay */}
-              <div className="h-8 px-2.5 rounded-md border border-border bg-black flex items-center justify-center gap-1">
+              <div className="h-8 px-2.5 border border-border bg-black flex items-center justify-center gap-1">
                 <svg viewBox="0 0 14 16" className="h-4 w-auto fill-white" aria-label="Apple Pay" aria-hidden="true">
                   <path d="M9.02 2.06c.52-.63.87-1.5.77-2.37-.75.03-1.65.5-2.18 1.13-.48.55-.9 1.44-.79 2.29.84.06 1.69-.42 2.2-1.05zM9.78 3.3c-1.21-.07-2.24.69-2.82.69-.58 0-1.47-.65-2.43-.63C3.2 3.38 1.9 4.2 1.18 5.47c-1.46 2.52-.38 6.26 1.04 8.31.69.99 1.52 2.1 2.6 2.06.99-.04 1.38-.65 2.58-.65 1.2 0 1.55.65 2.6.63 1.12-.02 1.83-1.02 2.52-2.01.79-1.14 1.11-2.25 1.13-2.31-.02-.01-2.17-.84-2.19-3.33-.02-2.08 1.7-3.08 1.78-3.13-.97-1.44-2.49-1.6-3.06-1.64z"/>
                 </svg>

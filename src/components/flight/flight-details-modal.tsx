@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { X, Plane, Check, Luggage, ShieldCheck, Users, ArrowRight } from "lucide-react";
 import type { FlightOffer } from "@/types/flight";
-import { AIRLINE_NAMES, AIRCRAFT_NAMES } from "@/types/flight";
+import { AIRLINE_NAMES, AIRCRAFT_NAMES, AIRLINE_LOGO_FALLBACKS } from "@/types/flight";
 import { useCurrency } from "@/context/currency-context";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -34,20 +34,38 @@ function minsToLabel(m: number) {
 
 // ─── Airline Logo ─────────────────────────────────────────────────────────────
 
+const LOCAL_LOGOS: Record<string, string> = {
+  "9P": "/airlines/9P.jpg",
+  PF:   "/airlines/PF.png",
+};
+
 function AirlineLogo({ code, className = "" }: { code: string; className?: string }) {
+  const urls = [
+    LOCAL_LOGOS[code],
+    `https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/${code}.svg`,
+    AIRLINE_LOGO_FALLBACKS[code],
+  ].filter(Boolean) as string[];
+
+  const [idx, setIdx]       = useState(0);
   const [failed, setFailed] = useState(false);
+
+  const name     = AIRLINE_NAMES[code] ?? code;
+  const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+
+  function handleError() {
+    if (idx + 1 < urls.length) setIdx(idx + 1);
+    else setFailed(true);
+  }
+
   if (failed) return (
-    <div className={`bg-slate-100 flex items-center justify-center ${className}`}>
-      <Plane className="h-4 w-4 text-slate-400" />
+    <div className={`bg-primary/10 flex items-center justify-center ${className}`}>
+      <span className="text-sm font-bold text-primary tracking-wide">{initials}</span>
     </div>
   );
+
   return (
     <div className={`bg-white border border-slate-100 flex items-center justify-center overflow-hidden px-1.5 ${className}`}>
-      <img
-        src={`https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/${code}.svg`}
-        alt={code} className="h-5 w-full object-contain"
-        onError={() => setFailed(true)}
-      />
+      <img src={urls[idx]} alt={name} className="h-7 w-full object-contain" onError={handleError} />
     </div>
   );
 }
@@ -87,7 +105,7 @@ function FlightSegment({
 
         {/* Airline + duration row */}
         <div className="flex items-center gap-2 mb-3">
-          <AirlineLogo code={seg.carrierCode} className="h-7 w-14 shrink-0" />
+          <AirlineLogo code={seg.carrierCode} className="h-9 w-20 shrink-0" />
           <div className="flex flex-col">
             <span className="text-xs font-medium text-slate-700">{airline}</span>
             <span className="text-[11px] text-slate-400">{seg.carrierCode}{seg.flightNumber} · {aircraft}</span>
@@ -313,7 +331,8 @@ export function FlightDetailsModal({
       onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
       <div
-        className={`relative w-full max-w-4xl max-h-[95vh] sm:max-h-[88vh] bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ease-out ${
+        style={{ boxShadow: "rgba(50, 50, 93, 0.25) 0px 50px 100px -20px, rgba(0, 0, 0, 0.3) 0px 30px 60px -30px" }}
+        className={`relative w-full max-w-4xl max-h-[95vh] sm:max-h-[88vh] bg-white sm:rounded-2xl rounded-t-2xl overflow-hidden flex flex-col transition-all duration-300 ease-out ${
           visible ? "opacity-100 translate-y-0 sm:scale-100" : "opacity-0 translate-y-8 sm:scale-95"
         }`}
       >

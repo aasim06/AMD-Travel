@@ -4,19 +4,15 @@ import { useEffect, useState, useCallback, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   Plane,
-  Clock,
   Users,
   ArrowRight,
   AlertCircle,
-  Luggage,
   ChevronDown,
   Share2,
   Heart,
-  ShieldCheck,
-  Zap,
 } from "lucide-react";
 import type { FlightOffer, FlightSearchResponse, TravelClass, Currency } from "@/types/flight";
-import { AIRLINE_NAMES, AIRCRAFT_NAMES } from "@/types/flight";
+import { AIRLINE_NAMES, AIRLINE_LOGO_FALLBACKS } from "@/types/flight";
 import { useCurrency } from "@/context/currency-context";
 import { FilterSidebar, getDefaultFilters } from "@/components/flight/filter-sidebar";
 import type { FilterState } from "@/components/flight/filter-sidebar";
@@ -60,6 +56,7 @@ function formatTime(iso: string): string {
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
+    weekday: "short",
     day: "numeric",
     month: "short",
   });
@@ -226,25 +223,40 @@ function SortTabBar({
 
 // ─── Airline logo with fallback ─────────────────────────────────────────────
 
+const LOCAL_LOGOS: Record<string, string> = {
+  "9P": "/airlines/9P.jpg",
+  PF:   "/airlines/PF.png",
+};
+
 function AirlineLogo({ code }: { code: string }) {
+  const urls = [
+    LOCAL_LOGOS[code],
+    `https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/${code}.svg`,
+    AIRLINE_LOGO_FALLBACKS[code],
+  ].filter(Boolean) as string[];
+
+  const [idx, setIdx]       = useState(0);
   const [failed, setFailed] = useState(false);
+
+  const name     = AIRLINE_NAMES[code] ?? code;
+  const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+
+  function handleError() {
+    if (idx + 1 < urls.length) setIdx(idx + 1);
+    else setFailed(true);
+  }
 
   if (failed) {
     return (
-      <div className="h-6 w-12 rounded-md bg-slate-100 flex items-center justify-center shrink-0">
-        <Plane className="h-3.5 w-3.5 text-slate-400" />
+      <div className="h-10 w-24 bg-primary/10 flex items-center justify-center shrink-0">
+        <span className="text-sm font-bold text-primary tracking-wide">{initials}</span>
       </div>
     );
   }
 
   return (
-    <div className="h-8 w-16 rounded-lg bg-white border border-slate-100 flex items-center justify-center shrink-0 overflow-hidden px-1.5">
-      <img
-        src={`https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/${code}.svg`}
-        alt={code}
-        className="h-6 w-full object-contain"
-        onError={() => setFailed(true)}
-      />
+    <div className="h-10 w-24 bg-white border border-slate-100 flex items-center justify-center shrink-0 overflow-hidden px-1">
+      <img src={urls[idx]} alt={name} className="h-9 w-full object-contain" onError={handleError} />
     </div>
   );
 }
@@ -264,55 +276,117 @@ function LegRow({
   const stops   = leg.segments.length - 1;
   const airline = carriers[dep.carrierCode] ?? AIRLINE_NAMES[dep.carrierCode] ?? dep.carrierCode;
   const label   = totalLegs === 1 ? "Outbound" : legIndex === 0 ? "Outbound" : "Return";
-  const stopCodes = leg.segments.slice(0, -1).map(s => s.arrival.iataCode);
+
+  // Overnight: arrival on different calendar day than departure
+  const depDay = new Date(dep.departure.at).toDateString();
+  const arrDay = new Date(arr.arrival.at).toDateString();
+  const nightOffset = Math.round(
+    (new Date(arr.arrival.at).getTime() - new Date(dep.departure.at).getTime()) / (1000 * 60 * 60 * 24)
+  );
+  const isOvernight = arrDay !== depDay;
+
+  // Layover durations between segments
+  const layovers = leg.segments.slice(0, -1).map((seg, i) => {
+    const nextSeg = leg.segments[i + 1];
+    const layoverMins = Math.round(
+      (new Date(nextSeg.departure.at).getTime() - new Date(seg.arrival.at).getTime()) / 60000
+    );
+    return { code: seg.arrival.iataCode, mins: layoverMins };
+  });
+
+  // Aircraft type from first segment
+  const aircraft = dep.aircraft && dep.aircraft !== "---" ? dep.aircraft : null;
 
   return (
     <div>
       {/* Leg label */}
-      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-2">
+      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-2.5">
         {formatDate(dep.departure.at)} &bull; {label}
       </p>
 
       {/* Timeline row */}
       <div className="flex items-center gap-3">
+
         {/* Departure */}
         <div className="shrink-0 text-left w-16">
-          <p className="text-lg font-bold text-slate-900 leading-none">{formatTime(dep.departure.at)}</p>
+          <p className="text-lg font-bold text-slate-900 leading-none tabular-nums">{formatTime(dep.departure.at)}</p>
           <p className="text-xs font-bold text-primary mt-0.5">{dep.departure.iataCode}</p>
         </div>
 
-        {/* Center: line + info */}
-        <div className="flex-1 flex flex-col items-center gap-1 min-w-0">
-          {/* Duration + airline */}
+        {/* Center */}
+        <div className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
+
+          {/* Top row: airline logo + duration + aircraft */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 rounded-full px-2 py-0.5">
-              {parseDuration(leg.duration)}
-            </span>
-            <div className="h-5 w-px bg-slate-200" />
             <AirlineLogo code={dep.carrierCode} />
-            <span className="text-[11px] text-slate-500 truncate max-w-[80px] hidden sm:block">{airline}</span>
+            <div className="h-4 w-px bg-slate-200" />
+            <div className="flex flex-col items-center">
+              <span className="text-[11px] font-semibold text-slate-600">
+                {parseDuration(leg.duration)}
+              </span>
+              {aircraft && (
+                <span className="text-[9px] text-slate-400 leading-none mt-0.5 whitespace-nowrap">{aircraft}</span>
+              )}
+            </div>
           </div>
-          {/* Dotted path */}
-          <div className="w-full flex items-center gap-1">
-            <div className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-            <div className="flex-1 border-t-2 border-dashed border-slate-200" />
-            <Plane className="h-3.5 w-3.5 text-primary shrink-0" />
-            <div className="flex-1 border-t-2 border-dashed border-slate-200" />
-            <div className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+
+          {/* Flight path with stop dots */}
+          <div className="w-full flex items-center">
+            {/* Origin dot */}
+            <div className="h-2 w-2 rounded-full border-2 border-primary bg-white shrink-0" />
+
+            {stops === 0 ? (
+              <>
+                <div className="flex-1 border-t-2 border-dashed border-slate-200" />
+                <Plane className="h-3.5 w-3.5 text-primary shrink-0 -rotate-0" />
+                <div className="flex-1 border-t-2 border-dashed border-slate-200" />
+              </>
+            ) : (
+              layovers.map((lv, i) => (
+                <>
+                  <div key={`line-${i}`} className="flex-1 border-t-2 border-dashed border-slate-200" />
+                  {/* Stop dot + label */}
+                  <div key={`stop-${i}`} className="flex flex-col items-center shrink-0 mx-0.5">
+                    <span className="text-[9px] font-semibold text-amber-600 leading-none mb-0.5">{lv.code}</span>
+                    <div className="h-2.5 w-2.5 rounded-full bg-amber-400 border-2 border-white shadow-sm" />
+                    <span className="text-[8px] text-slate-400 leading-none mt-0.5 whitespace-nowrap">{minsToLabel(lv.mins)}</span>
+                  </div>
+                  {i === layovers.length - 1 && (
+                    <>
+                      <div className="flex-1 border-t-2 border-dashed border-slate-200" />
+                      <Plane className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <div className="flex-1 border-t-2 border-dashed border-slate-200" />
+                    </>
+                  )}
+                </>
+              ))
+            )}
+
+            {/* Destination dot */}
+            <div className="h-2 w-2 rounded-full border-2 border-primary bg-white shrink-0" />
           </div>
-          {/* Stops */}
+
+          {/* Bottom: direct / stops label */}
           <span className={`text-[10px] font-semibold ${
             stops === 0 ? "text-emerald-600" : "text-amber-600"
           }`}>
-            {stops === 0 ? "Direct" : `${stops} stop${stops > 1 ? "s" : ""} · ${stopCodes.join(", ")}`}
+            {stops === 0 ? "Non-stop" : `${stops} stop${stops > 1 ? "s" : ""}`}
           </span>
         </div>
 
         {/* Arrival */}
         <div className="shrink-0 text-right w-16">
-          <p className="text-lg font-bold text-slate-900 leading-none">{formatTime(arr.arrival.at)}</p>
+          <div className="flex items-start justify-end gap-0.5">
+            <p className="text-lg font-bold text-slate-900 leading-none tabular-nums">{formatTime(arr.arrival.at)}</p>
+            {isOvernight && (
+              <span className="text-[9px] font-bold text-rose-500 leading-none mt-0.5">
+                +{nightOffset}
+              </span>
+            )}
+          </div>
           <p className="text-xs font-bold text-primary mt-0.5">{arr.arrival.iataCode}</p>
         </div>
+
       </div>
     </div>
   );
@@ -335,6 +409,94 @@ function NightsBadge({ depAt, arrAt }: { depAt: string; arrAt: string }) {
   );
 }
 
+// ─── Baggage Breakdown Modal ─────────────────────────────────────────────────
+
+function BaggageModal({ offer, onClose }: { offer: FlightOffer; onClose: (e?: React.MouseEvent) => void }) {
+  const baggage = offer.baggageAllowance;
+  const qty     = baggage?.quantity ?? 0;
+  const weight  = baggage?.weight;
+  const unit    = baggage?.weightUnit ?? "kg";
+
+  const checkedDetail = qty > 0
+    ? (weight ? `${qty}× ${weight}${unit}` : `${qty} bag${qty > 1 ? "s" : ""}`)
+    : null;
+
+  const ITEMS = [
+    {
+      svg: <path d="M20.583 2.25a.806.806 0 0 1 1.167 0 .806.806 0 0 1 0 1.167l-4.907 4.906h.008l-1.149 1.141L3.417 21.75c-.25.333-.834.333-1.167 0a.806.806 0 0 1 0-1.167l1.809-1.808c-.177-.327-.259-.692-.259-1.129 0-.692.353-7.091.42-7.448.093-.468.285-.828.641-1.18.28-.285.656-.517 1-.62.089-.029.521-.06.97-.077l.056-.002c.56-.017.75-.022.849-.12a.4.4 0 0 0 .085-.147c.053-.39.31-1.078.59-1.487.187-.268.576-.673.856-.88.408-.309.856-.509 1.429-.637.18-.04.432-.056.856-.044 1.113.031 1.72.108 2.225.36.7.356 1.309.977 1.649 1.685q.059.121.108.25zm-8.753 8.754H7c-.417 0-.667.25-.667.667 0 .416.334.666.667.666h.137c.167 0 .334.167.334.417v.833c0 .417.124.667.666.667.582 0 .667-.254.667-.667.006-.587 0-.833 0-.833 0-.25.167-.417.417-.417h1.275zM9.364 8.078q.035.038.07.071l.048.05c.085.108.53.105 1.363.1l.556-.002h.809q.44.001.79.007c.604.007 1.001.012 1.158-.045a2 2 0 0 1-.048-.165c-.163-.663-.694-1.65-2.558-1.65-.996 0-1.873.597-2.17 1.57zM15.785 11.004l2.421-2.405c.197.114.386.258.544.419.356.352.552.716.64 1.18.064.36.42 6.788.42 7.448 0 .693-.204 1.201-.66 1.662-.324.324-.62.504-1.028.616-.255.07-.402.08-1.311.08H15.79V20H14.5l.001.004H9.123V20H7.832v.004H6.723l7.72-7.667H16.5c.334 0 .667-.25.667-.666a.657.657 0 0 0-.667-.667z" />,
+      label: "Personal item", detail: null, included: true,
+    },
+    {
+      svg: <path d="M14.91 9.083c-.25 0-.417-.166-.417-.416v-4.5c0-.25.167-.417.417-.417.583 0 .833-.417.833-.917S15.493 2 14.91 2H9.077c-.584 0-.834.417-.834.833 0 .417.25.834.75.834q.5.125.5.5v4.416c0 .25-.166.417-.416.417h-.834c-1.166.083-2.083 1-2.083 2.083v8c0 1 .667 1.834 1.667 2 .083 0 .166.167.166.25 0 .5.334.667.834.667s.833-.167.833-.667a.18.18 0 0 1 .167-.166h4.166a.18.18 0 0 1 .167.166c0 .5.333.667.833.667s.834-.167.834-.667c0-.083.25-.25.333-.25 1-.166 1.667-1.083 1.667-2v-8c0-1.083-.75-2-1.917-2zm0 4.25h-3.5c-.25 0-.417.167-.417.417v.833c0 .334-.25.667-.666.667s-.667-.25-.667-.667v-.833c0-.25-.167-.417-.333-.417h-.25a.657.657 0 0 1-.667-.666c0-.417.25-.667.667-.667h5.833c.333 0 .667.25.667.667a.657.657 0 0 1-.667.666m-2.5-9.666c.25 0 .417.166.417.416V8.58c0 .25-.167.417-.417.417h-.833c-.25 0-.417-.167-.417-.417V4.083c0-.25.167-.416.417-.416z" />,
+      label: "Cabin bag", detail: null, included: true,
+    },
+    {
+      svg: <path d="M15.91 5.333c-1.417 0-1.417-.166-1.417-.416v-.75c0-.25.167-.417.417-.417.583 0 .833-.417.833-.917S15.494 2 14.91 2H9.077c-.584 0-.834.417-.834.833 0 .417.25.834.75.834q.5.125.5.5v.666c0 .25-.166.417-.416.417H6.243c-1.166.083-2.083 1-2.083 2.083v11.75c0 1 .667 1.834 1.667 2 .083 0 .166.167.166.25 0 .5.334.667.834.667s.833-.167.833-.667a.18.18 0 0 1 .167-.166h8.166a.18.18 0 0 1 .167.166c0 .5.334.667.834.667s.833-.167.833-.667c0-.083.25-.25.333-.25 1-.166 1.667-1.083 1.667-2V7.333c0-1.083-.75-2-1.917-2zM15.6 8.75a.75.75 0 0 1 1.5 0v8.5a.75.75 0 0 1-1.5 0zm-4.3 0a.75.75 0 0 1 1.5 0v8.5a.75.75 0 0 1-1.5 0zM7.75 8a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-1.5 0v-8.5A.75.75 0 0 1 7.75 8m3.41-3.917c0-.25.167-.416.417-.416h.833c.25 0 .417.166.417.416v.747c0 .25-.167.417-.417.417h-.833c-.25 0-.417-.167-.417-.417z" />,
+      label: "Checked bag", detail: checkedDetail, included: qty > 0,
+    },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={(e) => { e.stopPropagation(); onClose(e); }}>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <div
+        className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm p-5 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="text-base font-semibold text-slate-900">Baggage breakdown</p>
+        <p className="text-[11px] text-slate-400 mt-0.5 mb-4">Based on standard airline policy · may vary</p>
+
+        <div className="space-y-3">
+          {ITEMS.map((item, i) => (
+            <div key={i} className="flex items-center justify-between h-10">
+              {/* Left: icon + label */}
+              <div className="flex items-center gap-2">
+                <svg className="h-4 w-4 shrink-0 fill-current text-slate-500" viewBox="0 0 24 24">
+                  {item.svg}
+                </svg>
+                <span className="text-sm font-medium text-slate-700">{item.label}</span>
+                {item.detail && (
+                  <span className="text-xs text-slate-400">({item.detail})</span>
+                )}
+              </div>
+              {/* Right: included / not available */}
+              <div className="flex items-center gap-1.5 ml-4">
+                {item.included ? (
+                  <>
+                    <svg className="h-4 w-4 shrink-0 fill-current text-emerald-500" viewBox="0 0 24 24">
+                      <path d="M6.445 12.668a.9.9 0 1 0-1.302 1.242l3.572 3.745a.9.9 0 0 0 1.335-.036l8.591-10.037a.9.9 0 0 0-1.367-1.17l-7.598 8.876a.48.48 0 0 1-.712.02z" />
+                    </svg>
+                    <span className="text-sm text-slate-600">Included</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-4 w-4 shrink-0 fill-current text-slate-400" viewBox="0 0 24 24">
+                      <path d="M17.656 6.333a.9.9 0 0 1 0 1.273l-4.046 4.052a.48.48 0 0 0 0 .678l4.047 4.053a.9.9 0 0 1 .08 1.18l-.081.092a.9.9 0 0 1-1.273 0l-4.044-4.05a.48.48 0 0 0-.68 0l-4.042 4.05a.9.9 0 1 1-1.274-1.273l4.047-4.052a.48.48 0 0 0 0-.678L6.343 7.606a.9.9 0 0 1-.08-1.18l.081-.093a.9.9 0 0 1 1.273.001l4.043 4.049a.48.48 0 0 0 .679 0l4.044-4.049a.9.9 0 0 1 1.273 0" />
+                    </svg>
+                    <span className="text-sm text-slate-400">Not available</span>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-5 border-t border-slate-100 pt-4 flex justify-end">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onClose(e); }}
+            className="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Flight Card ──────────────────────────────────────────────────────────────
+
 function FlightCard({
   offer, carriers, onSelect,
 }: {
@@ -343,8 +505,9 @@ function FlightCard({
   onSelect: (offer: FlightOffer) => void;
 }) {
   const { formatPrice } = useCurrency();
-  const [saved, setSaved]         = useState(false);
-  const [shareOpen, setShareOpen] = useState(false);
+  const [saved, setSaved]           = useState(false);
+  const [shareOpen, setShareOpen]   = useState(false);
+  const [baggageOpen, setBaggageOpen] = useState(false);
   const price  = parseFloat(offer.price.total);
   const perPax = parseFloat(offer.price.perPassenger);
 
@@ -353,7 +516,7 @@ function FlightCard({
     : `https://amdglobal.com/itinerary/${offer.id}`;
 
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden flex flex-col md:flex-row" style={{ boxShadow: 'rgba(0, 0, 0, 0.1) 0px 10px 50px' }}>
+    <div onClick={() => onSelect(offer)} className="cursor-pointer bg-white border border-slate-200/80 rounded-2xl overflow-hidden flex flex-col md:flex-row" style={{ boxShadow: 'rgba(0, 0, 0, 0.1) 0px 10px 50px' }}>
 
       {/* ── Left: Route Details (70%) ── */}
       <div className="flex-1 p-5 space-y-4 min-w-0">
@@ -376,31 +539,48 @@ function FlightCard({
           </div>
         ))}
 
-        {/* Baggage & perks row */}
-        <div className="flex items-center gap-3 pt-1 border-t border-slate-100 flex-wrap">
-          {[
-            { icon: <Luggage className="h-3 w-3" />, label: "Personal item", ok: true },
-            { icon: <Luggage className="h-3 w-3" />, label: "Cabin bag", ok: true },
-            {
-              icon: <Luggage className="h-3 w-3" />,
-              label: offer.baggageAllowance?.quantity
-                ? `${offer.baggageAllowance.quantity}× Checked`
-                : "No checked bag",
-              ok: !!offer.baggageAllowance?.quantity,
-            },
-            {
-              icon: <Users className="h-3 w-3" />,
-              label: `${offer.numberOfBookableSeats} seats left`,
-              ok: offer.numberOfBookableSeats > 3,
-            },
-          ].map((item, i) => (
-            <span key={i} className={`flex items-center gap-1 text-[11px] font-medium ${
-              item.ok ? "text-slate-500" : "text-slate-400"
-            }`}>
-              <span className={item.ok ? "text-primary" : "text-slate-300"}>{item.icon}</span>
-              {item.label}
+        {/* Baggage & badges row */}
+        <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-dashed border-slate-200">
+          {/* Baggage */}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setBaggageOpen(true); }}
+            className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-primary transition-colors cursor-pointer"
+          >
+            {/* Personal item */}
+            <svg className="h-3.5 w-3.5 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-label="Personal item">
+              <path d="M20.583 2.25a.806.806 0 0 1 1.167 0 .806.806 0 0 1 0 1.167l-4.907 4.906h.008l-1.149 1.141L3.417 21.75c-.25.333-.834.333-1.167 0a.806.806 0 0 1 0-1.167l1.809-1.808c-.177-.327-.259-.692-.259-1.129 0-.692.353-7.091.42-7.448.093-.468.285-.828.641-1.18.28-.285.656-.517 1-.62.089-.029.521-.06.97-.077l.056-.002c.56-.017.75-.022.849-.12a.4.4 0 0 0 .085-.147c.053-.39.31-1.078.59-1.487.187-.268.576-.673.856-.88.408-.309.856-.509 1.429-.637.18-.04.432-.056.856-.044 1.113.031 1.72.108 2.225.36.7.356 1.309.977 1.649 1.685q.059.121.108.25zm-8.753 8.754H7c-.417 0-.667.25-.667.667 0 .416.334.666.667.666h.137c.167 0 .334.167.334.417v.833c0 .417.124.667.666.667.582 0 .667-.254.667-.667.006-.587 0-.833 0-.833 0-.25.167-.417.417-.417h1.275zM9.364 8.078q.035.038.07.071l.048.05c.085.108.53.105 1.363.1l.556-.002h.809q.44.001.79.007c.604.007 1.001.012 1.158-.045a2 2 0 0 1-.048-.165c-.163-.663-.694-1.65-2.558-1.65-.996 0-1.873.597-2.17 1.57zM15.785 11.004l2.421-2.405c.197.114.386.258.544.419.356.352.552.716.64 1.18.064.36.42 6.788.42 7.448 0 .693-.204 1.201-.66 1.662-.324.324-.62.504-1.028.616-.255.07-.402.08-1.311.08H15.79V20H14.5l.001.004H9.123V20H7.832v.004H6.723l7.72-7.667H16.5c.334 0 .667-.25.667-.666a.657.657 0 0 0-.667-.667z" />
+            </svg>
+            <span className="font-medium">1</span>
+            <div className="h-3 w-px bg-slate-300 mx-1" />
+            {/* Cabin bag */}
+            <svg className="h-3.5 w-3.5 text-slate-600 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-label="Cabin bag">
+              <path d="M14.91 9.083c-.25 0-.417-.166-.417-.416v-4.5c0-.25.167-.417.417-.417.583 0 .833-.417.833-.917S15.493 2 14.91 2H9.077c-.584 0-.834.417-.834.833 0 .417.25.834.75.834q.5.125.5.5v4.416c0 .25-.166.417-.416.417h-.834c-1.166.083-2.083 1-2.083 2.083v8c0 1 .667 1.834 1.667 2 .083 0 .166.167.166.25 0 .5.334.667.834.667s.833-.167.833-.667a.18.18 0 0 1 .167-.166h4.166a.18.18 0 0 1 .167.166c0 .5.333.667.833.667s.834-.167.834-.667c0-.083.25-.25.333-.25 1-.166 1.667-1.083 1.667-2v-8c0-1.083-.75-2-1.917-2zm0 4.25h-3.5c-.25 0-.417.167-.417.417v.833c0 .334-.25.667-.666.667s-.667-.25-.667-.667v-.833c0-.25-.167-.417-.333-.417h-.25a.657.657 0 0 1-.667-.666c0-.417.25-.667.667-.667h5.833c.333 0 .667.25.667.667a.657.657 0 0 1-.667.666m-2.5-9.666c.25 0 .417.166.417.416V8.58c0 .25-.167.417-.417.417h-.833c-.25 0-.417-.167-.417-.417V4.083c0-.25.167-.416.417-.416z" />
+            </svg>
+            <span className="font-medium">1</span>
+            <div className="h-3 w-px bg-slate-300 mx-1" />
+            {/* Checked bag */}
+            <svg className="h-3.5 w-3.5 text-slate-600 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-label="Checked bag">
+              <path d="M15.91 5.333c-1.417 0-1.417-.166-1.417-.416v-.75c0-.25.167-.417.417-.417.583 0 .833-.417.833-.917S15.494 2 14.91 2H9.077c-.584 0-.834.417-.834.833 0 .417.25.834.75.834q.5.125.5.5v.666c0 .25-.166.417-.416.417H6.243c-1.166.083-2.083 1-2.083 2.083v11.75c0 1 .667 1.834 1.667 2 .083 0 .166.167.166.25 0 .5.334.667.834.667s.833-.167.833-.667a.18.18 0 0 1 .167-.166h8.166a.18.18 0 0 1 .167.166c0 .5.334.667.834.667s.833-.167.833-.667c0-.083.25-.25.333-.25 1-.166 1.667-1.083 1.667-2V7.333c0-1.083-.75-2-1.917-2zM15.6 8.75a.75.75 0 0 1 1.5 0v8.5a.75.75 0 0 1-1.5 0zm-4.3 0a.75.75 0 0 1 1.5 0v8.5a.75.75 0 0 1-1.5 0zM7.75 8a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-1.5 0v-8.5A.75.75 0 0 1 7.75 8m3.41-3.917c0-.25.167-.416.417-.416h.833c.25 0 .417.166.417.416v.747c0 .25-.167.417-.417.417h-.833c-.25 0-.417-.167-.417-.417z" />
+            </svg>
+            <span className="font-medium">{offer.baggageAllowance?.quantity ?? 0}</span>
+          </button>
+
+          {/* Self-transfer badge for multi-city */}
+          {offer.itineraries.length > 1 && (
+            <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-600 text-[11px] font-medium px-2 py-0.5 rounded-full">
+              <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M21.92 9.19a1.29 1.29 0 0 0-1.207-.84h-5.225a.43.43 0 0 1-.405-.287l-1.876-5.316a1.288 1.288 0 0 0-2.412 0l-.004.013L8.92 8.063a.43.43 0 0 1-.405.286H3.29a1.288 1.288 0 0 0-.827 2.276l4.45 3.691a.43.43 0 0 1 .133.466l-1.87 5.606a1.288 1.288 0 0 0 1.983 1.446l4.59-3.365a.43.43 0 0 1 .507 0l4.587 3.364a1.288 1.288 0 0 0 1.984-1.445l-1.87-5.61a.43.43 0 0 1 .134-.465l4.458-3.697c.41-.35.56-.92.372-1.425" />
+              </svg>
+              Self-transfer
             </span>
-          ))}
+          )}
+
+          {/* Seats left */}
+          <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 ml-auto">
+            <Users className="h-3 w-3" />
+            {offer.numberOfBookableSeats} seats left
+          </span>
         </div>
       </div>
 
@@ -409,11 +589,11 @@ function FlightCard({
 
         {/* Top: share + save */}
         <div className="flex items-center gap-2 self-end mb-3">
-          <button type="button" onClick={() => setShareOpen(true)}
+          <button type="button" onClick={(e) => { e.stopPropagation(); setShareOpen(true); }}
             className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors">
             <Share2 className="h-3.5 w-3.5 text-slate-400" />
           </button>
-          <button type="button" onClick={() => setSaved(v => !v)}
+          <button type="button" onClick={(e) => { e.stopPropagation(); setSaved(v => !v); }}
             className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors">
             <Heart className={`h-3.5 w-3.5 transition-colors ${
               saved ? "fill-rose-500 text-rose-500" : "text-slate-400"
@@ -423,12 +603,6 @@ function FlightCard({
 
         {/* Price block */}
         <div className="text-center w-full">
-          {/* Badge */}
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <Users className="h-3 w-3 text-primary" />
-            <span className="text-[11px] font-semibold text-primary">Members' Choice</span>
-          </div>
-
           <p className="text-2xl font-bold text-slate-900 leading-none">
             {formatPrice(price)}
           </p>
@@ -439,7 +613,7 @@ function FlightCard({
 
         {/* CTA */}
         <button
-          onClick={() => onSelect(offer)}
+          onClick={(e) => { e.stopPropagation(); onSelect(offer); }}
           className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 px-6 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors shadow-sm shadow-primary/20 active:scale-[0.98]"
         >
           Select <ArrowRight className="h-4 w-4" />
@@ -452,6 +626,9 @@ function FlightCard({
           title={`Flight from ${offer.itineraries[0].segments[0].departure.iataCode} to ${offer.itineraries[0].segments[offer.itineraries[0].segments.length - 1].arrival.iataCode}`}
           onClose={() => setShareOpen(false)}
         />
+      )}
+      {baggageOpen && (
+        <BaggageModal offer={offer} onClose={(e?: React.MouseEvent) => { e?.stopPropagation(); setBaggageOpen(false); }} />
       )}
     </div>
   );
@@ -552,6 +729,7 @@ function SearchContent() {
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState<string | null>(null);
   const [fromCache, setFromCache] = useState(false);
+  const [failedLegs, setFailedLegs] = useState<string[]>([]);
   const [sortKey, setSortKey]     = useState<SortKey | OtherSort>("best");
   const [filters, setFilters]           = useState<FilterState>(getDefaultFilters(9999));
   const [selectedFlight, setSelectedFlight] = useState<FlightOffer | null>(null);
@@ -602,6 +780,7 @@ function SearchContent() {
   // Derive filtered list from sorted results
   const filteredResults = useMemo(() => {
     return sortedResults.filter((offer) => {
+
       const price = parseFloat(offer.price.total);
       const outbound = offer.itineraries[0];
       const ret      = offer.itineraries[1];
@@ -617,8 +796,9 @@ function SearchContent() {
 
       // Airlines
       if (filters.selectedAirlines.size > 0) {
-        const carrier = outbound.segments[0].carrierCode;
-        if (!filters.selectedAirlines.has(carrier)) return false;
+        const offerCarriers = offer.validatingAirlineCodes ?? [outbound.segments[0].carrierCode];
+        const hasMatch = offerCarriers.some((c) => filters.selectedAirlines.has(c));
+        if (!hasMatch) return false;
       }
 
       // Outbound departure time
@@ -644,12 +824,14 @@ function SearchContent() {
         if (retArrMin < filters.retArrFrom || retArrMin > filters.retArrTo) return false;
       }
 
-      // Total flight duration
-      const totalFlightMins = offer.itineraries.reduce((sum, it) => {
-        const m = it.duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
-        return sum + (parseInt(m?.[1] ?? "0") * 60) + parseInt(m?.[2] ?? "0");
-      }, 0);
-      if (totalFlightMins > filters.maxFlightDuration) return false;
+      // Total flight duration — skip for multi-city (multiple legs naturally exceed single-flight limit)
+      if (offer.itineraries.length === 1) {
+        const totalFlightMins = offer.itineraries.reduce((sum, it) => {
+          const m = it.duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+          return sum + (parseInt(m?.[1] ?? "0") * 60) + parseInt(m?.[2] ?? "0");
+        }, 0);
+        if (totalFlightMins > filters.maxFlightDuration) return false;
+      }
 
       // Days of week (outbound departure day)
       if (filters.activeDays.size > 0) {
@@ -665,8 +847,12 @@ function SearchContent() {
   const availableAirlines = useMemo(() => {
     const seen = new Map<string, string>();
     results.forEach((o) => {
-      const code = o.itineraries[0].segments[0].carrierCode;
-      if (!seen.has(code)) seen.set(code, carriers[code] ?? AIRLINE_NAMES[code] ?? code);
+      const codes = o.validatingAirlineCodes?.length
+        ? o.validatingAirlineCodes
+        : [o.itineraries[0].segments[0].carrierCode];
+      codes.forEach((code) => {
+        if (!seen.has(code)) seen.set(code, carriers[code] ?? AIRLINE_NAMES[code] ?? code);
+      });
     });
     return Array.from(seen.entries()).map(([code, name]) => ({ code, name }));
   }, [results, carriers]);
@@ -707,7 +893,6 @@ const fetchFlights = useCallback(async () => {
         return;
       }
     } else if (!from || !to || !dept) {
-      setError("Missing search parameters. Please go back and try again.");
       setLoading(false);
       return;
     }
@@ -744,14 +929,21 @@ const fetchFlights = useCallback(async () => {
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body?.error ?? `Search failed (${res.status})`);
+        const errMsg = body?.error ?? `Search failed (${res.status})`;
+        if (errMsg.toLowerCase().includes("hasn't returned any results") || errMsg.toLowerCase().includes("no results")) {
+          setResults([]);
+          setLoading(false);
+          return;
+        }
+        throw new Error(errMsg);
       }
 
-      const data: FlightSearchResponse & { cached?: boolean } = await res.json();
+      const data: FlightSearchResponse & { cached?: boolean; failedLegs?: string[] } = await res.json();
       const fetched = data.data ?? [];
       setResults(fetched);
       setCarriers(data.dictionaries?.carriers ?? {});
       setFromCache(data.cached === true);
+      setFailedLegs(data.failedLegs ?? []);
       setSortedResults(applySort(fetched, sortKey, data.dictionaries?.carriers ?? {}));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -846,6 +1038,19 @@ const fetchFlights = useCallback(async () => {
                     </span>
                   )}
                 </div>
+
+                {/* Failed legs warning */}
+                {failedLegs.length > 0 && (
+                  <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4">
+                    <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-semibold text-amber-800">Some legs unavailable</p>
+                      <p className="text-xs text-amber-600 mt-0.5">
+                        No flights found for: <span className="font-medium">{failedLegs.join(", ")}</span>. Results shown for available legs only.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <SortTabBar offers={results} carriers={carriers} sortKey={sortKey} onSort={handleSort} />
 
