@@ -43,7 +43,7 @@ function ViberIcon() {
 interface ShareItineraryModalProps {
   url:     string;
   title?:  string;
-  onClose: () => void;
+  onClose: (e?: React.MouseEvent) => void;
 }
 
 export function ShareItineraryModal({ url, title = "Check out this flight itinerary!", onClose }: ShareItineraryModalProps) {
@@ -117,16 +117,19 @@ export function ShareItineraryModal({ url, title = "Check out this flight itiner
       className={`fixed inset-0 z-50 flex items-center justify-center px-4 transition-all duration-250 ${
         visible ? "bg-black/40 backdrop-blur-sm" : "bg-black/0"
       }`}
-      onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
+      onClick={(e) => { e.stopPropagation(); if (e.target === e.currentTarget) handleClose(); }}
     >
-      <div className={`relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 transition-all duration-250 ease-out ${
-        visible ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-4"
-      }`}>
+      <div
+        className={`relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 transition-all duration-250 ease-out ${
+          visible ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-4"
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
 
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <p className="text-base font-bold text-slate-900">Share this itinerary</p>
-          <button type="button" onClick={handleClose}
+          <button type="button" onClick={(e) => { e.stopPropagation(); handleClose(); }}
             className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors">
             <X className="h-4 w-4 text-slate-500" />
           </button>

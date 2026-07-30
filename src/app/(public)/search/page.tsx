@@ -624,7 +624,7 @@ function FlightCard({
         <ShareItineraryModal
           url={shareUrl}
           title={`Flight from ${offer.itineraries[0].segments[0].departure.iataCode} to ${offer.itineraries[0].segments[offer.itineraries[0].segments.length - 1].arrival.iataCode}`}
-          onClose={() => setShareOpen(false)}
+          onClose={(e?: React.MouseEvent) => { e?.stopPropagation(); setShareOpen(false); }}
         />
       )}
       {baggageOpen && (
@@ -957,6 +957,15 @@ const fetchFlights = useCallback(async () => {
     console.log("Search params changed, triggering fetchFlights", { from, to, dept });
     fetchFlights();
   }, [fetchFlights]);
+
+  // Dynamic page title
+  useEffect(() => {
+    const origin = tripType === "multi-city" && parsedLegs
+      ? parsedLegs.map(l => l.from).join(" → ") + " → " + parsedLegs[parsedLegs.length - 1].to
+      : from && to ? `${from} → ${to}` : null;
+    document.title = origin ? `${origin} · Flights · AMD Global` : "Flight Search · AMD Global";
+    return () => { document.title = "AMD Global Travel"; };
+  }, [from, to, tripType, parsedLegs]);
 
   return (
     <>

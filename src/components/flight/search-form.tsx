@@ -30,6 +30,20 @@ import { RECENT_SEARCHES_KEY, MAX_RECENT_SEARCHES } from "@/types/flight";
 import { DatePickerPopover, formatISO, type DateRange } from "@/components/flight/date-picker-popover";
 import { AirportInput } from "@/components/flight/airport-input";
 
+// ─── Prefetch cache ──────────────────────────────────────────────────────────
+const prefetchCache = new Map<string, Promise<void>>();
+
+function prefetchFlights(payload: object) {
+  const key = JSON.stringify(payload);
+  if (prefetchCache.has(key)) return;
+  const p = fetch("/api/flights/search", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).then(() => {}).catch(() => {});
+  prefetchCache.set(key, p);
+}
+
 // ─── localStorage helper ─────────────────────────────────────────────────────
 
 function saveRecentSearch(entry: {
@@ -174,6 +188,7 @@ export function FlightSearchForm() {
   const [destDisplay, setDestDisplay]       = useState("");
   const [dateRange, setDateRange]           = useState<DateRange>({ departure: null, returnDate: null });
   const [swapping, setSwapping]             = useState(false);
+  const [returnDateError, setReturnDateError] = useState(false);
   const [legs, setLegs]                     = useState<FlightLeg[]>(DEFAULT_LEGS);
   const newLegRef                            = useRef<HTMLDivElement>(null);
 
@@ -218,6 +233,40 @@ export function FlightSearchForm() {
     setDestDisplay(originDisplay);
   }
 
+  // Prefetch when all fields are filled
+  useEffect(() => {
+    if (tripType === "multi-city") {
+      const allFilled = legs.every((l) => l.origin && l.destination && l.departureDate);
+      if (!allFilled) return;
+      prefetchFlights({
+        tripType,
+        origin: legs[0].origin,
+        destination: legs[legs.length - 1].destination,
+        departureDate: formatISO(legs[0].departureDate!),
+        passengers,
+        travelClass,
+        currency: "USD",
+        legs: legs.map((l) => ({
+          origin: l.origin,
+          destination: l.destination,
+          departureDate: formatISO(l.departureDate!),
+        })),
+      });
+    } else {
+      if (!origin || !destination || !dateRange.departure) return;
+      prefetchFlights({
+        tripType,
+        origin,
+        destination,
+        departureDate: formatISO(dateRange.departure),
+        ...(tripType === "round-trip" && dateRange.returnDate ? { returnDate: formatISO(dateRange.returnDate) } : {}),
+        passengers,
+        travelClass,
+        currency: "USD",
+      });
+    }
+  }, [origin, destination, dateRange, legs, tripType, passengers, travelClass]);
+
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
 
@@ -242,6 +291,11 @@ export function FlightSearchForm() {
     }
 
     if (!origin || !destination || !dateRange.departure) return;
+    if (tripType === "round-trip" && !dateRange.returnDate) {
+      setReturnDateError(true);
+      return;
+    }
+    setReturnDateError(false);
     saveRecentSearch({
       origin,
       destination,
@@ -454,13 +508,18 @@ export function FlightSearchForm() {
               </div>
 
               {/* Row 4 — Dates */}
-              <div className="w-full rounded-lg border border-slate-300 bg-white">
-                <DatePickerPopover
-                  value={dateRange}
-                  onChange={setDateRange}
-                  isRoundTrip={tripType === "round-trip"}
-                  mobileSheet
-                />
+              <div className="w-full">
+                <div className={`rounded-lg border bg-white ${ returnDateError ? "border-rose-400" : "border-slate-300" }`}>
+                  <DatePickerPopover
+                    value={dateRange}
+                    onChange={(r) => { setDateRange(r); if (r.returnDate) setReturnDateError(false); }}
+                    isRoundTrip={tripType === "round-trip"}
+                    mobileSheet
+                  />
+                </div>
+                {returnDateError && (
+                  <p className="text-[11px] text-rose-500 mt-1 pl-1">Please select a return date</p>
+                )}
               </div>
             </>
           )}
@@ -819,9 +878,13 @@ export function FlightSearchForm() {
           <div className="flex-1 min-w-0">
             <DatePickerPopover
               value={dateRange}
-              onChange={setDateRange}
+              onChange={(r) => { setDateRange(r); if (r.returnDate) setReturnDateError(false); }}
               isRoundTrip={tripType === "round-trip"}
+              error={returnDateError}
             />
+            {returnDateError && (
+              <p className="text-[11px] text-rose-500 mt-1 pl-1">Please select a return date</p>
+            )}
           </div>
 
           {/* SEARCH */}
