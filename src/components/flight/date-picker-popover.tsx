@@ -15,6 +15,7 @@ interface DatePickerPopoverProps {
   onChange: (range: DateRange) => void;
   isRoundTrip: boolean;
   mobileSheet?: boolean;
+  error?: boolean;
 }
 
 type FlexMode = "exact" | "flexible" | "month";
@@ -263,7 +264,7 @@ function MonthGrid({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function DatePickerPopover({ value, onChange, isRoundTrip, mobileSheet }: DatePickerPopoverProps) {
+export function DatePickerPopover({ value, onChange, isRoundTrip, mobileSheet, error }: DatePickerPopoverProps) {
   const today = startOfDay(new Date());
 
   const [open, setOpen] = useState(false);
@@ -426,6 +427,8 @@ export function DatePickerPopover({ value, onChange, isRoundTrip, mobileSheet }:
           "flex items-center gap-2 w-full h-14 rounded-xl border bg-card px-3 text-left transition-all",
           open
             ? "border-primary ring-2 ring-primary/30"
+            : error
+            ? "border-rose-400 ring-2 ring-rose-200"
             : "border-border hover:border-primary/50",
         ].join(" ")}
       >
