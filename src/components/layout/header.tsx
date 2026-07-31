@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import {
@@ -222,10 +223,10 @@ function MiniAirportInput({
   const [query, setQuery] = useState("");
   const [open, setOpen]   = useState(false);
   const [idx, setIdx]     = useState(-1);
-  const ref               = useRef<HTMLDivElement>(null);
+  const containerRef      = useRef<HTMLDivElement>(null);
   const internalRef       = useRef<HTMLInputElement>(null);
   const resolvedRef       = inputRef ?? internalRef;
-  const mouseDownOnList   = useRef(false);
+  const [dropCoords, setDropCoords] = useState<{ top: number; left: number; width: number } | null>(null);
 
   // Sync display when value changes externally
   useEffect(() => {
@@ -240,6 +241,36 @@ function MiniAirportInput({
     const q = query.trim();
     return q.length >= 2 ? searchAirports(q).slice(0, 8) : [];
   }, [query]);
+
+  // Reposition portal dropdown to anchor input
+  const reposition = useCallback(() => {
+    if (!containerRef.current) return;
+    const r = containerRef.current.getBoundingClientRect();
+    setDropCoords({ top: r.bottom + 4, left: r.left, width: r.width });
+  }, []);
+
+  useEffect(() => {
+    if (!open) { setDropCoords(null); return; }
+    reposition();
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [open, reposition]);
+
+  // Close on outside click
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setIdx(-1);
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
 
   function select(code: string, city: string) {
     onChange(code, `${city} (${code})`);
@@ -256,7 +287,7 @@ function MiniAirportInput({
   }
 
   return (
-    <div ref={ref} className="relative w-full">
+    <div ref={containerRef} className="relative w-full">
       <div className="flex items-center gap-2 h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all duration-200">
         <span className="text-primary shrink-0">{icon}</span>
         <input
@@ -265,20 +296,22 @@ function MiniAirportInput({
           value={query}
           placeholder={placeholder}
           onChange={e => { setQuery(e.target.value); setIdx(-1); setOpen(true); }}
-          onFocus={() => setOpen(true)}
-          onBlur={() => { if (!mouseDownOnList.current) setOpen(false); mouseDownOnList.current = false; }}
+          onFocus={() => { reposition(); setOpen(true); }}
           onKeyDown={onKey}
           className="flex-1 bg-transparent text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none min-w-0"
         />
       </div>
-      {open && results.length > 0 && (
-        <ul className="absolute top-full left-0 mt-1 z-[200] w-64 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+
+      {open && results.length > 0 && dropCoords && createPortal(
+        <ul
+          className="fixed z-[9999] rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden"
+          style={{ top: dropCoords.top, left: dropCoords.left, width: Math.max(dropCoords.width, 240) }}
+        >
           {results.map((a, i) => (
             <li key={a.code}>
               <button
                 type="button"
-                onMouseDown={() => { mouseDownOnList.current = true; }}
-                onClick={() => select(a.code, a.city)}
+                onMouseDown={e => { e.preventDefault(); select(a.code, a.city); }}
                 onMouseEnter={() => setIdx(i)}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${
                   i === idx ? "bg-primary/5" : "hover:bg-slate-50"
@@ -292,7 +325,8 @@ function MiniAirportInput({
               </button>
             </li>
           ))}
-        </ul>
+        </ul>,
+        document.body
       )}
     </div>
   );
@@ -564,7 +598,7 @@ function CompactSearchBar() {
         </div>
 
         {/* Scrollable body */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar p-5 space-y-4 max-h-[650px]">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto no-scrollbar p-5 space-y-4 max-h-[650px]">
 
           {/* ── ROUTE TAB ── */}
           {active === "route" && (
@@ -797,7 +831,7 @@ function CompactSearchBar() {
           <div className="fixed inset-0 z-[55] bg-black/20 hidden md:block" onMouseDown={() => setOpen(false)} />
           <div
             ref={modalRef}
-            className="fixed left-1/2 -translate-x-1/2 top-[68px] z-[60] w-[480px] max-w-[calc(100vw-32px)] max-h-[90vh] bg-white rounded-3xl border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.1)] hidden md:flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150"
+            className="fixed left-1/2 -translate-x-1/2 top-[68px] z-[60] w-[480px] max-w-[calc(100vw-32px)] max-h-[90vh] bg-white rounded-3xl border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.1)] hidden md:flex flex-col animate-in fade-in slide-in-from-top-2 duration-150"
             onMouseDown={e => e.stopPropagation()}
           >
             <SearchFormContent onClose={() => setOpen(false)} />

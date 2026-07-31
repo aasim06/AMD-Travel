@@ -1,54 +1,32 @@
 "use client";
 
-import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight, CalendarDays, X } from "lucide-react";
+import { useState } from "react";
+import type { DateRange as DayPickerRange } from "react-day-picker";
+import { CalendarDays, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface DateRange {
-  departure: Date | null;
+  departure:  Date | null;
   returnDate: Date | null;
 }
 
 interface DatePickerPopoverProps {
-  value: DateRange;
-  onChange: (range: DateRange) => void;
+  value:       DateRange;
+  onChange:    (range: DateRange) => void;
   isRoundTrip: boolean;
   mobileSheet?: boolean;
-  error?: boolean;
+  error?:      boolean;
 }
-
-type FlexMode = "exact" | "flexible" | "month";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function toKey(d: Date) {
-  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-}
-
-function isSameDay(a: Date, b: Date) {
-  return toKey(a) === toKey(b);
-}
-
-function isBefore(a: Date, b: Date) {
-  return a < b;
-}
-
-function startOfDay(d: Date) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
-
-function addDays(d: Date, n: number) {
-  const r = new Date(d);
-  r.setDate(r.getDate() + n);
-  return r;
-}
-
-function nextSaturday(from: Date) {
-  const d = new Date(from);
-  const day = d.getDay();
-  d.setDate(d.getDate() + ((6 - day + 7) % 7 || 7));
-  return d;
+export function formatISO(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function formatDisplay(d: Date | null) {
@@ -56,23 +34,12 @@ function formatDisplay(d: Date | null) {
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
-function formatISO(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-const MONTH_NAMES = [
-  "January","February","March","April","May","June",
-  "July","August","September","October","November","December",
-];
-const DAY_HEADERS = ["M","T","W","T","F","S","S"];
-
-// ─── Mock price map (seeded per day-of-month for realism) ─────────────────────
+// ─── Mock price helper (same seed logic as before) ───────────────────────────
 
 function getMockPrice(date: Date): number | null {
   const seed = (date.getDate() * 37 + date.getMonth() * 13) % 100;
-  if (seed > 60) return null; // not every day has a price
-  const base = 180 + (seed * 4);
-  return base;
+  if (seed > 60) return null;
+  return 180 + seed * 4;
 }
 
 function getCheapestInMonth(year: number, month: number): number {
@@ -85,479 +52,291 @@ function getCheapestInMonth(year: number, month: number): number {
   return min;
 }
 
-// ─── Quick selection chips ────────────────────────────────────────────────────
+// ─── Custom day cell with price indicator ────────────────────────────────────
 
-function getQuickChips(today: Date) {
-  const sat = nextSaturday(today);
-  const sun = addDays(sat, 1);
-  return [
-    {
-      label: "Today",
-      departure: today,
-      returnDate: null,
-    },
-    {
-      label: "Next Weekend",
-      departure: sat,
-      returnDate: sun,
-    },
-    {
-      label: "1 Week Trip",
-      departure: addDays(today, 3),
-      returnDate: addDays(today, 10),
-    },
-    {
-      label: "2 Weeks Trip",
-      departure: addDays(today, 3),
-      returnDate: addDays(today, 17),
-    },
-  ];
-}
-
-// ─── Single month grid ────────────────────────────────────────────────────────
-
-interface MonthGridProps {
-  year: number;
-  month: number;
-  departure: Date | null;
-  returnDate: Date | null;
-  hoverDate: Date | null;
-  today: Date;
-  isRoundTrip: boolean;
-  onDayClick: (d: Date) => void;
-  onDayHover: (d: Date | null) => void;
-  cheapestInMonth: number;
-}
-
-function MonthGrid({
-  year, month, departure, returnDate, hoverDate,
-  today, isRoundTrip, onDayClick, onDayHover, cheapestInMonth,
-}: MonthGridProps) {
-  const firstDay = (new Date(year, month, 1).getDay() + 6) % 7; // Mon=0
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  const rangeEnd = isRoundTrip ? (returnDate ?? hoverDate) : null;
-
-  function getDayState(day: number) {
-    const date = new Date(year, month, day);
-    const isPast = isBefore(date, today);
-    const isDep = departure ? isSameDay(date, departure) : false;
-    const isRet = returnDate ? isSameDay(date, returnDate) : false;
-    const isHov = hoverDate ? isSameDay(date, hoverDate) : false;
-
-    let inRange = false;
-    if (departure && rangeEnd) {
-      const [s, e] = isBefore(departure, rangeEnd)
-        ? [departure, rangeEnd]
-        : [rangeEnd, departure];
-      inRange = isBefore(s, date) && isBefore(date, e);
-    }
-
-    return { date, isPast, isDep, isRet, isHov, inRange };
-  }
-
-  const cells: (number | null)[] = [
-    ...Array(firstDay).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-  ];
-
-  // Pad to complete last row
-  while (cells.length % 7 !== 0) cells.push(null);
+function PricedDay({
+  date,
+  cheapestLeft,
+  cheapestRight,
+}: {
+  date: Date;
+  cheapestLeft: number;
+  cheapestRight: number;
+}) {
+  const price    = getMockPrice(date);
+  const cheapest = Math.min(cheapestLeft, cheapestRight);
+  const isCheap  = price !== null && price === cheapest;
 
   return (
-    <div className="flex-1 min-w-0">
-      {/* Month name */}
-      <p className="text-center font-bold text-slate-800 text-sm mb-3">
-        {MONTH_NAMES[month]} {year}
-      </p>
-
-      {/* Day headers */}
-      <div className="grid grid-cols-7 mb-1">
-        {DAY_HEADERS.map((d, i) => (
-          <div key={i} className="text-center text-xs font-semibold text-slate-400 uppercase py-1">
-            {d}
-          </div>
-        ))}
-      </div>
-
-      {/* Day cells */}
-      <div className="grid grid-cols-7">
-        {cells.map((day, idx) => {
-          if (!day) return <div key={`e-${idx}`} />;
-
-          const { date, isPast, isDep, isRet, isHov, inRange } = getDayState(day);
-          const price = getMockPrice(date);
-          const isCheapest = price !== null && price === cheapestInMonth;
-          const isSelected = isDep || isRet;
-
-          // Range bridge background
-          const rangeEnd2 = isRoundTrip ? (returnDate ?? hoverDate) : null;
-          let bridgeLeft = false;
-          let bridgeRight = false;
-          if (departure && rangeEnd2 && !isPast) {
-            const [s, e] = isBefore(departure, rangeEnd2)
-              ? [departure, rangeEnd2]
-              : [rangeEnd2, departure];
-            if (isSameDay(date, s)) bridgeRight = true;
-            else if (isSameDay(date, e)) bridgeLeft = true;
-            else if (inRange) { bridgeLeft = true; bridgeRight = true; }
-          }
-
-          return (
-            <div
-              key={day}
-              className="relative flex flex-col items-center"
-              onMouseEnter={() => !isPast && onDayHover(date)}
-              onMouseLeave={() => onDayHover(null)}
-            >
-              {/* Range bridge strip */}
-              {(bridgeLeft || bridgeRight) && (
-                <div
-                  className="absolute top-[6px] h-10 bg-blue-50 pointer-events-none z-0"
-                  style={{
-                    left: bridgeLeft ? 0 : "50%",
-                    right: bridgeRight ? 0 : "50%",
-                  }}
-                />
-              )}
-
-              <button
-                type="button"
-                disabled={isPast}
-                onClick={() => onDayClick(date)}
-                className={[
-                  "relative z-10 flex flex-col items-center justify-center w-full h-12 rounded-lg transition-all duration-150 my-0.5",
-                  isPast
-                    ? "opacity-30 cursor-not-allowed"
-                    : isSelected
-                    ? "bg-primary text-primary-foreground"
-                    : isHov
-                    ? "bg-blue-50 text-slate-900"
-                    : inRange
-                    ? "bg-blue-50 text-slate-900"
-                    : "hover:bg-slate-100 text-slate-800",
-                ].join(" ")}
-              >
-                <span className="text-sm font-semibold leading-none">{day}</span>
-                {price !== null && (
-                  <span
-                    className={[
-                      "text-[10px] font-medium mt-0.5 leading-none",
-                      isSelected
-                        ? "text-white/80"
-                        : isCheapest
-                        ? "text-emerald-600 font-bold"
-                        : "text-slate-500",
-                    ].join(" ")}
-                  >
-                    ${price}
-                  </span>
-                )}
-              </button>
-            </div>
-          );
-        })}
-      </div>
+    <div className="flex flex-col items-center justify-center w-full h-full gap-px">
+      <span className="text-sm font-semibold leading-none">{date.getDate()}</span>
+      {price !== null && (
+        <span
+          className={cn(
+            "text-[9px] font-medium leading-none",
+            isCheap ? "text-emerald-500 font-bold" : "text-slate-400"
+          )}
+        >
+          ${price}
+        </span>
+      )}
     </div>
   );
 }
 
+// ─── Quick-select chips ───────────────────────────────────────────────────────
+
+function addDays(d: Date, n: number) {
+  const r = new Date(d); r.setDate(r.getDate() + n); return r;
+}
+function nextSaturday(from: Date) {
+  const d = new Date(from);
+  d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7 || 7));
+  return d;
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function DatePickerPopover({ value, onChange, isRoundTrip, mobileSheet, error }: DatePickerPopoverProps) {
-  const today = startOfDay(new Date());
+export function DatePickerPopover({
+  value, onChange, isRoundTrip, mobileSheet, error,
+}: DatePickerPopoverProps) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
 
-  const [open, setOpen] = useState(false);
-  const [flexMode, setFlexMode] = useState<FlexMode>("exact");
-  const [hoverDate, setHoverDate] = useState<Date | null>(null);
-  const [leftMonth, setLeftMonth] = useState(() => ({
-    year: today.getFullYear(),
-    month: today.getMonth(),
-  }));
-
-  const ref         = useRef<HTMLDivElement>(null);
-  const triggerRef   = useRef<HTMLButtonElement>(null);
-  const savedScrollY = useRef(0);
-  const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties>({});
-
-  // Lock body scroll while mobile date sheet is open
-  useEffect(() => {
-    if (!mobileSheet || !open) return;
-    const y = window.scrollY;
-    savedScrollY.current = y;
-    document.body.style.position = "fixed";
-    document.body.style.top      = `-${y}px`;
-    document.body.style.width    = "100%";
-    return () => {
-      document.body.style.position = "";
-      document.body.style.top      = "";
-      document.body.style.width    = "";
-      window.scrollTo({ top: savedScrollY.current, behavior: "instant" as ScrollBehavior });
-    };
-  }, [mobileSheet, open]);
-
-  // Recalculate fixed position on open, scroll, and resize
-  const updatePosition = useCallback(() => {
-    if (!triggerRef.current) return;
-    const rect = triggerRef.current.getBoundingClientRect();
-    const popoverWidth = 680;
-    const viewportWidth = window.innerWidth;
-    const left = Math.min(rect.left, viewportWidth - popoverWidth - 16);
-    setPopoverStyle({
-      position: "fixed",
-      top: rect.bottom + 8,
-      left: Math.max(8, left),
-      width: Math.min(popoverWidth, viewportWidth - 16),
-      zIndex: 999,
-    });
-  }, []);
-
-  useLayoutEffect(() => {
-    if (!open || mobileSheet) return;
-    updatePosition();
-    window.addEventListener("scroll", updatePosition);
-    window.addEventListener("resize", updatePosition);
-    return () => {
-      window.removeEventListener("scroll", updatePosition);
-      window.removeEventListener("resize", updatePosition);
-    };
-  }, [open, mobileSheet, updatePosition]);
-
-  // Right month is always left + 1
-  const rightMonth = (() => {
-    const m = leftMonth.month + 1;
-    return m > 11
-      ? { year: leftMonth.year + 1, month: 0 }
-      : { year: leftMonth.year, month: m };
-  })();
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (
-        ref.current && !ref.current.contains(e.target as Node) &&
-        triggerRef.current && !triggerRef.current.contains(e.target as Node)
-      ) setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
-  const handleDayClick = useCallback(
-    (date: Date) => {
-      const { departure, returnDate: ret } = value;
-
-      if (!departure || (departure && ret)) {
-        // Start fresh — set departure
-        onChange({ departure: date, returnDate: null });
-      } else {
-        // Departure already set — set return (or swap if before)
-        if (!isRoundTrip) {
-          onChange({ departure: date, returnDate: null });
-        } else if (isBefore(date, departure)) {
-          onChange({ departure: date, returnDate: departure });
-        } else {
-          onChange({ departure, returnDate: date });
-          setOpen(false);
-        }
-      }
-    },
-    [value, onChange, isRoundTrip]
+  const [open, setOpen]           = useState(false);
+  const [month, setMonth]         = useState<Date>(
+    value.departure ?? today
   );
 
-  function prevMonth() {
-    setLeftMonth((lm) => {
-      if (lm.month === 0) return { year: lm.year - 1, month: 11 };
-      return { year: lm.year, month: lm.month - 1 };
-    });
-  }
+  // Derive cheapest prices for the two visible months
+  const rightMonthDate = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+  const cheapestLeft   = getCheapestInMonth(month.getFullYear(), month.getMonth());
+  const cheapestRight  = getCheapestInMonth(rightMonthDate.getFullYear(), rightMonthDate.getMonth());
 
-  function nextMonth() {
-    setLeftMonth((lm) => {
-      if (lm.month === 11) return { year: lm.year + 1, month: 0 };
-      return { year: lm.year, month: lm.month + 1 };
-    });
+  // Convert our DateRange ↔ react-day-picker DateRange
+  const selected: DayPickerRange | undefined =
+    value.departure
+      ? { from: value.departure, to: value.returnDate ?? undefined }
+      : undefined;
+
+  function handleSelect(range: DayPickerRange | undefined) {
+    if (!range) {
+      onChange({ departure: null, returnDate: null });
+      return;
+    }
+    const dep = range.from ?? null;
+    const ret = range.to   ?? null;
+    onChange({ departure: dep, returnDate: isRoundTrip ? ret : null });
+    // Auto-close when both dates picked (round-trip) or any date (one-way)
+    if (!isRoundTrip && dep) { setOpen(false); return; }
+    if (isRoundTrip && dep && ret) { setOpen(false); }
   }
 
   function clearDates() {
     onChange({ departure: null, returnDate: null });
   }
 
-  const chips = getQuickChips(today);
+  // Quick chips
+  const sat    = nextSaturday(today);
+  const chips  = [
+    { label: "Today",        from: today,              to: null                  },
+    { label: "Next Weekend", from: sat,                to: addDays(sat, 1)       },
+    { label: "1 Week",       from: addDays(today, 3),  to: addDays(today, 10)    },
+    { label: "2 Weeks",      from: addDays(today, 3),  to: addDays(today, 17)    },
+  ];
 
+  // Trigger label
   const depLabel = formatDisplay(value.departure);
   const retLabel = formatDisplay(value.returnDate);
-
   const triggerText = depLabel
     ? isRoundTrip
       ? `${depLabel}${retLabel ? ` → ${retLabel}` : " → Return?"}`
       : depLabel
-    : isRoundTrip
-    ? "Departure — Return"
-    : "Select date";
+    : isRoundTrip ? "Departure — Return" : "Select date";
 
-  const cheapestLeft = getCheapestInMonth(leftMonth.year, leftMonth.month);
-  const cheapestRight = getCheapestInMonth(rightMonth.year, rightMonth.month);
+  // Footer status
+  const footerText = !value.departure
+    ? "Select a departure date"
+    : !value.returnDate && isRoundTrip
+    ? `Depart: ${depLabel} — Select return`
+    : `${depLabel}${retLabel ? ` – ${retLabel}` : ""}`;
 
-  const FLEX_TABS = [
-    { label: "Specific dates", value: "exact" as FlexMode },
-    { label: "Flexible dates", value: "flexible" as FlexMode },
-  ];
-
-  const footerText = (() => {
-    if (!value.departure) return "Select a departure date";
-    const dep = formatDisplay(value.departure)!;
-    if (!value.returnDate) return isRoundTrip ? `Depart: ${dep} — Select return` : `Selected: ${dep}`;
-    return `Selected: ${dep} – ${formatDisplay(value.returnDate)}`;
-  })();
-
-  return (
-    <div ref={ref} className="relative flex-1 min-w-0">
-      {/* ── Trigger button ── */}
-      <label className="block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1 px-1">
-        {isRoundTrip ? "Departure — Return" : "Departure"}
-      </label>
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={(e) => {
-          if (mobileSheet) (e.currentTarget as HTMLButtonElement).focus({ preventScroll: true });
-          setOpen((v) => !v);
-        }}
-        className={[
-          "flex items-center gap-2 w-full h-14 rounded-xl border bg-card px-3 text-left transition-all",
-          open
-            ? "border-primary ring-2 ring-primary/30"
-            : error
-            ? "border-rose-400 ring-2 ring-rose-200"
-            : "border-border hover:border-primary/50",
-        ].join(" ")}
-      >
-        <CalendarDays className="h-4 w-4 text-primary shrink-0" />
-        <span
-          className={[
-            "flex-1 text-sm font-medium truncate",
-            depLabel ? "text-foreground" : "text-muted-foreground",
-          ].join(" ")}
-        >
-          {triggerText}
-        </span>
-        {depLabel && (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); clearDates(); }}
-            className="shrink-0 h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          >
-            <X className="h-3 w-3" />
-          </button>
+  // ── Shared calendar panel ─────────────────────────────────────────────────
+  function CalendarPanel({ onClose }: { onClose: () => void }) {
+    return (
+      <div className="flex flex-col">
+        {/* Quick chips */}
+        {isRoundTrip && (
+          <div className="flex items-center gap-1.5 px-4 pt-3 pb-2 border-b border-slate-100 flex-wrap">
+            {chips.map((c) => (
+              <button
+                key={c.label}
+                type="button"
+                onClick={() => {
+                  onChange({ departure: c.from, returnDate: isRoundTrip ? c.to : null });
+                  if (!isRoundTrip || c.to) onClose();
+                }}
+                className="px-3 py-1 rounded-full border border-slate-200 text-xs font-medium text-slate-600 hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors"
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
         )}
-      </button>
 
-      {/* ── Popover / Bottom-sheet ── */}
-      {open && mobileSheet && (
-        <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setOpen(false)} />
-      )}
-      {open && (
-        <div
-          style={mobileSheet ? undefined : popoverStyle}
-          className={mobileSheet
-            ? "fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl shadow-2xl overflow-hidden animate-fade-in"
-            : "rounded-2xl border border-border bg-white shadow-card-hover overflow-hidden animate-fade-in"
-          }
-        >
-          {/* ── Top header ── */}
-          <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-slate-100">
-            {/* Trip type pill */}
-            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-              {isRoundTrip ? "Return" : "One-way"}
-            </span>
-            {/* Specific / Flexible tabs */}
-            <div className="flex items-center gap-1 bg-slate-100 rounded-full p-1">
-              {FLEX_TABS.map((tab) => (
-                <button
-                  key={tab.value}
-                  type="button"
-                  onClick={() => setFlexMode(tab.value)}
-                  className={[
-                    "px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200",
-                    flexMode === tab.value
-                      ? "bg-slate-900 text-white shadow-sm"
-                      : "text-slate-500 hover:text-slate-800",
-                  ].join(" ")}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* ── Month navigation + dual grids ── */}
-          <div className="px-5 pt-4">
-            <div className="flex items-center justify-between mb-4">
-              <button
-                type="button"
-                onClick={prevMonth}
-                className="h-8 w-8 rounded-full flex items-center justify-center border border-slate-200 text-slate-500 hover:text-primary hover:border-primary transition-all"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <div className="flex gap-8 text-sm font-bold text-slate-400 pointer-events-none select-none">
-                <span>{MONTH_NAMES[leftMonth.month]} {leftMonth.year}</span>
-                <span>{MONTH_NAMES[rightMonth.month]} {rightMonth.year}</span>
-              </div>
-              <button
-                type="button"
-                onClick={nextMonth}
-                className="h-8 w-8 rounded-full flex items-center justify-center border border-slate-200 text-slate-500 hover:text-primary hover:border-primary transition-all"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-8">
-              <MonthGrid
-                year={leftMonth.year}
-                month={leftMonth.month}
-                departure={value.departure}
-                returnDate={value.returnDate}
-                hoverDate={hoverDate}
-                today={today}
-                isRoundTrip={isRoundTrip}
-                onDayClick={handleDayClick}
-                onDayHover={setHoverDate}
-                cheapestInMonth={cheapestLeft}
+        {/* Calendar */}
+        <Calendar
+          mode="range"
+          numberOfMonths={2}
+          selected={selected}
+          onSelect={handleSelect}
+          month={month}
+          onMonthChange={setMonth}
+          disabled={{ before: today }}
+          showOutsideDays={false}
+          className="p-4"
+          classNames={{
+            months:              "flex gap-6",
+            month:               "flex flex-col gap-3 min-w-[220px]",
+            caption:             "relative flex items-center justify-center h-9",
+            caption_label:       "text-sm font-bold text-slate-800 pointer-events-none",
+            nav:                 "flex items-center gap-1",
+            nav_button:          cn(
+              "absolute h-7 w-7 rounded-lg border border-slate-200 bg-white",
+              "flex items-center justify-center transition-colors",
+              "hover:bg-slate-50 text-slate-500 hover:text-primary hover:border-primary/40"
+            ),
+            nav_button_previous: "left-0",
+            nav_button_next:     "right-0",
+            table:               "w-full border-collapse mt-1",
+            head_row:            "flex",
+            head_cell:           "w-10 text-center text-[11px] font-semibold text-slate-400 uppercase",
+            row:                 "flex w-full mt-0.5",
+            cell:                "relative w-10 h-12 p-0 text-center focus-within:z-20",
+            day:                 cn(
+              "w-10 h-12 p-0 font-normal rounded-lg text-slate-700 transition-colors",
+              "hover:bg-slate-100 hover:text-slate-900",
+              "focus:outline-none focus:ring-2 focus:ring-primary/30"
+            ),
+            day_selected:        "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground rounded-lg",
+            day_range_start:     "bg-primary text-primary-foreground rounded-l-lg rounded-r-none",
+            day_range_end:       "bg-primary text-primary-foreground rounded-r-lg rounded-l-none",
+            day_range_middle:    "bg-primary/10 text-primary rounded-none hover:bg-primary/20",
+            day_today:           "ring-1 ring-primary/40 font-semibold",
+            day_outside:         "opacity-0 pointer-events-none",
+            day_disabled:        "text-slate-300 opacity-40 cursor-not-allowed hover:bg-transparent",
+            day_hidden:          "invisible",
+          }}
+          components={{
+            DayContent: ({ date }) => (
+              <PricedDay
+                date={date}
+                cheapestLeft={cheapestLeft}
+                cheapestRight={cheapestRight}
               />
-              <MonthGrid
-                year={rightMonth.year}
-                month={rightMonth.month}
-                departure={value.departure}
-                returnDate={value.returnDate}
-                hoverDate={hoverDate}
-                today={today}
-                isRoundTrip={isRoundTrip}
-                onDayClick={handleDayClick}
-                onDayHover={setHoverDate}
-                cheapestInMonth={cheapestRight}
-              />
-            </div>
-          </div>
+            ),
+          }}
+        />
 
-          {/* ── Footer ── */}
-          <div className="px-5 py-4 mt-3 border-t border-slate-100 flex items-center justify-between gap-4">
-            <span className="text-sm text-slate-600">{footerText}</span>
-            <button
+        {/* Footer */}
+        <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-3">
+          <span className="text-xs text-slate-500 truncate">{footerText}</span>
+          <div className="flex items-center gap-2 shrink-0">
+            {value.departure && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => { clearDates(); }}
+                className="text-xs text-slate-400 hover:text-slate-700"
+              >
+                Clear
+              </Button>
+            )}
+            <Button
               type="button"
-              onClick={() => setOpen(false)}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-6 py-2 rounded-lg text-sm transition-all"
+              size="sm"
+              onClick={onClose}
+              className="px-5 text-xs"
             >
               Apply
-            </button>
+            </Button>
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    );
+  }
+
+  // ── Trigger button (shared) ───────────────────────────────────────────────
+  function TriggerButton({ onClick }: { onClick: () => void }) {
+    return (
+      <div className="relative flex-1 min-w-0">
+        <label className="block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1 px-1">
+          {isRoundTrip ? "Departure — Return" : "Departure"}
+        </label>
+        <button
+          type="button"
+          onClick={onClick}
+          className={cn(
+            "flex items-center gap-2 w-full h-14 rounded-xl border bg-card px-3 text-left transition-all",
+            open
+              ? "border-primary ring-2 ring-primary/30"
+              : error
+              ? "border-rose-400 ring-2 ring-rose-200"
+              : "border-border hover:border-primary/50"
+          )}
+        >
+          <CalendarDays className="h-4 w-4 text-primary shrink-0" />
+          <span className={cn("flex-1 text-sm font-medium truncate", depLabel ? "text-foreground" : "text-muted-foreground")}>
+            {triggerText}
+          </span>
+          {depLabel && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); clearDates(); }}
+              className="shrink-0 h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </button>
+      </div>
+    );
+  }
+
+  // ── Mobile bottom-sheet ───────────────────────────────────────────────────
+  if (mobileSheet) {
+    return (
+      <>
+        <TriggerButton onClick={() => setOpen(v => !v)} />
+        {open && (
+          <>
+            <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setOpen(false)} />
+            <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl shadow-2xl overflow-y-auto max-h-[90vh]">
+              <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-3 mb-1" />
+              <CalendarPanel onClose={() => setOpen(false)} />
+            </div>
+          </>
+        )}
+      </>
+    );
+  }
+
+  // ── Desktop Shadcn Popover ────────────────────────────────────────────────
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <div className="flex-1 min-w-0 cursor-pointer">
+          <TriggerButton onClick={() => setOpen(v => !v)} />
+        </div>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        sideOffset={6}
+        className="w-auto p-0 rounded-2xl border border-slate-200 shadow-[0_8px_40px_rgba(0,0,0,0.12)]"
+        onInteractOutside={() => setOpen(false)}
+      >
+        <CalendarPanel onClose={() => setOpen(false)} />
+      </PopoverContent>
+    </Popover>
   );
 }
-
-// ─── Utility export ───────────────────────────────────────────────────────────
-
-export { formatISO };

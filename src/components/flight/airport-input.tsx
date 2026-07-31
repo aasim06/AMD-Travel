@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { Plane, MapPin, X } from "lucide-react";
 import { searchAirports, POPULAR_AIRPORTS } from "@/lib/data/airportsData";
 import type { AirportOption } from "@/lib/data/airportsData";
@@ -260,14 +261,56 @@ export function AirportInput({
         />
       </div>
 
-      {open && (
+      <PortalDropdown open={open} anchorRef={containerRef}>
         <ul
           role="listbox"
-          className="absolute top-full left-0 mt-1.5 z-50 w-[340px] rounded-xl border border-border bg-card shadow-card-hover overflow-hidden"
+          className="w-[340px] max-h-72 overflow-y-auto no-scrollbar rounded-xl border border-border bg-card shadow-card-hover"
         >
           <ResultList />
         </ul>
-      )}
+      </PortalDropdown>
     </div>
+  );
+}
+
+// ── Portal dropdown — renders outside all stacking contexts ──────────────────
+function PortalDropdown({
+  open,
+  anchorRef,
+  children,
+}: {
+  open: boolean;
+  anchorRef: React.RefObject<HTMLElement | null>;
+  children: React.ReactNode;
+}) {
+  const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  useEffect(() => {
+    if (!open || !anchorRef.current) { setCoords(null); return; }
+    function reposition() {
+      if (!anchorRef.current) return;
+      const r = anchorRef.current.getBoundingClientRect();
+      // Use fixed positioning — coords are viewport-relative, no scroll offset needed
+      setCoords({ top: r.bottom + 6, left: r.left, width: r.width });
+    }
+    reposition();
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [open, anchorRef]);
+
+  if (!open || !coords) return null;
+
+  return createPortal(
+    <div
+      className="fixed z-[9999]"
+      style={{ top: coords.top, left: coords.left, minWidth: coords.width }}
+    >
+      {children}
+    </div>,
+    document.body
   );
 }

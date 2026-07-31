@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Inter } from "next/font/google";
+import { Plus_Jakarta_Sans, Inter, Geist } from "next/font/google";
 import "./globals.css";
 import { siteConfig } from "@/config/site";
 import { CurrencyProvider } from "@/context/currency-context";
 import NextTopLoader from "nextjs-toploader";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const fontHeading = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -46,7 +49,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={cn("font-sans", geist.variable)}>
       <body
         className={`${fontHeading.variable} ${fontBody.variable} font-body bg-background text-foreground antialiased`}
       >

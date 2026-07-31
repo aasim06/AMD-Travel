@@ -1,42 +1,44 @@
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* === Core Brand Palette (HSL, no hsl() wrapper — Tailwind adds it) === */
-    --primary: 207 90% 54%;                  /* #2196f3 Material Blue 500 */
-    --primary-foreground: 210 40% 98%;
+    /* === Core Brand Palette (bare H S% L% — Tailwind wraps with hsl()) === */
+    --primary: 207 90% 54%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 38 92% 50%;         /* Warm Amber / Gold */
-    --secondary-foreground: 222 84% 4.9%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
 
-    --background: 210 40% 98%;       /* Ultra Light Soft Gray */
-    --foreground: 222 84% 4.9%;      /* Dark Navy/Gray */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
 
-    --card: 0 0% 100%;               /* Pure White */
-    --card-foreground: 222 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 84% 4.9%;
+    --popover-foreground: 0 0% 9%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 40%;
 
-    --accent: 38 92% 96%;            /* Light amber tint for hover/highlight surfaces */
-    --accent-foreground: 38 92% 30%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 9%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 210 40% 98%;
 
     --success: 142 71% 45%;
     --success-foreground: 210 40% 98%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
+    --border: 0 0% 89%;
+    --input: 0 0% 89%;
     --ring: 207 90% 54%;
 
-    --radius: 0.625rem; /* 10px */
+    --radius: 0.625rem;
 
     /* === Glassmorphism tokens === */
     --glass-bg: 0 0% 100%;
@@ -44,62 +46,95 @@
     --glass-border: 0 0% 100%;
     --glass-border-opacity: 0.3;
     --glass-blur: 16px;
-    --glass-shadow: 217 91% 25%;
+    --glass-shadow: 207 90% 25%;
 
-    /* === Card elevation shadows (navy-tinted, not pure black) === */
+    /* === Card elevation shadows === */
     --shadow-color: 217 50% 20%;
+    --chart-1: 0 0% 75%;
+    --chart-2: 0 0% 40%;
+    --chart-3: 0 0% 30%;
+    --chart-4: 0 0% 22%;
+    --chart-5: 0 0% 14%;
+    --sidebar: 0 0% 98%;
+    --sidebar-foreground: 0 0% 9%;
+    --sidebar-primary: 207 90% 54%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 9%;
+    --sidebar-border: 0 0% 89%;
+    --sidebar-ring: 0 0% 50%;
   }
 
   .dark {
-    --primary: 207 90% 68%;          /* #2196f3 lighter for dark mode */
-    --primary-foreground: 222 84% 4.9%;
+    --primary: 207 90% 65%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 38 92% 55%;
-    --secondary-foreground: 222 84% 4.9%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 98%;
 
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 9%;
+    --foreground: 0 0% 98%;
 
-    --card: 222 40% 9%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222 40% 9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 98%;
 
-    --muted: 217 33% 15%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 55%;
 
-    --accent: 38 60% 15%;
-    --accent-foreground: 38 92% 70%;
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 63% 45%;
+    --destructive: 0 63% 55%;
     --destructive-foreground: 210 40% 98%;
 
     --success: 142 60% 40%;
     --success-foreground: 210 40% 98%;
 
-    --border: 217 33% 18%;
-    --input: 217 33% 18%;
-    --ring: 210 63% 60%;
+    --border: 0 0% 20%;
+    --input: 0 0% 22%;
+    --ring: 207 90% 65%;
 
     --glass-bg: 222 40% 9%;
     --glass-bg-opacity: 0.55;
     --glass-border: 210 40% 98%;
     --glass-border-opacity: 0.08;
-    --glass-shadow: 0 0% 0%;
+    --glass-shadow: 207 90% 5%;
+    --chart-1: 0 0% 75%;
+    --chart-2: 0 0% 40%;
+    --chart-3: 0 0% 30%;
+    --chart-4: 0 0% 22%;
+    --chart-5: 0 0% 15%;
+    --sidebar: 0 0% 12%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 207 90% 65%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 0 0% 40%;
   }
 
   * {
-    @apply border-border;
+    @apply border-border outline-ring/50;
   }
 
   body {
-    @apply bg-background text-foreground font-body;
+    @apply font-body bg-background text-foreground;
     font-feature-settings: "cv11", "ss01";
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading tracking-tight;
+  }
+  .theme {
+    --font-heading: var(--font-sans);
+    --font-sans: var(--font-sans);
+  }
+  html {
+    @apply font-sans;
   }
 }
 
@@ -173,6 +208,15 @@
   }
   .range-thumb::-webkit-slider-runnable-track { background: transparent; }
   .range-thumb::-moz-range-track { background: transparent; }
+
+  /* Card fade-in animation */
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in {
+    animation: fade-in 0.4s ease both;
+  }
 
   /* Smooth accordion expand/collapse */
   .accordion-body {

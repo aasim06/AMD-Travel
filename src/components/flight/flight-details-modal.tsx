@@ -320,7 +320,15 @@ export function FlightDetailsModal({
   }
 
   function handleSelect(fareType: FareType, price: number) {
-    router.push(`/checkout?flightId=${offer.id}&fareType=${fareType}&price=${price}`);
+    const paxCount = parseInt(new URLSearchParams(window.location.search).get("passengers") ?? "1", 10);
+    sessionStorage.setItem("amd_checkout_offer", JSON.stringify({
+      offer,
+      carriers,
+      fareClass: fareType === "guarantee" ? "Flex" : "Economy",
+      selectedPrice: price,
+      passengers: paxCount,
+    }));
+    router.push("/checkout");
   }
 
   return (

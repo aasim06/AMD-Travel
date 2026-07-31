@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import {
   Bell, RotateCcw, ChevronDown, Luggage, X, SlidersHorizontal,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -113,11 +114,19 @@ function SectionHeader({ label, open, onToggle }: { label: string; open: boolean
   );
 }
 
-function BagCounter({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+function CheckedBagIcon() {
+  return (
+    <svg className="h-3.5 w-3.5 text-slate-600 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-label="Checked bag">
+      <path d="M15.91 5.333c-1.417 0-1.417-.166-1.417-.416v-.75c0-.25.167-.417.417-.417.583 0 .833-.417.833-.917S15.494 2 14.91 2H9.077c-.584 0-.834.417-.834.833 0 .417.25.834.75.834q.5.125.5.5v.666c0 .25-.166.417-.416.417H6.243c-1.166.083-2.083 1-2.083 2.083v11.75c0 1 .667 1.834 1.667 2 .083 0 .166.167.166.25 0 .5.334.667.834.667s.833-.167.833-.667a.18.18 0 0 1 .167-.166h8.166a.18.18 0 0 1 .167.166c0 .5.334.667.834.667s.833-.167.833-.667c0-.083.25-.25.333-.25 1-.166 1.667-1.083 1.667-2V7.333c0-1.083-.75-2-1.917-2zM15.6 8.75a.75.75 0 0 1 1.5 0v8.5a.75.75 0 0 1-1.5 0zm-4.3 0a.75.75 0 0 1 1.5 0v8.5a.75.75 0 0 1-1.5 0zM7.75 8a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-1.5 0v-8.5A.75.75 0 0 1 7.75 8m3.41-3.917c0-.25.167-.416.417-.416h.833c.25 0 .417.166.417.416v.747c0 .25-.167.417-.417.417h-.833c-.25 0-.417-.167-.417-.417z" />
+    </svg>
+  );
+}
+
+function BagCounter({ label, value, onChange, checked = false }: { label: string; value: number; onChange: (v: number) => void; checked?: boolean }) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2 text-sm text-slate-600">
-        <Luggage className="h-4 w-4 text-slate-400" />
+        {checked ? <CheckedBagIcon /> : <Luggage className="h-3.5 w-3.5 text-slate-600 shrink-0" />}
         {label}
       </div>
       <div className="flex items-center gap-2">
@@ -221,7 +230,7 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
   ];
 
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-5" style={{ boxShadow: 'rgba(0, 0, 0, 0.1) 0px 10px 50px' }}>
+    <div className="bg-white rounded-2xl p-5 space-y-5">
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
@@ -252,14 +261,41 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
       {/* ── Price Range ── */}
       <div className="border-t border-slate-100 pt-4 space-y-3">
         <SectionHeader label="Price" open={priceOpen} onToggle={() => setPriceOpen(v => !v)} />
-        <div className={`accordion-body ${priceOpen ? "open" : ""}`}><div className="pt-1">
-          <RangeSlider
-            min={absoluteMinPrice} max={absoluteMaxPrice} step={5}
-            valueMin={filters.minPrice} valueMax={filters.maxPrice}
-            formatValue={v => `$${v}`}
-            onChangeMin={v => set({ minPrice: v })}
-            onChangeMax={v => set({ maxPrice: v })}
-          />
+        <div className={`accordion-body ${priceOpen ? "open" : ""}`}><div className="pt-1 space-y-3">
+          {/* Progress bar + sliders overlay */}
+          <div className="relative flex items-center h-5">
+            {/* Track */}
+            <Progress value={100} className="absolute w-full h-2 bg-slate-200 pointer-events-none" />
+            {/* Active range fill */}
+            <div
+              className="absolute h-2 rounded-full bg-primary pointer-events-none"
+              style={{
+                left: `${((filters.minPrice - absoluteMinPrice) / (absoluteMaxPrice - absoluteMinPrice)) * 100}%`,
+                right: `${100 - ((filters.maxPrice - absoluteMinPrice) / (absoluteMaxPrice - absoluteMinPrice)) * 100}%`,
+              }}
+            />
+            {/* Min thumb */}
+            <input type="range"
+              min={absoluteMinPrice} max={absoluteMaxPrice} step={5}
+              value={filters.minPrice}
+              onChange={e => set({ minPrice: Math.min(Number(e.target.value), filters.maxPrice - 5) })}
+              className="absolute w-full appearance-none bg-transparent cursor-pointer range-thumb"
+              style={{ zIndex: filters.minPrice > absoluteMaxPrice - (absoluteMaxPrice - absoluteMinPrice) * 0.1 ? 5 : 3 }}
+            />
+            {/* Max thumb */}
+            <input type="range"
+              min={absoluteMinPrice} max={absoluteMaxPrice} step={5}
+              value={filters.maxPrice}
+              onChange={e => set({ maxPrice: Math.max(Number(e.target.value), filters.minPrice + 5) })}
+              className="absolute w-full appearance-none bg-transparent cursor-pointer range-thumb"
+              style={{ zIndex: 4 }}
+            />
+          </div>
+          {/* Min/Max labels */}
+          <div className="flex justify-between text-[11px]">
+            <span className="font-semibold text-slate-700">${filters.minPrice}</span>
+            <span className="font-semibold text-slate-700">${filters.maxPrice}</span>
+          </div>
         </div></div>
       </div>
 
@@ -377,7 +413,7 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
         <SectionHeader label="Baggage" open={baggageOpen} onToggle={() => setBaggageOpen(v => !v)} />
         <div className={`accordion-body ${baggageOpen ? "open" : ""}`}><div className="pt-1 space-y-3">
             <BagCounter label="Cabin baggage"   value={filters.cabinBags}   onChange={v => set({ cabinBags: v })} />
-            <BagCounter label="Checked baggage" value={filters.checkedBags} onChange={v => set({ checkedBags: v })} />
+            <BagCounter label="Checked baggage" value={filters.checkedBags} onChange={v => set({ checkedBags: v })} checked />
         </div></div>
       </div>
 
@@ -398,7 +434,7 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
                   Clear
                 </button>
               </div>
-              <div className="max-h-44 overflow-y-auto space-y-2 pr-1">
+              <div className="max-h-44 overflow-y-auto space-y-2 pr-1 no-scrollbar">
                 {availableAirlines.map(airline => (
                   <label key={airline.code} className="flex items-center gap-2.5 cursor-pointer group">
                     <input type="checkbox"
@@ -485,9 +521,7 @@ export function FilterSidebar(props: FilterSidebarProps) {
 
       {/* Desktop sticky sidebar */}
       <div className="hidden lg:block w-full lg:w-72 xl:w-80 shrink-0">
-        <div className="lg:sticky lg:top-24 h-fit max-h-[calc(100vh-7rem)] overflow-y-auto no-scrollbar">
-          <SidebarPanel {...props} />
-        </div>
+        <SidebarPanel {...props} />
       </div>
     </>
   );

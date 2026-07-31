@@ -11,6 +11,7 @@ import {
   Share2,
   Heart,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { FlightOffer, FlightSearchResponse, TravelClass, Currency } from "@/types/flight";
 import { AIRLINE_NAMES, AIRLINE_LOGO_FALLBACKS } from "@/types/flight";
 import { useCurrency } from "@/context/currency-context";
@@ -18,6 +19,7 @@ import { FilterSidebar, getDefaultFilters } from "@/components/flight/filter-sid
 import type { FilterState } from "@/components/flight/filter-sidebar";
 import { FlightDetailsModal } from "@/components/flight/flight-details-modal";
 import { ShareItineraryModal } from "@/components/flight/share-itinerary-modal";
+import { FlightSkeleton } from "@/components/flight/flight-skeleton";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -409,87 +411,48 @@ function NightsBadge({ depAt, arrAt }: { depAt: string; arrAt: string }) {
   );
 }
 
-// ─── Baggage Breakdown Modal ─────────────────────────────────────────────────
+// ─── Baggage Popover Content ──────────────────────────────────────────────────
 
-function BaggageModal({ offer, onClose }: { offer: FlightOffer; onClose: (e?: React.MouseEvent) => void }) {
+function BaggagePopoverContent({ offer }: { offer: FlightOffer }) {
   const baggage = offer.baggageAllowance;
   const qty     = baggage?.quantity ?? 0;
   const weight  = baggage?.weight;
   const unit    = baggage?.weightUnit ?? "kg";
-
-  const checkedDetail = qty > 0
-    ? (weight ? `${qty}× ${weight}${unit}` : `${qty} bag${qty > 1 ? "s" : ""}`)
-    : null;
+  const checkedDetail = qty > 0 ? (weight ? `${qty}× ${weight}${unit}` : `${qty} bag${qty > 1 ? "s" : ""}`) : null;
 
   const ITEMS = [
-    {
-      svg: <path d="M20.583 2.25a.806.806 0 0 1 1.167 0 .806.806 0 0 1 0 1.167l-4.907 4.906h.008l-1.149 1.141L3.417 21.75c-.25.333-.834.333-1.167 0a.806.806 0 0 1 0-1.167l1.809-1.808c-.177-.327-.259-.692-.259-1.129 0-.692.353-7.091.42-7.448.093-.468.285-.828.641-1.18.28-.285.656-.517 1-.62.089-.029.521-.06.97-.077l.056-.002c.56-.017.75-.022.849-.12a.4.4 0 0 0 .085-.147c.053-.39.31-1.078.59-1.487.187-.268.576-.673.856-.88.408-.309.856-.509 1.429-.637.18-.04.432-.056.856-.044 1.113.031 1.72.108 2.225.36.7.356 1.309.977 1.649 1.685q.059.121.108.25zm-8.753 8.754H7c-.417 0-.667.25-.667.667 0 .416.334.666.667.666h.137c.167 0 .334.167.334.417v.833c0 .417.124.667.666.667.582 0 .667-.254.667-.667.006-.587 0-.833 0-.833 0-.25.167-.417.417-.417h1.275zM9.364 8.078q.035.038.07.071l.048.05c.085.108.53.105 1.363.1l.556-.002h.809q.44.001.79.007c.604.007 1.001.012 1.158-.045a2 2 0 0 1-.048-.165c-.163-.663-.694-1.65-2.558-1.65-.996 0-1.873.597-2.17 1.57zM15.785 11.004l2.421-2.405c.197.114.386.258.544.419.356.352.552.716.64 1.18.064.36.42 6.788.42 7.448 0 .693-.204 1.201-.66 1.662-.324.324-.62.504-1.028.616-.255.07-.402.08-1.311.08H15.79V20H14.5l.001.004H9.123V20H7.832v.004H6.723l7.72-7.667H16.5c.334 0 .667-.25.667-.666a.657.657 0 0 0-.667-.667z" />,
-      label: "Personal item", detail: null, included: true,
-    },
-    {
-      svg: <path d="M14.91 9.083c-.25 0-.417-.166-.417-.416v-4.5c0-.25.167-.417.417-.417.583 0 .833-.417.833-.917S15.493 2 14.91 2H9.077c-.584 0-.834.417-.834.833 0 .417.25.834.75.834q.5.125.5.5v4.416c0 .25-.166.417-.416.417h-.834c-1.166.083-2.083 1-2.083 2.083v8c0 1 .667 1.834 1.667 2 .083 0 .166.167.166.25 0 .5.334.667.834.667s.833-.167.833-.667a.18.18 0 0 1 .167-.166h4.166a.18.18 0 0 1 .167.166c0 .5.333.667.833.667s.834-.167.834-.667c0-.083.25-.25.333-.25 1-.166 1.667-1.083 1.667-2v-8c0-1.083-.75-2-1.917-2zm0 4.25h-3.5c-.25 0-.417.167-.417.417v.833c0 .334-.25.667-.666.667s-.667-.25-.667-.667v-.833c0-.25-.167-.417-.333-.417h-.25a.657.657 0 0 1-.667-.666c0-.417.25-.667.667-.667h5.833c.333 0 .667.25.667.667a.657.657 0 0 1-.667.666m-2.5-9.666c.25 0 .417.166.417.416V8.58c0 .25-.167.417-.417.417h-.833c-.25 0-.417-.167-.417-.417V4.083c0-.25.167-.416.417-.416z" />,
-      label: "Cabin bag", detail: null, included: true,
-    },
-    {
-      svg: <path d="M15.91 5.333c-1.417 0-1.417-.166-1.417-.416v-.75c0-.25.167-.417.417-.417.583 0 .833-.417.833-.917S15.494 2 14.91 2H9.077c-.584 0-.834.417-.834.833 0 .417.25.834.75.834q.5.125.5.5v.666c0 .25-.166.417-.416.417H6.243c-1.166.083-2.083 1-2.083 2.083v11.75c0 1 .667 1.834 1.667 2 .083 0 .166.167.166.25 0 .5.334.667.834.667s.833-.167.833-.667a.18.18 0 0 1 .167-.166h8.166a.18.18 0 0 1 .167.166c0 .5.334.667.834.667s.833-.167.833-.667c0-.083.25-.25.333-.25 1-.166 1.667-1.083 1.667-2V7.333c0-1.083-.75-2-1.917-2zM15.6 8.75a.75.75 0 0 1 1.5 0v8.5a.75.75 0 0 1-1.5 0zm-4.3 0a.75.75 0 0 1 1.5 0v8.5a.75.75 0 0 1-1.5 0zM7.75 8a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-1.5 0v-8.5A.75.75 0 0 1 7.75 8m3.41-3.917c0-.25.167-.416.417-.416h.833c.25 0 .417.166.417.416v.747c0 .25-.167.417-.417.417h-.833c-.25 0-.417-.167-.417-.417z" />,
-      label: "Checked bag", detail: checkedDetail, included: qty > 0,
-    },
+    { d: "M20.583 2.25a.806.806 0 0 1 1.167 0 .806.806 0 0 1 0 1.167l-4.907 4.906h.008l-1.149 1.141L3.417 21.75c-.25.333-.834.333-1.167 0a.806.806 0 0 1 0-1.167l1.809-1.808c-.177-.327-.259-.692-.259-1.129 0-.692.353-7.091.42-7.448.093-.468.285-.828.641-1.18.28-.285.656-.517 1-.62.089-.029.521-.06.97-.077l.056-.002c.56-.017.75-.022.849-.12a.4.4 0 0 0 .085-.147c.053-.39.31-1.078.59-1.487.187-.268.576-.673.856-.88.408-.309.856-.509 1.429-.637.18-.04.432-.056.856-.044 1.113.031 1.72.108 2.225.36.7.356 1.309.977 1.649 1.685q.059.121.108.25zm-8.753 8.754H7c-.417 0-.667.25-.667.667 0 .416.334.666.667.666h.137c.167 0 .334.167.334.417v.833c0 .417.124.667.666.667.582 0 .667-.254.667-.667.006-.587 0-.833 0-.833 0-.25.167-.417.417-.417h1.275zM9.364 8.078q.035.038.07.071l.048.05c.085.108.53.105 1.363.1l.556-.002h.809q.44.001.79.007c.604.007 1.001.012 1.158-.045a2 2 0 0 1-.048-.165c-.163-.663-.694-1.65-2.558-1.65-.996 0-1.873.597-2.17 1.57zM15.785 11.004l2.421-2.405c.197.114.386.258.544.419.356.352.552.716.64 1.18.064.36.42 6.788.42 7.448 0 .693-.204 1.201-.66 1.662-.324.324-.62.504-1.028.616-.255.07-.402.08-1.311.08H15.79V20H14.5l.001.004H9.123V20H7.832v.004H6.723l7.72-7.667H16.5c.334 0 .667-.25.667-.666a.657.657 0 0 0-.667-.667z", label: "Personal item", detail: null, included: qty > 0 },
+    { d: "M14.91 9.083c-.25 0-.417-.166-.417-.416v-4.5c0-.25.167-.417.417-.417.583 0 .833-.417.833-.917S15.493 2 14.91 2H9.077c-.584 0-.834.417-.834.833 0 .417.25.834.75.834q.5.125.5.5v4.416c0 .25-.166.417-.416.417h-.834c-1.166.083-2.083 1-2.083 2.083v8c0 1 .667 1.834 1.667 2 .083 0 .166.167.166.25 0 .5.334.667.834.667s.833-.167.833-.667a.18.18 0 0 1 .167-.166h4.166a.18.18 0 0 1 .167.166c0 .5.333.667.833.667s.834-.167.834-.667c0-.083.25-.25.333-.25 1-.166 1.667-1.083 1.667-2v-8c0-1.083-.75-2-1.917-2zm0 4.25h-3.5c-.25 0-.417.167-.417.417v.833c0 .334-.25.667-.666.667s-.667-.25-.667-.667v-.833c0-.25-.167-.417-.333-.417h-.25a.657.657 0 0 1-.667-.666c0-.417.25-.667.667-.667h5.833c.333 0 .667.25.667.667a.657.657 0 0 1-.667.666m-2.5-9.666c.25 0 .417.166.417.416V8.58c0 .25-.167.417-.417.417h-.833c-.25 0-.417-.167-.417-.417V4.083c0-.25.167-.416.417-.416z", label: "Cabin bag", detail: null, included: qty > 0 },
+    { d: "M15.91 5.333c-1.417 0-1.417-.166-1.417-.416v-.75c0-.25.167-.417.417-.417.583 0 .833-.417.833-.917S15.494 2 14.91 2H9.077c-.584 0-.834.417-.834.833 0 .417.25.834.75.834q.5.125.5.5v.666c0 .25-.166.417-.416.417H6.243c-1.166.083-2.083 1-2.083 2.083v11.75c0 1 .667 1.834 1.667 2 .083 0 .166.167.166.25 0 .5.334.667.834.667s.833-.167.833-.667a.18.18 0 0 1 .167-.166h8.166a.18.18 0 0 1 .167.166c0 .5.334.667.834.667s.833-.167.833-.667c0-.083.25-.25.333-.25 1-.166 1.667-1.083 1.667-2V7.333c0-1.083-.75-2-1.917-2zM15.6 8.75a.75.75 0 0 1 1.5 0v8.5a.75.75 0 0 1-1.5 0zm-4.3 0a.75.75 0 0 1 1.5 0v8.5a.75.75 0 0 1-1.5 0zM7.75 8a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-1.5 0v-8.5A.75.75 0 0 1 7.75 8m3.41-3.917c0-.25.167-.416.417-.416h.833c.25 0 .417.166.417.416v.747c0 .25-.167.417-.417.417h-.833c-.25 0-.417-.167-.417-.417z", label: "Checked bag", detail: checkedDetail, included: qty > 0 },
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={(e) => { e.stopPropagation(); onClose(e); }}>
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <div
-        className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm p-5 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <p className="text-base font-semibold text-slate-900">Baggage breakdown</p>
-        <p className="text-[11px] text-slate-400 mt-0.5 mb-4">Based on standard airline policy · may vary</p>
-
-        <div className="space-y-3">
-          {ITEMS.map((item, i) => (
-            <div key={i} className="flex items-center justify-between h-10">
-              {/* Left: icon + label */}
-              <div className="flex items-center gap-2">
-                <svg className="h-4 w-4 shrink-0 fill-current text-slate-500" viewBox="0 0 24 24">
-                  {item.svg}
-                </svg>
-                <span className="text-sm font-medium text-slate-700">{item.label}</span>
-                {item.detail && (
-                  <span className="text-xs text-slate-400">({item.detail})</span>
-                )}
-              </div>
-              {/* Right: included / not available */}
-              <div className="flex items-center gap-1.5 ml-4">
-                {item.included ? (
-                  <>
-                    <svg className="h-4 w-4 shrink-0 fill-current text-emerald-500" viewBox="0 0 24 24">
-                      <path d="M6.445 12.668a.9.9 0 1 0-1.302 1.242l3.572 3.745a.9.9 0 0 0 1.335-.036l8.591-10.037a.9.9 0 0 0-1.367-1.17l-7.598 8.876a.48.48 0 0 1-.712.02z" />
-                    </svg>
-                    <span className="text-sm text-slate-600">Included</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="h-4 w-4 shrink-0 fill-current text-slate-400" viewBox="0 0 24 24">
-                      <path d="M17.656 6.333a.9.9 0 0 1 0 1.273l-4.046 4.052a.48.48 0 0 0 0 .678l4.047 4.053a.9.9 0 0 1 .08 1.18l-.081.092a.9.9 0 0 1-1.273 0l-4.044-4.05a.48.48 0 0 0-.68 0l-4.042 4.05a.9.9 0 1 1-1.274-1.273l4.047-4.052a.48.48 0 0 0 0-.678L6.343 7.606a.9.9 0 0 1-.08-1.18l.081-.093a.9.9 0 0 1 1.273.001l4.043 4.049a.48.48 0 0 0 .679 0l4.044-4.049a.9.9 0 0 1 1.273 0" />
-                    </svg>
-                    <span className="text-sm text-slate-400">Not available</span>
-                  </>
-                )}
-              </div>
+    <div className="p-4 w-72">
+      <p className="text-sm font-semibold text-slate-900">Baggage breakdown</p>
+      <p className="text-[11px] text-slate-400 mt-0.5 mb-3">Based on standard airline policy · may vary</p>
+      <div className="space-y-2.5">
+        {ITEMS.map((item, i) => (
+          <div key={i} className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <svg className="h-4 w-4 shrink-0 fill-current text-slate-500" viewBox="0 0 24 24"><path d={item.d} /></svg>
+              <span className="text-sm font-medium text-slate-700">{item.label}</span>
+              {item.detail && <span className="text-xs text-slate-400">({item.detail})</span>}
             </div>
-          ))}
-        </div>
-
-        <div className="mt-5 border-t border-slate-100 pt-4 flex justify-end">
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onClose(e); }}
-            className="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition-colors"
-          >
-            Close
-          </button>
-        </div>
+            <div className="flex items-center gap-1 ml-4">
+              {item.included ? (
+                <>
+                  <svg className="h-4 w-4 shrink-0 fill-current text-emerald-500" viewBox="0 0 24 24"><path d="M6.445 12.668a.9.9 0 1 0-1.302 1.242l3.572 3.745a.9.9 0 0 0 1.335-.036l8.591-10.037a.9.9 0 0 0-1.367-1.17l-7.598 8.876a.48.48 0 0 1-.712.02z" /></svg>
+                  <span className="text-xs text-slate-600">Included</span>
+                </>
+              ) : (
+                <>
+                  <svg className="h-4 w-4 shrink-0 fill-current text-slate-400" viewBox="0 0 24 24"><path d="M17.656 6.333a.9.9 0 0 1 0 1.273l-4.046 4.052a.48.48 0 0 0 0 .678l4.047 4.053a.9.9 0 0 1 .08 1.18l-.081.092a.9.9 0 0 1-1.273 0l-4.044-4.05a.48.48 0 0 0-.68 0l-4.042 4.05a.9.9 0 1 1-1.274-1.273l4.047-4.052a.48.48 0 0 0 0-.678L6.343 7.606a.9.9 0 0 1-.08-1.18l.081-.093a.9.9 0 0 1 1.273.001l4.043 4.049a.48.48 0 0 0 .679 0l4.044-4.049a.9.9 0 0 1 1.273 0" /></svg>
+                  <span className="text-xs text-slate-400">Not available</span>
+                </>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -505,11 +468,22 @@ function FlightCard({
   onSelect: (offer: FlightOffer) => void;
 }) {
   const { formatPrice } = useCurrency();
-  const [saved, setSaved]           = useState(false);
-  const [shareOpen, setShareOpen]   = useState(false);
-  const [baggageOpen, setBaggageOpen] = useState(false);
+  const [saved, setSaved]         = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const price  = parseFloat(offer.price.total);
   const perPax = parseFloat(offer.price.perPassenger);
+  const router = useRouter();
+
+  function goToCheckout() {
+    const paxCount = parseInt(new URLSearchParams(window.location.search).get("passengers") ?? "1", 10);
+    sessionStorage.setItem("amd_checkout_offer", JSON.stringify({
+      offer,
+      carriers,
+      fareClass: "Economy",
+      passengers: paxCount,
+    }));
+    router.push("/checkout");
+  }
 
   const shareUrl = typeof window !== "undefined"
     ? `${window.location.origin}/itinerary/${offer.id}`
@@ -542,22 +516,24 @@ function FlightCard({
         {/* Baggage & badges row */}
         <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-dashed border-slate-200">
           {/* Baggage */}
+          <Popover>
+          <PopoverTrigger asChild>
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); setBaggageOpen(true); }}
+            onClick={(e) => e.stopPropagation()}
             className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-primary transition-colors cursor-pointer"
           >
             {/* Personal item */}
             <svg className="h-3.5 w-3.5 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-label="Personal item">
               <path d="M20.583 2.25a.806.806 0 0 1 1.167 0 .806.806 0 0 1 0 1.167l-4.907 4.906h.008l-1.149 1.141L3.417 21.75c-.25.333-.834.333-1.167 0a.806.806 0 0 1 0-1.167l1.809-1.808c-.177-.327-.259-.692-.259-1.129 0-.692.353-7.091.42-7.448.093-.468.285-.828.641-1.18.28-.285.656-.517 1-.62.089-.029.521-.06.97-.077l.056-.002c.56-.017.75-.022.849-.12a.4.4 0 0 0 .085-.147c.053-.39.31-1.078.59-1.487.187-.268.576-.673.856-.88.408-.309.856-.509 1.429-.637.18-.04.432-.056.856-.044 1.113.031 1.72.108 2.225.36.7.356 1.309.977 1.649 1.685q.059.121.108.25zm-8.753 8.754H7c-.417 0-.667.25-.667.667 0 .416.334.666.667.666h.137c.167 0 .334.167.334.417v.833c0 .417.124.667.666.667.582 0 .667-.254.667-.667.006-.587 0-.833 0-.833 0-.25.167-.417.417-.417h1.275zM9.364 8.078q.035.038.07.071l.048.05c.085.108.53.105 1.363.1l.556-.002h.809q.44.001.79.007c.604.007 1.001.012 1.158-.045a2 2 0 0 1-.048-.165c-.163-.663-.694-1.65-2.558-1.65-.996 0-1.873.597-2.17 1.57zM15.785 11.004l2.421-2.405c.197.114.386.258.544.419.356.352.552.716.64 1.18.064.36.42 6.788.42 7.448 0 .693-.204 1.201-.66 1.662-.324.324-.62.504-1.028.616-.255.07-.402.08-1.311.08H15.79V20H14.5l.001.004H9.123V20H7.832v.004H6.723l7.72-7.667H16.5c.334 0 .667-.25.667-.666a.657.657 0 0 0-.667-.667z" />
             </svg>
-            <span className="font-medium">1</span>
+            <span className="font-medium">0</span>
             <div className="h-3 w-px bg-slate-300 mx-1" />
             {/* Cabin bag */}
             <svg className="h-3.5 w-3.5 text-slate-600 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-label="Cabin bag">
               <path d="M14.91 9.083c-.25 0-.417-.166-.417-.416v-4.5c0-.25.167-.417.417-.417.583 0 .833-.417.833-.917S15.493 2 14.91 2H9.077c-.584 0-.834.417-.834.833 0 .417.25.834.75.834q.5.125.5.5v4.416c0 .25-.166.417-.416.417h-.834c-1.166.083-2.083 1-2.083 2.083v8c0 1 .667 1.834 1.667 2 .083 0 .166.167.166.25 0 .5.334.667.834.667s.833-.167.833-.667a.18.18 0 0 1 .167-.166h4.166a.18.18 0 0 1 .167.166c0 .5.333.667.833.667s.834-.167.834-.667c0-.083.25-.25.333-.25 1-.166 1.667-1.083 1.667-2v-8c0-1.083-.75-2-1.917-2zm0 4.25h-3.5c-.25 0-.417.167-.417.417v.833c0 .334-.25.667-.666.667s-.667-.25-.667-.667v-.833c0-.25-.167-.417-.333-.417h-.25a.657.657 0 0 1-.667-.666c0-.417.25-.667.667-.667h5.833c.333 0 .667.25.667.667a.657.657 0 0 1-.667.666m-2.5-9.666c.25 0 .417.166.417.416V8.58c0 .25-.167.417-.417.417h-.833c-.25 0-.417-.167-.417-.417V4.083c0-.25.167-.416.417-.416z" />
             </svg>
-            <span className="font-medium">1</span>
+            <span className="font-medium">0</span>
             <div className="h-3 w-px bg-slate-300 mx-1" />
             {/* Checked bag */}
             <svg className="h-3.5 w-3.5 text-slate-600 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-label="Checked bag">
@@ -565,6 +541,11 @@ function FlightCard({
             </svg>
             <span className="font-medium">{offer.baggageAllowance?.quantity ?? 0}</span>
           </button>
+          </PopoverTrigger>
+          <PopoverContent align="start" onClick={(e) => e.stopPropagation()}>
+            <BaggagePopoverContent offer={offer} />
+          </PopoverContent>
+          </Popover>
 
           {/* Self-transfer badge for multi-city */}
           {offer.itineraries.length > 1 && (
@@ -627,68 +608,7 @@ function FlightCard({
           onClose={(e?: React.MouseEvent) => { e?.stopPropagation(); setShareOpen(false); }}
         />
       )}
-      {baggageOpen && (
-        <BaggageModal offer={offer} onClose={(e?: React.MouseEvent) => { e?.stopPropagation(); setBaggageOpen(false); }} />
-      )}
-    </div>
-  );
-}
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
-function SkeletonCard() {
-  return (
-    <div className="bg-card rounded-2xl border border-border shadow-card overflow-hidden animate-pulse">
-      <div className="p-5 space-y-4">
-        {/* Airline row */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-muted" />
-            <div className="space-y-1.5">
-              <div className="h-3.5 w-28 rounded bg-muted" />
-              <div className="h-3 w-20 rounded bg-muted" />
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <div className="h-5 w-24 rounded bg-muted ml-auto" />
-            <div className="h-3 w-16 rounded bg-muted ml-auto" />
-          </div>
-        </div>
-        {/* Outbound row */}
-        <div className="flex items-center gap-3">
-          <div className="h-3 w-14 rounded bg-muted shrink-0" />
-          <div className="flex items-center gap-2 flex-1">
-            <div className="space-y-1 shrink-0">
-              <div className="h-5 w-12 rounded bg-muted" />
-              <div className="h-3 w-8 rounded bg-muted" />
-              <div className="h-3 w-10 rounded bg-muted" />
-            </div>
-            <div className="flex-1 flex flex-col items-center gap-1">
-              <div className="h-3 w-16 rounded bg-muted" />
-              <div className="w-full h-px bg-muted" />
-              <div className="h-3 w-12 rounded bg-muted" />
-            </div>
-            <div className="space-y-1 shrink-0">
-              <div className="h-5 w-12 rounded bg-muted" />
-              <div className="h-3 w-8 rounded bg-muted" />
-              <div className="h-3 w-10 rounded bg-muted" />
-            </div>
-          </div>
-        </div>
-        {/* Return row placeholder */}
-        <div className="flex items-center gap-3">
-          <div className="h-3 w-14 rounded bg-muted shrink-0" />
-          <div className="flex-1 h-px bg-muted" />
-        </div>
-      </div>
-      {/* Footer */}
-      <div className="px-5 py-3 bg-muted/40 border-t border-border flex items-center justify-between">
-        <div className="flex gap-4">
-          <div className="h-3 w-20 rounded bg-muted" />
-          <div className="h-3 w-16 rounded bg-muted" />
-        </div>
-        <div className="h-8 w-20 rounded-lg bg-muted" />
-      </div>
     </div>
   );
 }
@@ -986,7 +906,7 @@ const fetchFlights = useCallback(async () => {
         <div className="flex flex-col lg:flex-row gap-6 items-start">
 
           {/* ── Left: Filter Sidebar ── */}
-          <aside className="w-full lg:w-72 xl:w-80 shrink-0 lg:sticky lg:top-24">
+          <aside className="w-full lg:w-72 xl:w-80 shrink-0">
             <FilterSidebar
               availableAirlines={availableAirlines}
               absoluteMaxPrice={absoluteMaxPrice}
@@ -1002,7 +922,7 @@ const fetchFlights = useCallback(async () => {
             {/* Loading */}
             {loading && (
               <div className="space-y-4">
-                {Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)}
+                {Array.from({ length: 4 }).map((_, i) => <FlightSkeleton key={i} />)}
               </div>
             )}
 

@@ -69,14 +69,16 @@ for (const airport of indexed) {
   }
 }
 
+// ─── Popular airport IATA set — used to boost relevance score ────────────────
+const POPULAR_CODES = new Set(POPULAR_AIRPORTS.map((a) => a.code));
+
 // ─── Search ───────────────────────────────────────────────────────────────────
 
 export function searchAirports(keyword: string): AirportOption[] {
   const q = keyword.trim().toLowerCase();
   if (q.length < 2) return POPULAR_AIRPORTS;
 
-  // Country-group match: if the entire query matches an alias for a country,
-  // return all airports for that country (up to 10), flagged as isCountryMatch.
+  // Country-group match
   const countryHits = indexed.filter(
     (a) => a.aliases.includes(q) || a.country.toLowerCase() === q
   );
@@ -85,20 +87,47 @@ export function searchAirports(keyword: string): AirportOption[] {
     return countryHits.slice(0, 10).map((a) => toOption(a, true, groupLabel));
   }
 
-  // Prefix-index lookup: get the candidate bucket for the first 2 chars,
-  // then filter candidates whose full _search string contains the query.
+  // Prefix-index lookup — collect all candidates that contain the query
   const p2 = q.slice(0, 2);
   const candidates = prefixIndex.get(p2);
   if (!candidates) return [];
 
-  const results: AirportOption[] = [];
+  const scored: { airport: IndexedAirport; score: number }[] = [];
+
   for (const a of candidates) {
-    if (a._search.includes(q)) {
-      results.push(toOption(a));
-      if (results.length === 10) break;
-    }
+    if (!a._search.includes(q)) continue;
+
+    const iataLower = a.iata.toLowerCase();
+    const cityLower = a.city.toLowerCase();
+    const nameLower = a.name.toLowerCase();
+
+    let score = 0;
+
+    // Exact IATA match — highest priority
+    if (iataLower === q)                  score += 100;
+    // IATA starts with query
+    else if (iataLower.startsWith(q))     score += 80;
+    // City exact match
+    if (cityLower === q)                  score += 70;
+    // City starts with query
+    else if (cityLower.startsWith(q))     score += 50;
+    // Airport name starts with query
+    else if (nameLower.startsWith(q))     score += 30;
+    // Alias exact match
+    else if (a.aliases.includes(q))       score += 40;
+    // Fallback: substring match (already guaranteed by _search.includes)
+    else                                  score += 10;
+
+    // Boost popular/well-known airports
+    if (POPULAR_CODES.has(a.iata))        score += 20;
+
+    scored.push({ airport: a, score });
   }
-  return results;
+
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 12)
+    .map(({ airport }) => toOption(airport));
 }
 
 function toOption(
