@@ -60,7 +60,7 @@ interface DatePickerProps {
 
 function DatePickerField({
   label, value, onChange, error, helperText,
-  fromYear, toYear, disabled,
+  disabled,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const selected = strToDate(value);
