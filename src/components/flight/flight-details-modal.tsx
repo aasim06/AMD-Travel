@@ -64,7 +64,7 @@ function AirlineLogo({ code, className = "" }: { code: string; className?: strin
   );
 
   return (
-    <div className={`bg-white border border-slate-100 flex items-center justify-center overflow-hidden px-1.5 ${className}`}>
+    <div className={`bg-white flex items-center justify-center overflow-hidden px-1.5 ${className}`}>
       <img src={urls[idx]} alt={name} className="h-7 w-full object-contain" onError={handleError} />
     </div>
   );
@@ -220,6 +220,7 @@ type FareType = "basic" | "guarantee";
 
 function FareCard({ type, price, onSelect }: { type: FareType; price: number; onSelect: () => void }) {
   const { formatPrice } = useCurrency();
+  const [loading, setLoading] = useState(false);
   const isGuarantee = type === "guarantee";
 
   const features = isGuarantee
@@ -279,14 +280,24 @@ function FareCard({ type, price, onSelect }: { type: FareType; price: number; on
       {/* CTA */}
       <button
         type="button"
-        onClick={onSelect}
-        className={`w-full py-2.5 rounded-[10px] text-sm font-semibold transition-all active:scale-[0.98] ${
+        onClick={() => { setLoading(true); onSelect(); }}
+        disabled={loading}
+        className={`w-full py-2.5 rounded-[10px] text-sm font-semibold transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-80 disabled:cursor-not-allowed ${
           isGuarantee
             ? "bg-primary hover:bg-primary/90 text-white"
             : "bg-slate-100 hover:bg-slate-200 text-slate-700"
         }`}
       >
-        Continue · {formatPrice(price)}
+        {loading ? (
+          <>
+            <span className={`h-4 w-4 rounded-full border-2 border-t-transparent animate-spin shrink-0 ${
+              isGuarantee ? "border-white/60 border-t-transparent" : "border-slate-400 border-t-transparent"
+            }`} />
+            Redirecting...
+          </>
+        ) : (
+          <>Continue · {formatPrice(price)}</>
+        )}
       </button>
     </div>
   );

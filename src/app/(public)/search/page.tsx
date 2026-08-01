@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo, Suspense } from "react";
+import { useEffect, useState, useCallback, useMemo, Suspense, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   Plane,
@@ -10,8 +11,18 @@ import {
   ChevronDown,
   Share2,
   Heart,
+  CalendarDays,
+  ArrowLeftRight,
+  Search,
+  PlaneTakeoff,
+  PlaneLanding,
+  Minus,
+  Plus,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import { format, parseISO } from "date-fns";
 import type { FlightOffer, FlightSearchResponse, TravelClass, Currency } from "@/types/flight";
 import { AIRLINE_NAMES, AIRLINE_LOGO_FALLBACKS } from "@/types/flight";
 import { useCurrency } from "@/context/currency-context";
@@ -20,6 +31,8 @@ import type { FilterState } from "@/components/flight/filter-sidebar";
 import { FlightDetailsModal } from "@/components/flight/flight-details-modal";
 import { ShareItineraryModal } from "@/components/flight/share-itinerary-modal";
 import { FlightSkeleton } from "@/components/flight/flight-skeleton";
+import { DatePriceStrip } from "@/components/flight/date-price-strip";
+import { searchAirports } from "@/lib/data/airportsData";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -62,6 +75,715 @@ function formatDate(iso: string): string {
     day: "numeric",
     month: "short",
   });
+}
+
+// ─── Modify Search Bar ───────────────────────────────────────────────────────
+
+/** Shadcn-styled airport combobox with Input + floating dropdown */
+function AirportCombobox({
+  value, onChange, placeholder, label, icon, minWidth = "160px",
+}: {
+  value: string;
+  onChange: (code: string, label: string) => void;
+  placeholder: string;
+  label: string;
+  icon: React.ReactNode;
+  minWidth?: string;
+}) {
+  const [query, setQuery]     = useState("");
+  const [open, setOpen]       = useState(false);
+  const [focused, setFocused] = useState(false);
+  const containerRef          = useRef<HTMLDivElement>(null);
+  const [dropCoords, setDropCoords] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  useEffect(() => {
+    if (!value) { setQuery(""); return; }
+    const m = searchAirports(value)[0];
+    if (m) setQuery(`${m.city} (${m.code})`);
+    else setQuery(value);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  const results = useMemo(() => {
+    const q = query.trim();
+    return q.length >= 2 ? searchAirports(q).slice(0, 6) : [];
+  }, [query]);
+
+  const reposition = useCallback(() => {
+    if (!containerRef.current) return;
+    const r = containerRef.current.getBoundingClientRect();
+    setDropCoords({ top: r.bottom + 4, left: r.left, width: r.width });
+  }, []);
+
+  useEffect(() => {
+    if (!open) { setDropCoords(null); return; }
+    reposition();
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [open, reposition]);
+
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative flex-1" style={{ minWidth }}>
+      {/* Label */}
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">{label}</p>
+      {/* Input wrapper */}
+      <div className={`flex items-center gap-2.5 h-11 px-3.5 rounded-xl border bg-white transition-all ${
+        focused ? "border-primary ring-2 ring-primary/15 shadow-sm" : "border-slate-200 hover:border-slate-300"
+      }`}>
+        <span className={`shrink-0 transition-colors ${focused ? "text-primary" : "text-slate-400"}`}>{icon}</span>
+        <input
+          type="text"
+          autoComplete="off"
+          spellCheck={false}
+          value={query}
+          placeholder={placeholder}
+          onChange={e => { setQuery(e.target.value); setOpen(true); reposition(); }}
+          onFocus={() => { setFocused(true); setOpen(true); reposition(); }}
+          onBlur={() => setFocused(false)}
+          className="flex-1 text-sm font-medium text-slate-800 placeholder:text-slate-400 bg-transparent outline-none min-w-0"
+        />
+        {query && (
+          <button
+            type="button"
+            onMouseDown={e => { e.preventDefault(); setQuery(""); onChange("", ""); }}
+            className="shrink-0 text-slate-300 hover:text-slate-500 transition-colors"
+          >
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+              <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {/* Dropdown — rendered via portal so z-index is always on top */}
+      {open && results.length > 0 && dropCoords && createPortal(
+        <div
+          className="fixed z-[9999] w-64 rounded-xl border border-slate-200 bg-white shadow-xl overflow-hidden"
+          style={{ top: dropCoords.top, left: dropCoords.left, minWidth: dropCoords.width }}
+        >
+          <div className="py-1.5">
+            {results.map((a) => (
+              <button
+                key={a.code}
+                type="button"
+                onMouseDown={e => {
+                  e.preventDefault();
+                  onChange(a.code, `${a.city} (${a.code})`);
+                  setQuery(`${a.city} (${a.code})`);
+                  setOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-slate-50 transition-colors group"
+              >
+                <div className="h-8 w-8 rounded-lg bg-primary/8 flex items-center justify-center shrink-0">
+                  <span className="text-xs font-bold text-primary">{a.code}</span>
+                </div>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-sm font-semibold text-slate-800 truncate group-hover:text-primary transition-colors">{a.city}</span>
+                  <span className="text-[11px] text-slate-400 truncate">{a.name ?? a.country}</span>
+                </div>
+                <span className="text-[10px] text-slate-300 shrink-0 font-medium">{a.country}</span>
+              </button>
+            ))}
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+/** Unified date range / single picker — one button, one popover, one calendar */
+function DateRangePicker({
+  dept,
+  ret,
+  isRound,
+  onDeptChange,
+  onRetChange,
+}: {
+  dept: string;
+  ret: string;
+  isRound: boolean;
+  onDeptChange: (iso: string) => void;
+  onRetChange: (iso: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [picking, setPicking] = useState<"dept" | "ret">("dept");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dropCoords, setDropCoords] = useState<{ top: number; left: number } | null>(null);
+
+  const deptDate = dept ? parseISO(dept) : undefined;
+  const retDate  = ret  ? parseISO(ret)  : undefined;
+  const today    = new Date(new Date().setHours(0, 0, 0, 0));
+
+  // Position the portal dropdown anchored to the button
+  const reposition = useCallback(() => {
+    if (!containerRef.current) return;
+    const r = containerRef.current.getBoundingClientRect();
+    setDropCoords({ top: r.bottom + 6, left: r.left });
+  }, []);
+
+  useEffect(() => {
+    if (!open) { setDropCoords(null); return; }
+    reposition();
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [open, reposition]);
+
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        // also check portal content
+        const portal = document.getElementById("date-picker-portal");
+        if (portal && portal.contains(e.target as Node)) return;
+        setOpen(false);
+        setPicking("dept");
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
+  function handleOpen() {
+    setPicking("dept");
+    setOpen(v => !v);
+  }
+
+  function handleDayClick(day: Date | undefined) {
+    if (!day) return;
+    const iso = format(day, "yyyy-MM-dd");
+
+    if (!isRound) {
+      onDeptChange(iso);
+      setOpen(false);
+      return;
+    }
+
+    if (picking === "dept") {
+      onDeptChange(iso);
+      if (retDate && day >= retDate) onRetChange("");
+      setPicking("ret");
+    } else {
+      if (deptDate && day < deptDate) {
+        onDeptChange(iso);
+        onRetChange("");
+        setPicking("ret");
+      } else {
+        onRetChange(iso);
+        setOpen(false);
+        setPicking("dept");
+      }
+    }
+  }
+
+  const deptLabel = deptDate ? format(deptDate, "EEE, MMM d") : "Departure";
+  const retLabel  = retDate  ? format(retDate,  "EEE, MMM d") : "Return";
+
+  // Custom modifiers for range highlighting
+  const modifiers: Record<string, Date | Date[] | { after: Date; before: Date }> = {};
+  const modifiersClassNames: Record<string, string> = {};
+  if (isRound && deptDate && retDate) {
+    modifiers.range_start  = deptDate;
+    modifiers.range_end    = retDate;
+    modifiers.range_middle = { after: deptDate, before: retDate };
+    modifiersClassNames.range_start  = "!bg-primary !text-primary-foreground rounded-lg";
+    modifiersClassNames.range_end    = "!bg-primary !text-primary-foreground rounded-lg";
+    modifiersClassNames.range_middle = "!bg-primary/10 !text-primary rounded-none";
+  } else if (deptDate) {
+    modifiers.range_start = deptDate;
+    modifiersClassNames.range_start = "!bg-primary !text-primary-foreground rounded-lg";
+  }
+
+  const dropdown = open && dropCoords ? createPortal(
+    <div
+      id="date-picker-portal"
+      className="fixed z-[9999] bg-white rounded-2xl border border-slate-200 shadow-2xl"
+      style={{
+        top: dropCoords.top,
+        left: Math.min(dropCoords.left, window.innerWidth - (isRound ? 600 : 300)),
+        minWidth: isRound ? 580 : 280,
+      }}
+    >
+      {/* Hint bar for round-trip */}
+      {isRound && (
+        <div className="flex items-center gap-3 px-4 pt-3 pb-2 border-b border-slate-100">
+          <button
+            type="button"
+            onClick={() => setPicking("dept")}
+            className={`flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+              picking === "dept" ? "bg-primary text-primary-foreground" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+            }`}
+          >
+            {deptDate ? format(deptDate, "EEE, MMM d") : "Departure"}
+          </button>
+          <ArrowRight className="h-3 w-3 text-slate-300 shrink-0" />
+          <button
+            type="button"
+            onClick={() => setPicking("ret")}
+            className={`flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+              picking === "ret" ? "bg-primary text-primary-foreground" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+            }`}
+          >
+            {retDate ? format(retDate, "EEE, MMM d") : "Return"}
+          </button>
+        </div>
+      )}
+      <Calendar
+        mode="single"
+        selected={picking === "dept" ? deptDate : retDate}
+        onSelect={handleDayClick}
+        disabled={(d) => d < today}
+        numberOfMonths={isRound ? 2 : 1}
+        modifiers={modifiers}
+        modifiersClassNames={modifiersClassNames}
+        initialFocus
+      />
+    </div>,
+    document.body
+  ) : null;
+
+  return (
+    <>
+      <div ref={containerRef} className="flex-1" style={{ minWidth: isRound ? "260px" : "150px" }}>
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">
+          {isRound ? "Departure — Return" : "Departure"}
+        </p>
+        <button
+          type="button"
+          onClick={handleOpen}
+          className={`w-full flex items-center gap-2 h-11 px-3.5 rounded-xl border bg-white transition-all text-left overflow-hidden
+            ${open ? "border-primary ring-2 ring-primary/15 shadow-sm" : "border-slate-200 hover:border-slate-300"}`}
+        >
+          <CalendarDays className={`h-4 w-4 shrink-0 transition-colors ${open ? "text-primary" : "text-slate-400"}`} />
+          <span className={`text-sm font-medium whitespace-nowrap shrink-0 ${deptDate ? "text-slate-800" : "text-slate-400"}`}>
+            {deptLabel}
+          </span>
+          {isRound && (
+            <>
+              <ArrowRight className="h-3 w-3 text-slate-300 shrink-0" />
+              <span className={`text-sm font-medium whitespace-nowrap shrink-0 ${retDate ? "text-slate-800" : "text-slate-400"}`}>
+                {retLabel}
+              </span>
+            </>
+          )}
+        </button>
+      </div>
+      {dropdown}
+    </>
+  );
+}
+
+function ModifySearchBar({ compact = false }: { compact?: boolean }) {
+  const searchParams = useSearchParams();
+  const router       = useRouter();
+
+  const [fromCode,   setFromCode]   = useState(searchParams.get("from") ?? "");
+  const [fromLabel,  setFromLabel]  = useState(searchParams.get("fromLabel") ?? searchParams.get("from") ?? "");
+  const [toCode,     setToCode]     = useState(searchParams.get("to") ?? "");
+  const [toLabel,    setToLabel]    = useState(searchParams.get("toLabel") ?? searchParams.get("to") ?? "");
+  const [dept,       setDept]       = useState(searchParams.get("dept") ?? "");
+  const [ret,        setRet]        = useState(searchParams.get("ret") ?? "");
+
+  // Sync local state when URL changes (e.g. date-price-strip click)
+  useEffect(() => {
+    setFromCode(searchParams.get("from") ?? "");
+    setFromLabel(searchParams.get("fromLabel") ?? searchParams.get("from") ?? "");
+    setToCode(searchParams.get("to") ?? "");
+    setToLabel(searchParams.get("toLabel") ?? searchParams.get("to") ?? "");
+    setDept(searchParams.get("dept") ?? "");
+    setRet(searchParams.get("ret") ?? "");
+    setPassengers(parseInt(searchParams.get("passengers") ?? "1", 10));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.toString()]);
+  const [passengers, setPassengers] = useState(parseInt(searchParams.get("passengers") ?? "1", 10));
+  const [tripType,   setTripType]   = useState<"one-way" | "round-trip">(
+    (searchParams.get("tripType") ?? "one-way") as "one-way" | "round-trip"
+  );
+  const [paxOpen,    setPaxOpen]    = useState(false);
+  const [paxCoords, setPaxCoords] = useState<{ top: number; left: number } | null>(null);
+
+  function openPax(e: React.MouseEvent<HTMLButtonElement>) {
+    const r = e.currentTarget.getBoundingClientRect();
+    setPaxCoords({ top: r.bottom + 6, left: r.left });
+    setPaxOpen(v => !v);
+  }
+
+  const isRound = tripType === "round-trip";
+
+  // When switching to one-way, clear return date
+  function handleTripTypeChange(t: "one-way" | "round-trip") {
+    setTripType(t);
+    if (t === "one-way") setRet("");
+  }
+
+  useEffect(() => {
+    if (!paxOpen) return;
+    function onDown(e: MouseEvent) {
+      const portal = document.getElementById("pax-portal");
+      // ignore clicks inside the portal itself
+      if (portal && portal.contains(e.target as Node)) return;
+      // ignore the button that opened it (openPax handles toggle)
+      if ((e.target as HTMLElement).closest("[data-pax-trigger]")) return;
+      setPaxOpen(false);
+    }
+    // Use setTimeout so the same click that opens doesn't immediately close
+    const tid = setTimeout(() => {
+      document.addEventListener("mousedown", onDown);
+    }, 0);
+    return () => {
+      clearTimeout(tid);
+      document.removeEventListener("mousedown", onDown);
+    };
+  }, [paxOpen]);
+
+  function handleSearch() {
+    if (!fromCode || !toCode || !dept) return;
+    const p = new URLSearchParams({
+      from: fromCode, to: toCode,
+      fromLabel, toLabel, dept,
+      passengers: String(passengers),
+      class: searchParams.get("class") ?? "ECONOMY",
+      tripType,
+      ...(isRound && ret ? { ret } : {}),
+    });
+    router.push(`/search?${p.toString()}`);
+  }
+
+  const canSearch = !!fromCode && !!toCode && !!dept;
+
+  // ── Compact pill labels ────────────────────────────────────────────────────
+  const fromShort  = fromLabel ? fromLabel.replace(/\s*\(.*\)/, "") : "From";
+  const toShort    = toLabel   ? toLabel.replace(/\s*\(.*\)/, "")   : "To";
+  const deptShort  = dept ? format(parseISO(dept), "MMM d") : "";
+  const retShort   = ret  ? format(parseISO(ret),  "MMM d") : "";
+  const dateShort  = deptShort
+    ? isRound && retShort ? `${deptShort} – ${retShort}` : deptShort
+    : "Date";
+  const paxShort   = `${passengers} Adult${passengers > 1 ? "s" : ""}`;
+
+  // ── Compact expand state ──────────────────────────────────────────────────
+  const [expanded, setExpanded] = useState(false);
+  const expandRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!compact) return;
+    function onDown(e: MouseEvent) {
+      // Don't close if click is inside the expand panel itself
+      if (expandRef.current && expandRef.current.contains(e.target as Node)) return;
+      // Don't close if click is inside any portal dropdown (calendar, airport, pax)
+      const portals = ["date-picker-portal", "pax-portal"];
+      if (portals.some(id => document.getElementById(id)?.contains(e.target as Node))) return;
+      setExpanded(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [compact]);
+
+  // ── COMPACT MODE ──────────────────────────────────────────────────────────
+  if (compact) {
+    return (
+      <>
+      <div ref={expandRef} className="relative">
+        {/* Compact pill */}
+        <button
+          type="button"
+          onClick={() => setExpanded(v => !v)}
+          className={`flex items-center gap-0 bg-white border rounded-full shadow-sm h-9 overflow-hidden transition-all duration-200 hover:shadow-md ${
+            expanded ? "border-primary ring-2 ring-primary/20" : "border-slate-200"
+          }`}
+        >
+          {/* Route */}
+          <span className="flex items-center gap-1.5 px-3 h-full border-r border-slate-100">
+            <Plane className="h-3 w-3 text-primary shrink-0" />
+            <span className="text-xs font-semibold text-slate-800 max-w-[160px] truncate">
+              {fromShort} → {toShort}
+            </span>
+          </span>
+          {/* Date */}
+          <span className="flex items-center gap-1.5 px-3 h-full border-r border-slate-100">
+            <CalendarDays className="h-3 w-3 text-slate-400 shrink-0" />
+            <span className="text-xs font-medium text-slate-600 whitespace-nowrap">{dateShort}</span>
+          </span>
+          {/* Pax */}
+          <span className="flex items-center gap-1.5 px-3 h-full border-r border-slate-100">
+            <Users className="h-3 w-3 text-slate-400 shrink-0" />
+            <span className="text-xs font-medium text-slate-600 whitespace-nowrap">{paxShort}</span>
+          </span>
+          {/* Search icon */}
+          <span className="flex items-center justify-center h-full px-3 bg-primary hover:bg-primary/90 transition-colors"
+            onClick={(e) => { e.stopPropagation(); handleSearch(); }}>
+            <Search className="h-3.5 w-3.5 text-primary-foreground" />
+          </span>
+        </button>
+
+        {/* Expanded dropdown */}
+        {expanded && (
+          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-[min(900px,95vw)] bg-white rounded-2xl border border-slate-200 overflow-hidden
+            animate-in fade-in-0 zoom-in-95 duration-200 ease-out"
+            style={{ boxShadow: "0 20px 60px -10px rgba(0,0,0,0.18), 0 8px 24px -6px rgba(0,0,0,0.10)" }}
+          >
+            <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-slate-100">
+              <div className="flex items-center bg-slate-100 rounded-lg p-0.5 gap-0.5">
+                {(["one-way", "round-trip"] as const).map((t) => (
+                  <button key={t} type="button" onClick={() => handleTripTypeChange(t)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                      tripType === t ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
+                    }`}>
+                    <Plane className={`h-3 w-3 ${tripType === t ? "text-primary" : "text-slate-400"}`} />
+                    {t === "one-way" ? "One Way" : "Round Trip"}
+                  </button>
+                ))}
+              </div>
+              <span className="text-[11px] text-slate-400 font-medium ml-auto">Modify your search</span>
+            </div>
+            <div className="px-5 py-4">
+              <div className="flex flex-wrap items-end gap-3">
+                <AirportCombobox value={fromCode} label="From"
+                  onChange={(code, lbl) => { setFromCode(code); setFromLabel(lbl); }}
+                  placeholder="City or airport" icon={<PlaneTakeoff className="h-4 w-4" />}
+                  minWidth="140px" />
+                <div className="shrink-0 pb-0.5">
+                  <button type="button"
+                    onClick={() => { setFromCode(toCode); setFromLabel(toLabel); setToCode(fromCode); setToLabel(fromLabel); }}
+                    className="h-11 w-11 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95">
+                    <ArrowLeftRight className="h-4 w-4" />
+                  </button>
+                </div>
+                <AirportCombobox value={toCode} label="To"
+                  onChange={(code, lbl) => { setToCode(code); setToLabel(lbl); }}
+                  placeholder="City or airport" icon={<PlaneLanding className="h-4 w-4" />}
+                  minWidth="140px" />
+                <div className="hidden lg:block self-stretch w-px bg-slate-100 mx-1" />
+                <DateRangePicker dept={dept} ret={ret} isRound={isRound}
+                  onDeptChange={setDept} onRetChange={setRet} />
+                <div className="relative shrink-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Passengers</p>
+                  <button
+                    data-pax-trigger
+                    type="button"
+                    onClick={openPax}
+                    className={`flex items-center gap-2.5 h-11 px-3.5 rounded-xl border bg-white transition-all text-sm font-medium text-slate-700 ${
+                      paxOpen ? "border-primary ring-2 ring-primary/15 shadow-sm" : "border-slate-200 hover:border-slate-300"}`}>
+                    <Users className={`h-4 w-4 transition-colors ${paxOpen ? "text-primary" : "text-slate-400"}`} />
+                    <span className="font-semibold text-slate-800">{passengers}</span>
+                    <span className="text-slate-500">{passengers === 1 ? "Adult" : "Adults"}</span>
+                    <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ml-1 ${paxOpen ? "rotate-180" : ""}`} />
+                  </button>
+                </div>
+                <div className="shrink-0 pb-0.5 ml-auto">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-transparent mb-1.5 select-none">·</p>
+                  <Button type="button" onClick={() => { handleSearch(); setExpanded(false); }} disabled={!canSearch}
+                    className="h-11 px-6 rounded-xl text-sm font-semibold gap-2 shadow-sm shadow-primary/20">
+                    <Search className="h-4 w-4" />Search flights
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Pax portal — also needed in compact mode */}
+      {paxOpen && paxCoords && createPortal(
+        <div
+          id="pax-portal"
+          className="fixed z-[9999] bg-white rounded-xl border border-slate-200 shadow-2xl p-4 min-w-[200px]"
+          style={{ top: paxCoords.top, left: paxCoords.left }}
+        >
+          <p className="text-xs font-semibold text-slate-700 mb-3">Passengers</p>
+          <div className="flex items-center justify-between gap-6">
+            <div>
+              <p className="text-sm font-medium text-slate-800">Adults</p>
+              <p className="text-[11px] text-slate-400">Age 12+</p>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <button type="button" onClick={() => setPassengers(p => Math.max(1, p - 1))}
+                disabled={passengers <= 1}
+                className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-40">
+                <Minus className="h-3.5 w-3.5" />
+              </button>
+              <span className="text-sm font-bold text-slate-800 w-5 text-center tabular-nums">{passengers}</span>
+              <button type="button" onClick={() => setPassengers(p => Math.min(9, p + 1))}
+                disabled={passengers >= 9}
+                className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-40">
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+          <button type="button" onClick={() => setPaxOpen(false)}
+            className="mt-3 w-full h-8 rounded-lg bg-primary/8 text-primary text-xs font-semibold hover:bg-primary/15 transition-colors">
+            Done
+          </button>
+        </div>,
+        document.body
+      )}
+      </>
+    );
+  }
+  // ── END COMPACT MODE ──────────────────────────────────────────────────────
+
+  return (
+    <>
+    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+
+      {/* ── Header strip: trip type toggle ── */}
+      <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-slate-100">
+        {/* Toggle buttons */}
+        <div className="flex items-center bg-slate-100 rounded-lg p-0.5 gap-0.5">
+          {(["one-way", "round-trip"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => handleTripTypeChange(t)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                tripType === t
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <Plane className={`h-3 w-3 ${tripType === t ? "text-primary" : "text-slate-400"} ${t === "round-trip" ? "rotate-180" : ""}`} />
+              {t === "one-way" ? "One Way" : "Round Trip"}
+            </button>
+          ))}
+        </div>
+        <span className="text-[11px] text-slate-400 font-medium">· Modify your search</span>
+      </div>
+
+      {/* ── Form fields ── */}
+      <div className="px-5 py-4">
+        <div className="flex flex-wrap items-end gap-3">
+
+          {/* ── From ── */}
+          <AirportCombobox
+            value={fromCode}
+            label="From"
+            onChange={(code, lbl) => { setFromCode(code); setFromLabel(lbl); }}
+            placeholder="City or airport"
+            icon={<PlaneTakeoff className="h-4 w-4" />}
+            minWidth="160px"
+          />
+
+          {/* ── Swap button ── */}
+          <div className="shrink-0 pb-0.5">
+            <button
+              type="button"
+              onClick={() => {
+                setFromCode(toCode); setFromLabel(toLabel);
+                setToCode(fromCode); setToLabel(fromLabel);
+              }}
+              className="h-11 w-11 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95"
+              title="Swap airports"
+            >
+              <ArrowLeftRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* ── To ── */}
+          <AirportCombobox
+            value={toCode}
+            label="To"
+            onChange={(code, lbl) => { setToCode(code); setToLabel(lbl); }}
+            placeholder="City or airport"
+            icon={<PlaneLanding className="h-4 w-4" />}
+            minWidth="160px"
+          />
+
+          {/* ── Divider ── */}
+          <div className="hidden lg:block self-stretch w-px bg-slate-100 mx-1" />
+
+          {/* ── Single date input (departure + optional return) ── */}
+          <DateRangePicker
+            dept={dept}
+            ret={ret}
+            isRound={isRound}
+            onDeptChange={setDept}
+            onRetChange={setRet}
+          />
+
+          {/* ── Passengers ── */}
+          <div className="relative shrink-0">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Passengers</p>
+            <button
+              data-pax-trigger
+              type="button"
+              onClick={openPax}
+              className={`flex items-center gap-2.5 h-11 px-3.5 rounded-xl border bg-white transition-all text-sm font-medium text-slate-700
+                ${paxOpen ? "border-primary ring-2 ring-primary/15 shadow-sm" : "border-slate-200 hover:border-slate-300"}`}
+            >
+              <Users className={`h-4 w-4 transition-colors ${paxOpen ? "text-primary" : "text-slate-400"}`} />
+              <span className="font-semibold text-slate-800">{passengers}</span>
+              <span className="text-slate-500">{passengers === 1 ? "Adult" : "Adults"}</span>
+              <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ml-1 ${paxOpen ? "rotate-180" : ""}`} />
+            </button>
+          </div>
+
+          {/* ── Search button ── */}
+          <div className="shrink-0 pb-0.5 ml-auto">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-transparent mb-1.5 select-none">·</p>
+            <Button
+              type="button"
+              onClick={handleSearch}
+              disabled={!canSearch}
+              className="h-11 px-6 rounded-xl text-sm font-semibold gap-2 shadow-sm shadow-primary/20"
+            >
+              <Search className="h-4 w-4" />
+              Search flights
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* ── Passengers portal dropdown (shared by full + compact forms) ── */}
+    {paxOpen && paxCoords && createPortal(
+      <div
+        id="pax-portal"
+        className="fixed z-[9999] bg-white rounded-xl border border-slate-200 shadow-2xl p-4 min-w-[200px]"
+        style={{ top: paxCoords.top, left: paxCoords.left }}
+      >
+        <p className="text-xs font-semibold text-slate-700 mb-3">Passengers</p>
+        <div className="flex items-center justify-between gap-6">
+          <div>
+            <p className="text-sm font-medium text-slate-800">Adults</p>
+            <p className="text-[11px] text-slate-400">Age 12+</p>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <button type="button" onClick={() => setPassengers(p => Math.max(1, p - 1))}
+              disabled={passengers <= 1}
+              className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-40">
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+            <span className="text-sm font-bold text-slate-800 w-5 text-center tabular-nums">{passengers}</span>
+            <button type="button" onClick={() => setPassengers(p => Math.min(9, p + 1))}
+              disabled={passengers >= 9}
+              className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-40">
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+        <button type="button" onClick={() => setPaxOpen(false)}
+          className="mt-3 w-full h-8 rounded-lg bg-primary/8 text-primary text-xs font-semibold hover:bg-primary/15 transition-colors">
+          Done
+        </button>
+      </div>,
+      document.body
+    )}
+    </>
+  );
 }
 
 // ─── Sort tab bar ─────────────────────────────────────────────────────────────
@@ -257,7 +979,7 @@ function AirlineLogo({ code }: { code: string }) {
   }
 
   return (
-    <div className="h-10 w-24 bg-white border border-slate-100 flex items-center justify-center shrink-0 overflow-hidden px-1">
+    <div className="h-10 w-24 bg-white  flex items-center justify-center shrink-0 overflow-hidden px-1">
       <img src={urls[idx]} alt={name} className="h-9 w-full object-contain" onError={handleError} />
     </div>
   );
@@ -887,8 +1609,17 @@ const fetchFlights = useCallback(async () => {
     return () => { document.title = "AMD Global Travel"; };
   }, [from, to, tripType, parsedLegs]);
 
+  // (scroll pinning removed — compact bar is always in header)
+
   return (
     <>
+    {/* ── Compact bar — always fixed in header ── */}
+    <div className="fixed top-0 left-0 right-0 h-16 z-50 pointer-events-none flex items-center justify-center px-4">
+      <div className="pointer-events-auto">
+        <ModifySearchBar compact />
+      </div>
+    </div>
+
     <main className="min-h-screen bg-background">
       {/* ── Top progress bar ── */}
       {loading ? (
@@ -902,6 +1633,7 @@ const fetchFlights = useCallback(async () => {
       )}
 
       <div className="max-w-7xl mx-auto px-4 py-6">
+
         {/* ── 2-Column Layout ── */}
         <div className="flex flex-col lg:flex-row gap-6 items-start">
 
@@ -979,6 +1711,23 @@ const fetchFlights = useCallback(async () => {
                       </p>
                     </div>
                   </div>
+                )}
+
+                {/* ── Date price strip ── */}
+                {tripType !== "multi-city" && (
+                  <DatePriceStrip
+                    origin={from}
+                    destination={to}
+                    selectedDate={dept}
+                    returnDate={ret}
+                    passengers={passengers}
+                    travelClass={travelClass === "ECONOMY" ? "1" : travelClass === "PREMIUM_ECONOMY" ? "2" : travelClass === "BUSINESS" ? "3" : "4"}
+                    onDateSelect={(iso) => {
+                      const p = new URLSearchParams(searchParams.toString());
+                      p.set("dept", iso);
+                      router.push(`/search?${p.toString()}`);
+                    }}
+                  />
                 )}
 
                 <SortTabBar offers={results} carriers={carriers} sortKey={sortKey} onSort={handleSort} />

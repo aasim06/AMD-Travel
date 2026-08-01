@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mail, Phone, MapPin, Globe, Camera, Briefcase, X } from "lucide-react";
+import { Mail, Phone, MapPin, Globe, Camera, Briefcase, X, MessageCircle } from "lucide-react";
 import { siteConfig } from "@/config/site";
 
 export function Footer() {
@@ -55,21 +55,18 @@ export function Footer() {
 
             <div className="mt-4 flex items-start gap-2 text-sm text-muted-foreground">
               <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
-              <span>
-                {siteConfig.contact.address.line1}, {siteConfig.contact.address.city},{" "}
-                {siteConfig.contact.address.country}
-              </span>
-            </div>
-            <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-              <Phone className="h-4 w-4 shrink-0 text-primary" />
-              <a href={`tel:${siteConfig.contact.phone}`} className="hover:text-primary transition-colors">
-                {siteConfig.contact.phone}
-              </a>
+              <span>Charlottenstraße 17, 52070 Aachen Germany</span>
             </div>
             <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
               <Mail className="h-4 w-4 shrink-0 text-primary" />
-              <a href={`mailto:${siteConfig.contact.email}`} className="hover:text-primary transition-colors">
-                {siteConfig.contact.email}
+              <a href="mailto:team@amdglobal.org" className="hover:text-primary transition-colors">
+                team@amdglobal.org
+              </a>
+            </div>
+            <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+              <MessageCircle className="h-4 w-4 shrink-0 text-primary" />
+              <a href="https://wa.me/4917972968560" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                +49 179 7296856
               </a>
             </div>
 

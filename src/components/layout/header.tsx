@@ -32,6 +32,10 @@ import {
   Crown,
   ChevronLeft,
   ChevronRight,
+  Bell,
+  LogIn,
+  UserPlus,
+  Settings,
 } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { searchAirports } from "@/lib/data/airportsData";
@@ -41,18 +45,19 @@ import type { CurrencyCode } from "@/lib/currency";
 // ─── Drawer nav items ─────────────────────────────────────────────────────────
 
 const PRIMARY_NAV = [
-  { label: "Flights",         href: "/flights",          icon: Plane    },
-  { label: "Stays / Hotels",  href: "/stays",            icon: Hotel    },
-  { label: "Cars",            href: "/cars",             icon: Car      },
-  { label: "Tour Packages",   href: "/tour-deals",       icon: Package  },
-  { label: "Umrah Packages",  href: "/umrah-packages",   icon: Moon     },
-  { label: "Visa Services",   href: "/visa-services",    icon: FileText },
+  { label: "Flights",         href: "/flights",          icon: Plane,    soon: true  },
+  { label: "Stays / Hotels",  href: "/stays",            icon: Hotel,    soon: true  },
+  { label: "Cars",            href: "/cars",             icon: Car,      soon: true  },
+  { label: "Tour Packages",   href: "/tour-deals",       icon: Package,  soon: false },
+  { label: "Umrah Packages",  href: "/umrah-packages",   icon: Moon,     soon: false },
+  { label: "Visa Services",   href: "/visa",             icon: FileText, soon: false },
 ];
 
 const SECONDARY_NAV = [
-  { label: "Explore Destinations", href: "/destinations", icon: MapPin  },
-  { label: "My Bookings / Trips",  href: "/bookings",     icon: BookOpen },
-  { label: "Language & Currency",  href: "/settings",     icon: Globe   },
+  { label: "Explore Destinations", href: "/destinations", icon: MapPin,       soon: true  },
+  { label: "My Bookings / Trips",  href: "/bookings",     icon: BookOpen,     soon: true  },
+  { label: "Contact Us",           href: "/contact",      icon: MessageCircle, soon: false },
+  { label: "Language & Currency",  href: "/settings",     icon: Globe,        soon: true  },
 ];
 
 // ─── Logo mark (shared) ───────────────────────────────────────────────────────
@@ -842,6 +847,82 @@ function CompactSearchBar() {
   );
 }
 
+// ─── User Popover ────────────────────────────────────────────────────────────
+
+function UserPopover() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative hidden sm:block">
+      <button
+        type="button"
+        aria-label="User account"
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+      >
+        <UserRound className="h-5 w-5" />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-slate-200 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.1)] overflow-hidden z-[80] animate-in fade-in slide-in-from-top-2 duration-150">
+          {/* Header */}
+          <div className="px-4 py-4 bg-gradient-to-br from-primary/8 to-primary/3 border-b border-slate-100">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                <UserRound className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-800">Welcome back!</p>
+                <p className="text-[11px] text-slate-400">Sign in to manage your trips</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Auth buttons */}
+          <div className="p-3 space-y-2">
+            <Link href="/signin" onClick={() => setOpen(false)}
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
+              <LogIn className="h-4 w-4" />
+              Sign In
+            </Link>
+            <Link href="/signup" onClick={() => setOpen(false)}
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 hover:border-primary/30 transition-colors">
+              <UserPlus className="h-4 w-4 text-primary" />
+              Create Account
+            </Link>
+          </div>
+
+          {/* Divider */}
+          <div className="mx-3 border-t border-slate-100" />
+
+          {/* Quick links */}
+          <div className="p-3 space-y-0.5">
+            <Link href="/bookings" onClick={() => setOpen(false)}
+              className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-slate-600 hover:bg-slate-50 hover:text-primary transition-colors">
+              <BookOpen className="h-4 w-4 text-slate-400" />
+              My Bookings
+            </Link>
+            <Link href="/settings" onClick={() => setOpen(false)}
+              className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-slate-600 hover:bg-slate-50 hover:text-primary transition-colors">
+              <Settings className="h-4 w-4 text-slate-400" />
+              Settings
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function Header() {
@@ -888,9 +969,9 @@ export function Header() {
             <LogoMark />
           </div>
 
-          {/* Center: compact search bar (visible on scroll) */}
-          <div className="flex-1 flex justify-center px-4">
-            {isScrolled && <CompactSearchBar />}
+          {/* Center: search slot — used by search page to portal compact bar here */}
+          <div id="header-search-slot" className="flex-1 flex justify-center px-4">
+            {isScrolled && pathname !== "/search" && <CompactSearchBar />}
           </div>
 
           {/* Right: currency + whatsapp + bookings */}
@@ -909,14 +990,18 @@ export function Header() {
               <MessageCircle className="h-5 w-5" />
             </a>
 
-            {/* My Bookings */}
-            <Link
-              href="/bookings"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-card transition-shadow hover:shadow-card-hover"
+            {/* Bell */}
+            <button
+              type="button"
+              aria-label="Notifications"
+              className="hidden sm:flex items-center justify-center h-9 w-9 rounded-full text-slate-500 hover:bg-slate-100 hover:text-primary transition-colors relative"
             >
-              <UserRound className="h-4 w-4" />
-              My Bookings
-            </Link>
+              <Bell className="h-5 w-5" />
+              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary border-2 border-white" />
+            </button>
+
+            {/* User popover */}
+            <UserPopover />
           </div>
         </div>
       </header>
@@ -952,7 +1037,7 @@ export function Header() {
         {/* Drawer body — scrollable */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
           {/* Primary nav */}
-          {PRIMARY_NAV.map(({ label, href, icon: Icon }) => {
+          {PRIMARY_NAV.map(({ label, href, icon: Icon, soon }) => {
             const active = pathname === href;
             return (
               <Link
@@ -970,7 +1055,12 @@ export function Header() {
                   <Icon className="h-4 w-4" />
                 </span>
                 {label}
-                {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />}
+                {soon && (
+                  <span className="ml-auto text-[9px] font-bold uppercase tracking-wider bg-amber-400/15 text-amber-600 border border-amber-400/30 px-1.5 py-0.5 rounded-full">
+                    Soon
+                  </span>
+                )}
+                {active && !soon && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />}
               </Link>
             );
           })}
@@ -979,7 +1069,7 @@ export function Header() {
           <div className="my-3 border-t border-border" />
 
           {/* Secondary nav */}
-          {SECONDARY_NAV.map(({ label, href, icon: Icon }) => {
+          {SECONDARY_NAV.map(({ label, href, icon: Icon, soon }) => {
             const active = pathname === href;
             return (
               <Link
@@ -997,6 +1087,11 @@ export function Header() {
                   <Icon className="h-4 w-4" />
                 </span>
                 {label}
+                {soon && (
+                  <span className="ml-auto text-[9px] font-bold uppercase tracking-wider bg-amber-400/15 text-amber-600 border border-amber-400/30 px-1.5 py-0.5 rounded-full">
+                    Soon
+                  </span>
+                )}
               </Link>
             );
           })}

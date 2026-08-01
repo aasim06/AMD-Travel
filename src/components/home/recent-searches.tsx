@@ -13,7 +13,6 @@ import {
   Plus,
   Hotel,
   Package,
-  TrendingUp,
 } from "lucide-react";
 import type { RecentSearch, TravelClass } from "@/types/flight";
 import { RECENT_SEARCHES_KEY } from "@/types/flight";
@@ -73,55 +72,7 @@ const POPULAR_ROUTES = [
   { origin: "LHE", destination: "IST", price: 410, label: "Lahore → Istanbul"    },
 ];
 
-// ─── Card themes (gradient bg + border + glow + icon gradient) ───────────────
 
-const CARD_THEMES = [
-  {
-    bg:     "bg-gradient-to-br from-blue-50/80 via-indigo-50/40 to-white",
-    border: "border-blue-100/80 hover:border-blue-300",
-    glow:   "hover:shadow-blue-500/10",
-    strip:  "from-blue-500 to-indigo-500",
-    icon:   "from-blue-600 to-indigo-600",
-    badge:  "bg-blue-50 text-blue-700",
-    price:  "text-blue-700",
-  },
-  {
-    bg:     "bg-gradient-to-br from-violet-50/80 via-purple-50/40 to-white",
-    border: "border-violet-100/80 hover:border-violet-300",
-    glow:   "hover:shadow-violet-500/10",
-    strip:  "from-violet-500 to-purple-500",
-    icon:   "from-violet-600 to-purple-600",
-    badge:  "bg-violet-50 text-violet-700",
-    price:  "text-violet-700",
-  },
-  {
-    bg:     "bg-gradient-to-br from-sky-50/80 via-cyan-50/40 to-white",
-    border: "border-sky-100/80 hover:border-sky-300",
-    glow:   "hover:shadow-sky-500/10",
-    strip:  "from-sky-500 to-cyan-500",
-    icon:   "from-sky-500 to-cyan-600",
-    badge:  "bg-sky-50 text-sky-700",
-    price:  "text-sky-700",
-  },
-  {
-    bg:     "bg-gradient-to-br from-emerald-50/80 via-teal-50/40 to-white",
-    border: "border-emerald-100/80 hover:border-emerald-300",
-    glow:   "hover:shadow-emerald-500/10",
-    strip:  "from-emerald-500 to-teal-500",
-    icon:   "from-emerald-600 to-teal-600",
-    badge:  "bg-emerald-50 text-emerald-700",
-    price:  "text-emerald-700",
-  },
-  {
-    bg:     "bg-gradient-to-br from-rose-50/80 via-pink-50/40 to-white",
-    border: "border-rose-100/80 hover:border-rose-300",
-    glow:   "hover:shadow-rose-500/10",
-    strip:  "from-rose-500 to-pink-500",
-    icon:   "from-rose-600 to-pink-600",
-    badge:  "bg-rose-50 text-rose-700",
-    price:  "text-rose-700",
-  },
-];
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -197,39 +148,7 @@ export function RecentSearches() {
   if (!mounted) return null;
 
   // ── Empty state ──
-  if (searches.length === 0) {
-    return (
-      <section className="container py-8">
-        <div className="flex items-center gap-2 mb-5">
-          <TrendingUp className="h-4 w-4 text-primary" />
-          <h2 className="font-heading font-bold text-foreground text-base">Popular Routes</h2>
-          <span className="text-xs text-muted-foreground ml-1">— start exploring</span>
-        </div>
-
-        <div className="flex gap-3 flex-wrap">
-          {POPULAR_ROUTES.map((route) => (
-            <button
-              key={route.label}
-              type="button"
-              onClick={() => quickPopularSearch(route)}
-              className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-border bg-card hover:border-primary/40 hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200 group"
-            >
-              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 text-primary shrink-0">
-                <Plane className="h-4 w-4" />
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                  {route.label}
-                </p>
-                <p className="text-xs text-muted-foreground">from {formatPrice(route.price)}</p>
-              </div>
-              <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all ml-1" />
-            </button>
-          ))}
-        </div>
-      </section>
-    );
-  }
+  if (searches.length === 0) return null;
 
   // ── Searches exist ──
   return (
@@ -256,8 +175,7 @@ export function RecentSearches() {
       {/* Cards row */}
       <div className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
-        {searches.map((s, idx) => {
-          const theme      = CARD_THEMES[idx % CARD_THEMES.length];
+        {searches.map((s) => {
           const originCity = cityOf(s.origin);
           const destCity   = cityOf(s.destination);
           const classLabel = CLASS_LABELS[s.travelClass] ?? s.travelClass;
@@ -265,17 +183,18 @@ export function RecentSearches() {
           return (
             <div
               key={s.id}
-              className={`relative flex-none w-64 snap-start rounded-2xl border ${theme.bg} ${theme.border} hover:-translate-y-1 hover:shadow-lg ${theme.glow} transition-all duration-300 overflow-hidden group`}
+              className="relative flex-none w-64 snap-start rounded-2xl border border-slate-200 bg-white hover:-translate-y-1 hover:border-slate-300 transition-all duration-300 overflow-hidden group"
+              style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}
             >
-              {/* Gradient top strip */}
-              <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${theme.strip}`} />
+              {/* Top strip */}
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary to-primary/60" />
 
               {/* Delete button */}
               <button
                 type="button"
                 onClick={() => removeOne(s.id)}
                 aria-label="Remove search"
-                className="absolute top-2.5 right-2.5 h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
+                className="absolute top-2.5 right-2.5 h-6 w-6 rounded-full flex items-center justify-center text-slate-300 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -283,8 +202,8 @@ export function RecentSearches() {
               <div className="p-4 pt-5">
                 {/* Route */}
                 <div className="flex items-center gap-2 mb-3">
-                  <div className={`flex items-center justify-center h-7 w-7 rounded-lg bg-gradient-to-r ${theme.icon} shrink-0`}>
-                    <Plane className="h-3.5 w-3.5 text-white" />
+                  <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-primary/10 shrink-0">
+                    <Plane className="h-3.5 w-3.5 text-primary" />
                   </div>
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className="font-heading font-bold text-sm text-foreground truncate">{originCity}</span>
@@ -294,7 +213,7 @@ export function RecentSearches() {
                 </div>
 
                 {/* IATA codes badge */}
-                <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${theme.badge} text-[10px] font-bold mb-3`}>
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold mb-3">
                   {s.origin} → {s.destination}
                   {s.tripType === "round-trip" && " (RT)"}
                   {s.tripType === "one-way" && " (OW)"}
@@ -319,14 +238,14 @@ export function RecentSearches() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-[10px] text-muted-foreground">Estimated</p>
-                    <p className={`font-heading font-bold text-base leading-tight ${theme.price}`}>
+                    <p className="font-heading font-bold text-base leading-tight text-primary">
                       from {formatPrice(s.estimatedPrice)}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => reSearch(s)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r ${theme.icon} text-white text-xs font-bold hover:brightness-110 hover:shadow-md transition-all active:scale-95`}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold hover:shadow-md transition-all active:scale-95"
                   >
                     Search
                     <ArrowRight className="h-3.5 w-3.5" />

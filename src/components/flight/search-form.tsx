@@ -6,10 +6,6 @@ import {
   Plane,
   PlaneTakeoff,
   PlaneLanding,
-  Hotel,
-  Car,
-  Package,
-  Moon,
   FileText,
   ArrowLeftRight,
   Search,
@@ -102,10 +98,6 @@ type CategoryKey = "flights" | "stays" | "cars" | "packages" | "umrah" | "visa";
 
 const CATEGORIES: { key: CategoryKey; label: string; icon: React.ReactNode }[] = [
   { key: "flights",  label: "Flights",         icon: <Plane      className="h-4 w-4" /> },
-  { key: "stays",    label: "Stays",           icon: <Hotel      className="h-4 w-4" /> },
-  { key: "cars",     label: "Cars",            icon: <Car        className="h-4 w-4" /> },
-  { key: "packages", label: "Packages",        icon: <Package    className="h-4 w-4" /> },
-  { key: "umrah",    label: "Umrah Packages",  icon: <Moon       className="h-4 w-4" /> },
   { key: "visa",     label: "Visa Services",   icon: <FileText   className="h-4 w-4" /> },
 ];
 

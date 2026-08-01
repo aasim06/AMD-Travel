@@ -22,30 +22,34 @@ function CheckoutContent() {
   const searchParams = useSearchParams();
   const router       = useRouter();
 
-  const [offer,     setOffer]     = useState<FlightOffer | null>(null);
-  const [carriers,  setCarriers]  = useState<Record<string, string>>({});
-  const [fareClass, setFareClass] = useState("Economy");
-  const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
-  const [passengers, setPassengers] = useState(1);
+  // Read sessionStorage synchronously during first render to avoid a
+  // "loading spinner" flash caused by deferring the read to useEffect.
+  function readCheckoutSession() {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = sessionStorage.getItem("amd_checkout_offer");
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  const [sessionData] = useState(() => readCheckoutSession());
+  const [offer]       = useState<FlightOffer | null>(() => sessionData?.offer ?? null);
+  const [carriers]    = useState<Record<string, string>>(() => sessionData?.carriers ?? {});
+  const [fareClass]   = useState<string>(() => sessionData?.fareClass ?? "Economy");
+  const [selectedPrice] = useState<number | null>(() => sessionData?.selectedPrice ?? null);
+  const [passengers]  = useState<number>(() => sessionData?.passengers ?? 1);
   const [step,      setStep]      = useState<CheckoutStep>("passengers");
   const [formData,  setFormData]  = useState<Partial<CheckoutData>>({});
   const [pnr,       setPnr]       = useState<string | null>(null);
 
   useEffect(() => {
-    // Read offer from sessionStorage (set by search page when user clicks Select)
-    try {
-      const raw = sessionStorage.getItem("amd_checkout_offer");
-      if (!raw) { router.replace("/search"); return; }
-      const parsed = JSON.parse(raw);
-      setOffer(parsed.offer);
-      setCarriers(parsed.carriers ?? {});
-      setFareClass(parsed.fareClass ?? "Economy");
-      setSelectedPrice(parsed.selectedPrice ?? null);
-      setPassengers(parsed.passengers ?? 1);
-    } catch {
+    if (!offer) {
       router.replace("/search");
     }
-  }, [router]);
+  }, [offer, router]);
 
   if (!offer) {
     return (
@@ -85,10 +89,6 @@ function CheckoutContent() {
         {step !== "confirmation" && (
           <div className="mb-6">
             <h1 className="text-xl font-bold text-slate-900">Complete your booking</h1>
-            <p className="text-sm text-slate-500 mt-0.5">
-              {offer.itineraries[0].segments[0].departure.iataCode} →{" "}
-              {offer.itineraries[0].segments.at(-1)!.arrival.iataCode} · {passengers} passenger{passengers > 1 ? "s" : ""}
-            </p>
           </div>
         )}
 

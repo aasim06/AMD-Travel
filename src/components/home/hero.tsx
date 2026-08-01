@@ -1,7 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { FlightSearchForm, CATEGORIES, type CategoryKey } from "@/components/flight/search-form";
 import { useCurrency } from "@/context/currency-context";
+import { useState } from "react";
 
 // ─── Destination cards data ────────────────────────────────────────────────────
 
@@ -17,6 +19,7 @@ const DESTINATIONS = [
 export function Hero() {
   const [activeCategory, setActiveCategory] = useState<CategoryKey>("flights");
   const { formatPrice } = useCurrency();
+  const router = useRouter();
   return (
     <section className="w-full border-b border-[#0B1D3A]" style={{ background: 'radial-gradient(circle at top right, #1A3B70 0%, #0B1D3A 60%, #061226 100%)' }}>
       <div className="container py-10 lg:py-14">
@@ -26,16 +29,16 @@ export function Hero() {
           <div className="flex flex-col gap-5 min-w-0">
 
             {/* Eyebrow */}
-            <div className="inline-flex items-center gap-2 self-start rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-semibold text-slate-300 shadow-sm">
+            {/* <div className="inline-flex items-center gap-2 self-start rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-semibold text-slate-300 shadow-sm">
               <span className="h-1.5 w-1.5 rounded-full bg-[#FF6B35] animate-pulse" />
               Trusted by 500,000+ travellers worldwide
-            </div>
+            </div> */}
 
             {/* Headline */}
             <div className="space-y-2">
               <h1 className="font-heading font-bold text-white text-balance text-3xl sm:text-4xl lg:text-[2.6rem] leading-[1.1]">
-                Compare flights from{" "}
-                <span style={{ color: 'rgb(252 211 77 / 93%)' }}>100s of airlines.</span>
+                Compare flights from <br />{" "}
+                <span className="block mt-3" style={{ color: 'rgb(252 211 77 / 93%)' }}>100s of airlines.</span>
               </h1>
              
             </div>
@@ -46,7 +49,10 @@ export function Hero() {
                 <button
                   key={cat.key}
                   type="button"
-                  onClick={() => setActiveCategory(cat.key)}
+                  onClick={() => {
+                    if (cat.key === "visa") { router.push("/visa"); return; }
+                    setActiveCategory(cat.key);
+                  }}
                   className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                     activeCategory === cat.key
                       ? "bg-white text-primary shadow-card"
@@ -65,7 +71,7 @@ export function Hero() {
             </div>
 
             {/* Trust row */}
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            {/* <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
               {[
                 "No hidden fees",
                 "150+ Airlines",
@@ -79,7 +85,7 @@ export function Hero() {
                   {t}
                 </span>
               ))}
-            </div>
+            </div> */}
           </div>
 
           {/* ── Right: Destination grid ── */}
@@ -115,17 +121,17 @@ export function Hero() {
             </div>
 
             {/* Bottom CTA strip */}
-            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 flex items-center justify-between gap-3 shadow-sm">
+            <Link href="/tour-deals" className="rounded-xl border border-slate-200 bg-white px-4 py-3 flex items-center justify-between gap-3 shadow-sm hover:border-primary/40 hover:bg-primary/5 transition-all group">
               <div>
-                <p className="text-slate-800 text-sm font-semibold">Explore all destinations</p>
+                <p className="text-slate-800 text-sm font-semibold group-hover:text-primary transition-colors">Explore all destinations</p>
                 <p className="text-slate-400 text-xs mt-0.5">500+ routes available</p>
               </div>
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <svg className="h-4 w-4 text-primary" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary transition-all duration-300">
+                <svg className="h-4 w-4 text-primary group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300 ease-in-out" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-            </div>
+            </Link>
 
           </div>
 
