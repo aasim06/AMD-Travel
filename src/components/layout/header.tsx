@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { AuthModal } from "@/components/auth/auth-modal";
 import {
   Menu,
   X,
@@ -837,6 +838,8 @@ function CompactSearchBar() {
 
 function UserPopover() {
   const [open, setOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authTab, setAuthTab] = useState<"signin" | "signup" | "lookup">("signin");
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -847,65 +850,88 @@ function UserPopover() {
     return () => document.removeEventListener("mousedown", onDown);
   }, []);
 
-  return (
-    <div ref={ref} className="relative hidden sm:block">
-      <button
-        type="button"
-        aria-label="User account"
-        onClick={() => setOpen(v => !v)}
-        className="flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-      >
-        <UserRound className="h-5 w-5" />
-      </button>
+  const handleOpenAuth = (tab: "signin" | "signup" | "lookup") => {
+    setAuthTab(tab);
+    setOpen(false);
+    setAuthOpen(true);
+  };
 
-      {open && (
-        <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-slate-200 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.1)] overflow-hidden z-[80] animate-in fade-in slide-in-from-top-2 duration-150">
-          {/* Header */}
-          <div className="px-4 py-4 bg-gradient-to-br from-primary/8 to-primary/3 border-b border-slate-100">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-                <UserRound className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-slate-800">Welcome back!</p>
-                <p className="text-[11px] text-slate-400">Sign in to manage your trips</p>
+  return (
+    <>
+      <div ref={ref} className="relative hidden sm:block">
+        <button
+          type="button"
+          aria-label="User account"
+          onClick={() => setOpen(v => !v)}
+          className="flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+        >
+          <UserRound className="h-5 w-5" />
+        </button>
+
+        {open && (
+          <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-slate-200 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.1)] overflow-hidden z-[80] animate-in fade-in slide-in-from-top-2 duration-150">
+            {/* Header */}
+            <div className="px-4 py-4 bg-gradient-to-br from-primary/8 to-primary/3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                  <UserRound className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-800">Welcome back!</p>
+                  <p className="text-[11px] text-slate-400">Sign in to manage your trips</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Auth buttons */}
-          <div className="p-3 space-y-2">
-            <Link href="/signin" onClick={() => setOpen(false)}
-              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
-              <LogIn className="h-4 w-4" />
-              Sign In
-            </Link>
-            <Link href="/signup" onClick={() => setOpen(false)}
-              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 hover:border-primary/30 transition-colors">
-              <UserPlus className="h-4 w-4 text-primary" />
-              Create Account
-            </Link>
-          </div>
+            {/* Auth buttons */}
+            <div className="p-3 space-y-2">
+              <button
+                type="button"
+                onClick={() => handleOpenAuth("signin")}
+                className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors text-left"
+              >
+                <LogIn className="h-4 w-4" />
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => handleOpenAuth("signup")}
+                className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 hover:border-primary/30 transition-colors text-left"
+              >
+                <UserPlus className="h-4 w-4 text-primary" />
+                Create Account
+              </button>
+            </div>
 
-          {/* Divider */}
-          <div className="mx-3 border-t border-slate-100" />
+            {/* Divider */}
+            <div className="mx-3 border-t border-slate-100" />
 
-          {/* Quick links */}
-          <div className="p-3 space-y-0.5">
-            <Link href="/bookings" onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-slate-600 hover:bg-slate-50 hover:text-primary transition-colors">
-              <BookOpen className="h-4 w-4 text-slate-400" />
-              My Bookings
-            </Link>
-            <Link href="/settings" onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-slate-600 hover:bg-slate-50 hover:text-primary transition-colors">
-              <Settings className="h-4 w-4 text-slate-400" />
-              Settings
-            </Link>
+            {/* Quick links */}
+            <div className="p-3 space-y-0.5">
+              <button
+                type="button"
+                onClick={() => handleOpenAuth("signin")}
+                className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm text-slate-600 hover:bg-slate-50 hover:text-primary transition-colors text-left"
+              >
+                <BookOpen className="h-4 w-4 text-slate-400" />
+                My Bookings
+              </button>
+              <Link href="/settings" onClick={() => setOpen(false)}
+                className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-slate-600 hover:bg-slate-50 hover:text-primary transition-colors">
+                <Settings className="h-4 w-4 text-slate-400" />
+                Settings
+              </Link>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+
+      <AuthModal
+        open={authOpen}
+        onOpenChange={setAuthOpen}
+        defaultTab={authTab}
+      />
+    </>
   );
 }
 
