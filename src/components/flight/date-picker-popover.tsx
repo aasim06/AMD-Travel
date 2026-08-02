@@ -6,7 +6,9 @@ import { CalendarDays, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
+import { useCurrency } from "@/context/currency-context";
+import { RATES, SYMBOLS } from "@/lib/currency";
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -58,41 +60,37 @@ function PricedDay({
   date,
   cheapestLeft,
   cheapestRight,
+  isSelected,
+  symbol,
+  rate,
 }: {
   date: Date;
   cheapestLeft: number;
   cheapestRight: number;
+  isSelected?: boolean;
+  symbol: string;
+  rate: number;
 }) {
   const price    = getMockPrice(date);
   const cheapest = Math.min(cheapestLeft, cheapestRight);
   const isCheap  = price !== null && price === cheapest;
+  const converted = price !== null ? Math.round(price * rate) : null;
 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full gap-px">
-      <span className="text-sm font-semibold leading-none">{date.getDate()}</span>
-      {price !== null && (
+      <span className="text-[15px] font-semibold leading-none">{date.getDate()}</span>
+      {converted !== null && (
         <span
           className={cn(
-            "text-[9px] font-medium leading-none",
-            isCheap ? "text-emerald-500 font-bold" : "text-slate-400"
+            "text-[10px] font-medium leading-none mt-0.5",
+            isSelected ? "text-white/80" : isCheap ? "text-emerald-500 font-bold" : "text-slate-400"
           )}
         >
-          ${price}
+          {symbol}{converted}
         </span>
       )}
     </div>
   );
-}
-
-// ─── Quick-select chips ───────────────────────────────────────────────────────
-
-function addDays(d: Date, n: number) {
-  const r = new Date(d); r.setDate(r.getDate() + n); return r;
-}
-function nextSaturday(from: Date) {
-  const d = new Date(from);
-  d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7 || 7));
-  return d;
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -101,6 +99,10 @@ export function DatePickerPopover({
   value, onChange, isRoundTrip, mobileSheet, error,
 }: DatePickerPopoverProps) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
+
+  const { currency } = useCurrency();
+  const symbol = SYMBOLS[currency];
+  const rate   = RATES[currency];
 
   const [open, setOpen]           = useState(false);
   const [month, setMonth]         = useState<Date>(
@@ -135,15 +137,6 @@ export function DatePickerPopover({
     onChange({ departure: null, returnDate: null });
   }
 
-  // Quick chips
-  const sat    = nextSaturday(today);
-  const chips  = [
-    { label: "Today",        from: today,              to: null                  },
-    { label: "Next Weekend", from: sat,                to: addDays(sat, 1)       },
-    { label: "1 Week",       from: addDays(today, 3),  to: addDays(today, 10)    },
-    { label: "2 Weeks",      from: addDays(today, 3),  to: addDays(today, 17)    },
-  ];
-
   // Trigger label
   const depLabel = formatDisplay(value.departure);
   const retLabel = formatDisplay(value.returnDate);
@@ -153,36 +146,23 @@ export function DatePickerPopover({
       : depLabel
     : isRoundTrip ? "Departure — Return" : "Select date";
 
-  // Footer status
-  const footerText = !value.departure
-    ? "Select a departure date"
-    : !value.returnDate && isRoundTrip
-    ? `Depart: ${depLabel} — Select return`
-    : `${depLabel}${retLabel ? ` – ${retLabel}` : ""}`;
+  // Guide header text
+  const guideText = !value.departure
+    ? "Select departure date"
+    : isRoundTrip && !value.returnDate
+    ? "Now select return date"
+    : null;
 
   // ── Shared calendar panel ─────────────────────────────────────────────────
-  function CalendarPanel({ onClose }: { onClose: () => void }) {
+  function CalendarPanel({ onClose: _onClose }: { onClose: () => void }) {
     return (
       <div className="flex flex-col">
-        {/* Quick chips */}
-        {isRoundTrip && (
-          <div className="flex items-center gap-1.5 px-4 pt-3 pb-2 border-b border-slate-100 flex-wrap">
-            {chips.map((c) => (
-              <button
-                key={c.label}
-                type="button"
-                onClick={() => {
-                  onChange({ departure: c.from, returnDate: isRoundTrip ? c.to : null });
-                  if (!isRoundTrip || c.to) onClose();
-                }}
-                className="px-3 py-1 rounded-full border border-slate-200 text-xs font-medium text-slate-600 hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors"
-              >
-                {c.label}
-              </button>
-            ))}
+        {/* Guide header */}
+        {guideText && (
+          <div className="px-6 pt-4 pb-0 flex items-center gap-2">
+            <span className="text-xs font-semibold text-primary uppercase tracking-widest">{guideText}</span>
           </div>
         )}
-
         {/* Calendar */}
         <Calendar
           mode="range"
@@ -193,75 +173,54 @@ export function DatePickerPopover({
           onMonthChange={setMonth}
           disabled={{ before: today }}
           showOutsideDays={false}
-          className="p-4"
+          className="p-6"
           classNames={{
-            months:              "flex gap-6",
-            month:               "flex flex-col gap-3 min-w-[220px]",
-            caption:             "relative flex items-center justify-center h-9",
-            caption_label:       "text-sm font-bold text-slate-800 pointer-events-none",
+            months:              "flex gap-10",
+            month:               "flex flex-col gap-4 min-w-[260px]",
+            caption:             "relative flex items-center justify-center h-10",
+            caption_label:       "text-base font-bold text-slate-800 pointer-events-none",
             nav:                 "flex items-center gap-1",
             nav_button:          cn(
-              "absolute h-7 w-7 rounded-lg border border-slate-200 bg-white",
+              "absolute h-8 w-8 rounded-lg border border-slate-200 bg-white",
               "flex items-center justify-center transition-colors",
               "hover:bg-slate-50 text-slate-500 hover:text-primary hover:border-primary/40"
             ),
             nav_button_previous: "left-0",
             nav_button_next:     "right-0",
-            table:               "w-full border-collapse mt-1",
+            table:               "w-full border-collapse mt-2",
             head_row:            "flex",
-            head_cell:           "w-10 text-center text-[11px] font-semibold text-slate-400 uppercase",
-            row:                 "flex w-full mt-0.5",
-            cell:                "relative w-10 h-12 p-0 text-center focus-within:z-20",
+            head_cell:           "w-[52px] text-center text-[11px] font-semibold text-slate-400 uppercase tracking-wide",
+            row:                 "flex w-full mt-1",
+            cell:                "relative w-[52px] h-[60px] p-0 text-center focus-within:z-20",
             day:                 cn(
-              "w-10 h-12 p-0 font-normal rounded-lg text-slate-700 transition-colors",
+              "w-[52px] h-[60px] p-0 font-normal rounded-xl text-slate-700 transition-colors",
               "hover:bg-slate-100 hover:text-slate-900",
               "focus:outline-none focus:ring-2 focus:ring-primary/30"
             ),
-            day_selected:        "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground rounded-lg",
-            day_range_start:     "bg-primary text-primary-foreground rounded-l-lg rounded-r-none",
-            day_range_end:       "bg-primary text-primary-foreground rounded-r-lg rounded-l-none",
-            day_range_middle:    "bg-primary/10 text-primary rounded-none hover:bg-primary/20",
-            day_today:           "ring-1 ring-primary/40 font-semibold",
+            day_selected:        "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground rounded-xl",
+            day_range_start:     "bg-primary text-primary-foreground rounded-xl",
+            day_range_end:       "bg-primary text-primary-foreground rounded-xl",
+            day_range_middle:    "!bg-transparent !text-slate-700 rounded-none hover:!bg-slate-100",
+            day_today:           "font-bold underline underline-offset-2 decoration-primary",
             day_outside:         "opacity-0 pointer-events-none",
             day_disabled:        "text-slate-300 opacity-40 cursor-not-allowed hover:bg-transparent",
             day_hidden:          "invisible",
           }}
           components={{
-            DayContent: ({ date }) => (
+            DayContent: ({ date, activeModifiers }) => (
               <PricedDay
                 date={date}
                 cheapestLeft={cheapestLeft}
                 cheapestRight={cheapestRight}
+                isSelected={!activeModifiers.range_middle && (activeModifiers.range_start || activeModifiers.range_end || (activeModifiers.selected && !activeModifiers.range_start && !activeModifiers.range_end))}
+                symbol={symbol}
+                rate={rate}
               />
             ),
           }}
         />
 
-        {/* Footer */}
-        <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-3">
-          <span className="text-xs text-slate-500 truncate">{footerText}</span>
-          <div className="flex items-center gap-2 shrink-0">
-            {value.departure && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => { clearDates(); }}
-                className="text-xs text-slate-400 hover:text-slate-700"
-              >
-                Clear
-              </Button>
-            )}
-            <Button
-              type="button"
-              size="sm"
-              onClick={onClose}
-              className="px-5 text-xs"
-            >
-              Apply
-            </Button>
-          </div>
-        </div>
+
       </div>
     );
   }

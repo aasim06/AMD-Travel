@@ -55,9 +55,9 @@ export default function RootLayout({
       >
         <CurrencyProvider>
           <NextTopLoader
-            color="#2563eb"
+            color="#ff8a3d"
             height={3}
-            shadow="0 0 10px #2563eb, 0 0 5px #3b82f6"
+            shadow="0 0 10px #ff8a3d, 0 0 5px #ff8a3d"
             showSpinner={false}
           />
           {children}

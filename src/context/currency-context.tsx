@@ -12,19 +12,19 @@ interface CurrencyContextValue {
 }
 
 const CurrencyContext = createContext<CurrencyContextValue>({
-  currency:    "USD",
+  currency:    "EUR",
   setCurrency: () => {},
-  formatPrice: (n) => _formatPrice(n, "USD"),
+  formatPrice: (n) => _formatPrice(n, "EUR"),
 });
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
-  const [currency, setCurrencyState] = useState<CurrencyCode>("USD");
+  const [currency, setCurrencyState] = useState<CurrencyCode>("EUR");
 
   // Hydrate from localStorage once on mount
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY) as CurrencyCode | null;
-      if (stored && stored in { USD: 1, EUR: 1, PKR: 1 }) setCurrencyState(stored);
+      if (stored && stored in { USD: 1, EUR: 1 }) setCurrencyState(stored);
     } catch { /* noop */ }
   }, []);
 

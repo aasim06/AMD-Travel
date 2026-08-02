@@ -114,20 +114,6 @@ const CURRENCY_META: Record<string, { flagSvg: React.ReactNode; symbol: string; 
     ),
     symbol: "€", label: "Euro",
   },
-  PKR: {
-    flagSvg: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40" className="h-4 w-6 overflow-hidden shrink-0">
-        <rect width="60" height="40" fill="#01411C"/>
-        <rect width="12" height="40" fill="white"/>
-        <circle cx="36" cy="20" r="10" fill="#01411C"/>
-        <circle cx="39" cy="17" r="10" fill="#01411C"/>
-        <circle cx="36" cy="20" r="8" fill="white"/>
-        <circle cx="39" cy="17" r="8" fill="#01411C"/>
-        <text x="42" y="18" fontSize="8" fill="white" textAnchor="middle">★</text>
-      </svg>
-    ),
-    symbol: "₨", label: "Pakistani Rupee",
-  },
 };
 
 function CurrencyDropdown() {

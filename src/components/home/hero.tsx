@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FlightSearchForm, CATEGORIES, type CategoryKey } from "@/components/flight/search-form";
 import { useCurrency } from "@/context/currency-context";
 import { useState } from "react";
+import { Car, Moon } from "lucide-react";
 
 // ─── Destination cards data ────────────────────────────────────────────────────
 
@@ -16,8 +17,8 @@ const DESTINATIONS = [
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function Hero() {
-  const [activeCategory, setActiveCategory] = useState<CategoryKey>("flights");
+export function Hero({ initialCategory = "flights" }: { initialCategory?: CategoryKey } = {}) {
+  const [activeCategory, setActiveCategory] = useState<CategoryKey>(initialCategory);
   const { formatPrice } = useCurrency();
   const router = useRouter();
   return (
@@ -37,10 +38,16 @@ export function Hero() {
             {/* Headline */}
             <div className="space-y-2">
               <h1 className="font-heading font-bold text-white text-balance text-3xl sm:text-4xl lg:text-[2.6rem] leading-[1.1]">
-                Compare flights from <br />{" "}
-                <span className="block mt-3" style={{ color: 'rgb(252 211 77 / 93%)' }}>100s of airlines.</span>
+                {initialCategory === "visa" ? (
+                  <>Fast & Hassle-Free <br /><span className="block mt-3" style={{ color: 'hsl(24 100% 62%)' }}>Visa Services.</span></>
+                ) : initialCategory === "umrah" ? (
+                  <>Your Sacred Journey <br /><span className="block mt-3" style={{ color: 'hsl(24 100% 62%)' }}>Starts Here.</span></>
+                ) : initialCategory === "cars" ? (
+                  <>Rent a Car <br /><span className="block mt-3" style={{ color: 'hsl(24 100% 62%)' }}>Anywhere, Anytime.</span></>
+                ) : (
+                  <>Compare Flights From <br /><span className="block mt-3" style={{ color: 'hsl(24 100% 62%)' }}>100s Of Airlines.</span></>
+                )}
               </h1>
-             
             </div>
 
             {/* Category tabs */}
@@ -51,6 +58,7 @@ export function Hero() {
                   type="button"
                   onClick={() => {
                     if (cat.key === "visa") { router.push("/visa"); return; }
+                    if (cat.key === "flights") { router.push("/"); return; }
                     setActiveCategory(cat.key);
                   }}
                   className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
@@ -63,6 +71,29 @@ export function Hero() {
                   {cat.label}
                 </button>
               ))}
+              <Link
+                href="/cars"
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                  initialCategory === "cars"
+                    ? "bg-white text-primary shadow-card"
+                    : "text-white/75 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                <Car className="h-4 w-4" />
+                Cars
+              </Link>
+              <button
+                type="button"
+                onClick={() => router.push("/umrah-packages")}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                  initialCategory === "umrah"
+                    ? "bg-white text-primary shadow-card"
+                    : "text-white/75 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                <Moon className="h-4 w-4" />
+                Umrah Packages
+              </button>
             </div>
 
             {/* Search form — contained white card */}
@@ -121,13 +152,13 @@ export function Hero() {
             </div>
 
             {/* Bottom CTA strip */}
-            <Link href="/tour-deals" className="rounded-xl border border-slate-200 bg-white px-4 py-3 flex items-center justify-between gap-3 shadow-sm hover:border-primary/40 hover:bg-primary/5 transition-all group">
+            <Link href="/tour-deals" className="rounded-xl border border-slate-200 bg-white px-4 py-3 flex items-center justify-between gap-3 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-colors group">
               <div>
-                <p className="text-slate-800 text-sm font-semibold group-hover:text-primary transition-colors">Explore all destinations</p>
+                <p className="text-slate-800 text-sm font-semibold">Explore all destinations</p>
                 <p className="text-slate-400 text-xs mt-0.5">500+ routes available</p>
               </div>
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary transition-all duration-300">
-                <svg className="h-4 w-4 text-primary group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300 ease-in-out" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <svg className="h-4 w-4 text-primary" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>

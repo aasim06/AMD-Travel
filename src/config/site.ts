@@ -36,7 +36,7 @@ export const siteConfig = {
 
   locale: {
     defaultCurrency: "EUR",
-    supportedCurrencies: ["EUR", "USD", "PKR"],
+    supportedCurrencies: ["EUR", "USD"],
     defaultLanguage: "en",
     supportedLanguages: ["en", "ar", "fr", "de"],
   },
@@ -45,7 +45,7 @@ export const siteConfig = {
     defaultMode: "light" as "light" | "dark" | "system",
     radius: "0.75rem",
     colors: {
-      primary: "217 91% 60%", // Deep Ocean Blue
+      primary: "24 100% 62%", // #ff8a3d Warm Orange
       secondary: "38 92% 50%", // Warm Amber
     },
   },
@@ -58,10 +58,10 @@ export const siteConfig = {
       { label: "Visa Services", href: "/visa-services" },
     ],
     footerQuickLinks: [
-      { label: "Flights", href: "/flights" },
+      { label: "Flights", href: "/" },
       { label: "Umrah Packages", href: "/umrah-packages" },
       { label: "Tour Deals", href: "/tour-deals" },
-      { label: "Visa Services", href: "/visa-services" },
+      { label: "Visa Services", href: "/visa" },
       { label: "My Bookings", href: "/bookings" },
     ],
     footerLegal: [

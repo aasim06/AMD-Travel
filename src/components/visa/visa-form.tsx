@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { format, parseISO } from "date-fns";
 import {
   FileText, User, Upload, RotateCcw, Send,
-  CheckCircle2, X, Globe, CreditCard, ChevronDown, CalendarDays,
+  CheckCircle2, X, Globe, CreditCard, ChevronDown, CalendarDays, Phone, Mail,
 } from "lucide-react";
 import { Input }  from "@/components/ui/input";
 import { Label }  from "@/components/ui/label";
@@ -29,6 +29,7 @@ interface FormState {
   occupation: string;  religion: string;    maritalStatus: string;
   nationality: string; passportNo: string;
   gender: "male" | "female";
+  email: string; phone: string;
   issueDate: string;   expiryDate: string;  dob: string;
   passportFront: UploadedFile | null;  passportFrontPreview: string | null;
   passportBack:  UploadedFile | null;  passportBackPreview:  string | null;
@@ -43,7 +44,7 @@ const EMPTY: FormState = {
   fatherName: "", motherName: "", placeOfBirth: "",
   occupation: "", religion: "", maritalStatus: "",
   nationality: "", passportNo: "",
-  gender: "male", issueDate: "", expiryDate: "", dob: "",
+  gender: "male", email: "", phone: "", issueDate: "", expiryDate: "", dob: "",
   passportFront: null, passportFrontPreview: null,
   passportBack:  null, passportBackPreview:  null,
   passportPhoto: null, passportPhotoPreview: null,
@@ -365,6 +366,8 @@ export function VisaApplicationForm() {
     if (!form.occupation.trim())  e.occupation  = "Occupation is required";
     if (!form.religion.trim())    e.religion    = "Religion is required";
     if (!form.nationality)   e.nationality   = "Nationality is required";
+    if (!form.email.trim())   e.email         = "Email is required";
+    if (!form.phone.trim())   e.phone         = "Phone number is required";
     if (!form.passportNo.trim())  e.passportNo  = "Passport number is required";
     if (!form.issueDate)     e.issueDate     = "Issue date is required";
     if (!form.expiryDate)    e.expiryDate    = "Expiry date is required";
@@ -554,10 +557,29 @@ export function VisaApplicationForm() {
               </div>
             </Field>
           </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Email Address" required>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input className={cn("h-10 rounded-xl pl-9", errors.email && "border-rose-400 ring-1 ring-rose-300")}
+                  placeholder="email@example.com" type="email"
+                  value={form.email} onChange={e => set("email", e.target.value)} />
+              </div>
+              {errors.email && <p className="text-[11px] text-rose-500 mt-0.5">{errors.email}</p>}
+            </Field>
+            <Field label="Phone / WhatsApp" required>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input className={cn("h-10 rounded-xl pl-9", errors.phone && "border-rose-400 ring-1 ring-rose-300")}
+                  placeholder="+49 123 456 7890" type="tel"
+                  value={form.phone} onChange={e => set("phone", e.target.value)} />
+              </div>
+              {errors.phone && <p className="text-[11px] text-rose-500 mt-0.5">{errors.phone}</p>}
+            </Field>
+          </div>
         </div>
       </div>
-
-      {/* ── Section 3: Passport Details ── */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6"
         style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
         <SectionHeader

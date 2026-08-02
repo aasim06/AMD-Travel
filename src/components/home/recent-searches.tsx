@@ -261,10 +261,10 @@ export function RecentSearches() {
 
         {/* ── New Search card ── */}
         <div
-          className="flex-none w-56 snap-start rounded-2xl border-2 border-dashed border-blue-200 bg-gradient-to-br from-blue-50/50 via-indigo-50/30 to-white flex flex-col items-center justify-center gap-4 p-5 hover:bg-blue-50/70 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
+          className="flex-none w-56 snap-start rounded-2xl border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-white flex flex-col items-center justify-center gap-4 p-5 hover:bg-primary/15 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         >
-          <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md group-hover:shadow-blue-500/40 group-hover:scale-105 transition-all">
+          <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-gradient-to-r from-primary to-primary/80 shadow-md group-hover:shadow-primary/40 group-hover:scale-105 transition-all">
             <Plus className="h-6 w-6 text-white" />
           </div>
           <div className="text-center">
@@ -274,7 +274,7 @@ export function RecentSearches() {
           {/* Quick category icons */}
           <div className="flex items-center gap-2">
             {[Plane, Hotel, Package].map((Icon, i) => (
-              <div key={i} className="flex items-center justify-center h-7 w-7 rounded-lg bg-white border border-blue-100 text-blue-500 group-hover:border-blue-300 group-hover:bg-blue-50 transition-colors shadow-sm">
+              <div key={i} className="flex items-center justify-center h-7 w-7 rounded-lg bg-white border border-primary/20 text-primary group-hover:border-primary/40 group-hover:bg-primary/10 transition-colors shadow-sm">
                 <Icon className="h-3.5 w-3.5" />
               </div>
             ))}

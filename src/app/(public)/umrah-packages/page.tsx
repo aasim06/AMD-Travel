@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { Hero } from "@/components/home/hero";
 import {
   MapPin, Clock, Users, Star, ArrowRight, MessageCircle,
-  Shield, HeartHandshake, Sparkles, Filter, Calendar,
+  Shield, HeartHandshake, Filter, Calendar,
   Plane, Hotel, Bus, Utensils, CheckCircle2, Moon,
 } from "lucide-react";
 
@@ -135,18 +136,6 @@ const SERVICES = [
   { icon: <HeartHandshake className="h-5 w-5 text-sky-500" />, bg: "bg-sky-50 border-sky-100", title: "24/7 Support", desc: "Dedicated guide throughout your journey" },
 ];
 
-const FEATURES = [
-  { icon: <Shield className="h-4 w-4 text-emerald-400" />, bg: "bg-emerald-500/10 border-emerald-500/20", title: "Visa Included", desc: "We handle everything" },
-  { icon: <HeartHandshake className="h-4 w-4 text-sky-400" />, bg: "bg-sky-500/10 border-sky-500/20", title: "Group & Private", desc: "Flexible options" },
-  { icon: <Sparkles className="h-4 w-4 text-amber-400" />, bg: "bg-amber-500/10 border-amber-500/20", title: "Trusted Agency", desc: "5,000+ pilgrims served" },
-];
-
-const STATS = [
-  { value: "5k+", label: "Pilgrims Served" },
-  { value: "10+", label: "Years Experience" },
-  { value: "4.9★", label: "Average Rating" },
-];
-
 export default function UmrahPackagesPage() {
   const [active, setActive] = useState("All");
 
@@ -155,69 +144,7 @@ export default function UmrahPackagesPage() {
   return (
     <main className="min-h-screen bg-slate-50">
 
-      {/* ── Hero ── */}
-      <div
-        className="w-full border-b border-[#0B1D3A] relative overflow-hidden"
-        style={{ background: "radial-gradient(ellipse at top right, #1e4080 0%, #0B1D3A 55%, #060f22 100%)" }}
-      >
-        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-blue-500/5 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 w-64 h-64 rounded-full bg-indigo-500/5 blur-3xl pointer-events-none" />
-
-        <div className="max-w-6xl mx-auto px-4 pt-12 pb-10 sm:pt-16 sm:pb-14 relative">
-
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-white/40 text-xs mb-6">
-            <span>Home</span>
-            <ArrowRight className="h-3 w-3" />
-            <span className="text-white/70 font-medium">Umrah Packages</span>
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-11 w-11 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center backdrop-blur-sm">
-                  <Moon className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-white/50 text-sm font-medium tracking-wide uppercase">Sacred Journey</span>
-              </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-3">
-                Your Umrah Journey<br />
-                <span style={{ color: "rgb(252 211 77 / 93%)", display: "block", marginTop: "0.75rem" }}>
-                  Starts Here
-                </span>
-              </h1>
-              <p className="text-white/55 text-sm sm:text-base max-w-lg leading-relaxed">
-                All-inclusive Umrah packages from Germany — flights, hotels near Haram, visa, and guided ziyarat, all taken care of.
-              </p>
-            </div>
-
-            {/* Stats */}
-            <div className="flex-shrink-0 bg-white/5 border border-white/10 rounded-2xl px-5 py-4 backdrop-blur-sm">
-              <div className="flex gap-6">
-                {STATS.map(s => (
-                  <div key={s.label} className="text-center">
-                    <p className="text-2xl font-bold text-white">{s.value}</p>
-                    <p className="text-[11px] text-white/45 mt-0.5">{s.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Feature pills */}
-          <div className="flex flex-wrap gap-3 mt-8">
-            {FEATURES.map(f => (
-              <div key={f.title} className={`flex items-center gap-2.5 border rounded-xl px-3.5 py-2.5 backdrop-blur-sm ${f.bg}`}>
-                {f.icon}
-                <div>
-                  <p className="text-xs font-bold text-white">{f.title}</p>
-                  <p className="text-[10px] text-white/45">{f.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <Hero initialCategory="umrah" />
 
       {/* ── What's Included ── */}
       <div className="max-w-6xl mx-auto px-4 py-10">

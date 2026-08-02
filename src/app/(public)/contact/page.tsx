@@ -95,7 +95,7 @@ export default function ContactPage() {
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-3">
                 We&apos;re Here to<br />
-                <span style={{ color: "rgb(252 211 77 / 93%)", display: "block", marginTop: "0.75rem" }}>
+                <span style={{ color: "hsl(24 100% 62%)", display: "block", marginTop: "0.75rem" }}>
                   Help You Travel
                 </span>
               </h1>
