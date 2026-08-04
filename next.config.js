@@ -1,3 +1,4 @@
+const path = require('node:path');
 // Force Node.js to resolve hostnames over IPv4 before IPv6.
 // Fixes ENOTFOUND on test.api.amadeus.com in environments where
 // IPv6 DNS resolution fails (common on Windows dev machines).
@@ -7,6 +8,7 @@ dns.setDefaultResultOrder('ipv4first');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  outputFileTracingRoot: path.resolve(__dirname),
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "flagcdn.com" },
@@ -15,3 +17,4 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
+
