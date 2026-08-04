@@ -5,6 +5,7 @@ import { FlightSearchForm, CATEGORIES, type CategoryKey } from "@/components/fli
 import { useCurrency } from "@/context/currency-context";
 import { useState } from "react";
 import { Car, Moon } from "lucide-react";
+import { Typewriter } from "@/components/ui/typewriter";
 
 // ─── Destination cards data ────────────────────────────────────────────────────
 
@@ -39,13 +40,33 @@ export function Hero({ initialCategory = "flights" }: { initialCategory?: Catego
             <div className="space-y-2">
               <h1 className="font-heading font-bold text-white text-balance text-3xl sm:text-4xl lg:text-[2.6rem] leading-[1.1]">
                 {initialCategory === "visa" ? (
-                  <>Fast & Hassle-Free <br /><span className="block mt-3" style={{ color: 'hsl(24 100% 62%)' }}>Visa Services.</span></>
+                  <>
+                    Fast & Hassle-Free <br />
+                    <span className="block mt-3 min-h-[1.2em]" style={{ color: 'hsl(24 100% 62%)' }}>
+                      <Typewriter words={["Visa Services.", "Fast Approvals.", "Easy Online Application."]} />
+                    </span>
+                  </>
                 ) : initialCategory === "umrah" ? (
-                  <>Your Sacred Journey <br /><span className="block mt-3" style={{ color: 'hsl(24 100% 62%)' }}>Starts Here.</span></>
+                  <>
+                    Your Sacred Journey <br />
+                    <span className="block mt-3 min-h-[1.2em]" style={{ color: 'hsl(24 100% 62%)' }}>
+                      <Typewriter words={["Starts Here.", "Custom Packages.", "Luxury & Budget Stays."]} />
+                    </span>
+                  </>
                 ) : initialCategory === "cars" ? (
-                  <>Rent a Car <br /><span className="block mt-3" style={{ color: 'hsl(24 100% 62%)' }}>Anywhere, Anytime.</span></>
+                  <>
+                    Rent a Car <br />
+                    <span className="block mt-3 min-h-[1.2em]" style={{ color: 'hsl(24 100% 62%)' }}>
+                      <Typewriter words={["Anywhere, Anytime.", "Best Daily Rates.", "Top Rental Agencies."]} />
+                    </span>
+                  </>
                 ) : (
-                  <>Compare Flights From <br /><span className="block mt-3" style={{ color: 'hsl(24 100% 62%)' }}>100s Of Airlines.</span></>
+                  <>
+                    Compare Flights From <br />
+                    <span className="block mt-3 min-h-[1.2em]" style={{ color: 'hsl(24 100% 62%)' }}>
+                      <Typewriter words={["100s Of Airlines.", "Best Ticket Prices.", "Top Global Routes.", "Exclusive Flight Deals."]} />
+                    </span>
+                  </>
                 )}
               </h1>
             </div>
