@@ -14,16 +14,9 @@ const nextConfig = {
       { protocol: "https", hostname: "flagcdn.com" },
     ],
   },
-  async rewrites() {
-    return [
-      {
-        source: "/",
-        destination: "/search",
-      },
-    ];
-  },
 };
 
 module.exports = nextConfig;
+
 
 

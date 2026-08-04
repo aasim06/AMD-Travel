@@ -217,8 +217,8 @@ export default function MyBookingsPage() {
   };
 
   return (
-    <PublicLayout>
     <main className="min-h-screen bg-background">
+
 
 
       {/* ── Hero / Header ── */}
@@ -610,6 +610,5 @@ export default function MyBookingsPage() {
       />
 
     </main>
-    </PublicLayout>
   );
 }

@@ -45,6 +45,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { MainLayoutWrapper } from "@/components/layout/main-layout-wrapper";
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -60,9 +62,10 @@ export default function RootLayout({
             shadow="0 0 10px #ff8a3d, 0 0 5px #ff8a3d"
             showSpinner={false}
           />
-          {children}
+          <MainLayoutWrapper>{children}</MainLayoutWrapper>
         </CurrencyProvider>
       </body>
     </html>
   );
 }
+

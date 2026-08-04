@@ -141,8 +141,8 @@ export default function CarsPage() {
   const filtered = active === "All" ? CARS : CARS.filter(c => c.category === active);
 
   return (
-    <PublicLayout>
     <main className="min-h-screen bg-slate-50">
+
 
 
       <Hero initialCategory="cars" />
@@ -310,6 +310,5 @@ export default function CarsPage() {
       </div>
 
     </main>
-    </PublicLayout>
   );
 }
