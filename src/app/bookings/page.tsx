@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { TicketModal, BookingTicketData } from "@/components/bookings/ticket-modal";
 import { CancellationModal } from "@/components/bookings/cancellation-modal";
 import { cn } from "@/lib/utils";
+import { PublicLayout } from "@/components/layout/public-layout";
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -215,7 +217,9 @@ export default function MyBookingsPage() {
   };
 
   return (
+    <PublicLayout>
     <main className="min-h-screen bg-background">
+
 
       {/* ── Hero / Header ── */}
       <section className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pt-16 pb-24 sm:pt-20 sm:pb-32 overflow-hidden">
@@ -606,5 +610,6 @@ export default function MyBookingsPage() {
       />
 
     </main>
+    </PublicLayout>
   );
 }

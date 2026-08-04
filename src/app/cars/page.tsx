@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { Hero } from "@/components/home/hero";
+import { PublicLayout } from "@/components/layout/public-layout";
 import {
   MapPin, Star, ArrowRight, MessageCircle, Filter,
   Users, Fuel, Settings, Shield, CheckCircle2,
   Car, Zap, Wind,
 } from "lucide-react";
+
 
 const CATEGORIES = ["All", "Economy", "SUV", "Luxury", "Van", "Electric"];
 
@@ -139,7 +141,9 @@ export default function CarsPage() {
   const filtered = active === "All" ? CARS : CARS.filter(c => c.category === active);
 
   return (
+    <PublicLayout>
     <main className="min-h-screen bg-slate-50">
+
 
       <Hero initialCategory="cars" />
 
@@ -306,5 +310,6 @@ export default function CarsPage() {
       </div>
 
     </main>
+    </PublicLayout>
   );
 }
