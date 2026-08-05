@@ -310,7 +310,7 @@ export default function UmrahPackagesPage() {
 
         {/* ── CTA Banner ── */}
         <div
-          className="mt-12 rounded-2xl overflow-hidden relative"
+          className="mt-6 sm:mt-12 rounded-2xl overflow-hidden relative"
           style={{ background: "radial-gradient(ellipse at top right, #1e4080 0%, #0B1D3A 55%, #060f22 100%)" }}
         >
           <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-blue-500/5 blur-3xl pointer-events-none" />
@@ -320,12 +320,12 @@ export default function UmrahPackagesPage() {
               <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">Get a Custom Umrah Package</h2>
               <p className="text-white/50 text-sm">Tell us your dates, group size, and budget — we&apos;ll arrange everything for your blessed journey.</p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0">
               <a
                 href="https://wa.me/4917972968560?text=Hi, I'd like a custom Umrah package"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2.5 bg-emerald-500 hover:bg-emerald-600 transition-colors text-white font-bold text-sm px-5 py-3 rounded-xl"
+                className="flex items-center justify-center gap-2.5 bg-emerald-500 hover:bg-emerald-600 transition-colors text-white font-bold text-sm px-5 py-3 rounded-xl w-full sm:w-auto text-center"
                 style={{ boxShadow: "0 4px 14px rgba(16,185,129,0.35)" }}
               >
                 <MessageCircle className="h-4 w-4" />
@@ -333,7 +333,7 @@ export default function UmrahPackagesPage() {
               </a>
               <a
                 href="mailto:team@amdglobal.org"
-                className="flex items-center gap-2.5 bg-white/10 hover:bg-white/15 border border-white/15 transition-colors text-white font-bold text-sm px-5 py-3 rounded-xl"
+                className="flex items-center justify-center gap-2.5 bg-white/10 hover:bg-white/15 border border-white/15 transition-colors text-white font-bold text-sm px-5 py-3 rounded-xl w-full sm:w-auto text-center"
               >
                 Email Us
                 <ArrowRight className="h-4 w-4" />

@@ -38,32 +38,32 @@ export function Hero({ initialCategory = "flights" }: { initialCategory?: Catego
 
             {/* Headline */}
             <div className="space-y-2">
-              <h1 className="font-heading font-bold text-white text-balance text-3xl sm:text-4xl lg:text-[2.6rem] leading-[1.1]">
+              <h1 className="font-heading font-extrabold text-white text-balance text-2xl xs:text-3xl sm:text-4xl lg:text-[2.6rem] leading-snug tracking-tight">
                 {initialCategory === "visa" ? (
                   <>
-                    Fast & Hassle-Free <br />
-                    <span className="block mt-3 min-h-[1.2em]" style={{ color: 'hsl(24 100% 62%)' }}>
+                    Fast &amp; Hassle-Free <br />
+                    <span className="inline-block mt-1 sm:mt-2 min-h-[1.2em] font-black text-amber-400">
                       <Typewriter words={["Visa Services.", "Fast Approvals.", "Easy Online Application."]} />
                     </span>
                   </>
                 ) : initialCategory === "umrah" ? (
                   <>
                     Your Sacred Journey <br />
-                    <span className="block mt-3 min-h-[1.2em]" style={{ color: 'hsl(24 100% 62%)' }}>
+                    <span className="inline-block mt-1 sm:mt-2 min-h-[1.2em] font-black text-amber-400">
                       <Typewriter words={["Starts Here.", "Custom Packages.", "Luxury & Budget Stays."]} />
                     </span>
                   </>
                 ) : initialCategory === "cars" ? (
                   <>
                     Rent a Car <br />
-                    <span className="block mt-3 min-h-[1.2em]" style={{ color: 'hsl(24 100% 62%)' }}>
+                    <span className="inline-block mt-1 sm:mt-2 min-h-[1.2em] font-black text-amber-400">
                       <Typewriter words={["Anywhere, Anytime.", "Best Daily Rates.", "Top Rental Agencies."]} />
                     </span>
                   </>
                 ) : (
                   <>
                     Compare Flights From <br />
-                    <span className="block mt-3 min-h-[1.2em]" style={{ color: 'hsl(24 100% 62%)' }}>
+                    <span className="inline-block mt-1 sm:mt-2 min-h-[1.2em] font-black text-amber-400">
                       <Typewriter words={["100s Of Airlines.", "Best Ticket Prices.", "Top Global Routes.", "Exclusive Flight Deals."]} />
                     </span>
                   </>
@@ -71,8 +71,8 @@ export function Hero({ initialCategory = "flights" }: { initialCategory?: Catego
               </h1>
             </div>
 
-            {/* Category tabs */}
-            <div className="flex items-center gap-1 flex-wrap">
+            {/* Category tabs — 2x2 grid on mobile so no tabs are hidden, single row on desktop */}
+            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat.key}
@@ -82,43 +82,43 @@ export function Hero({ initialCategory = "flights" }: { initialCategory?: Catego
                     if (cat.key === "flights") { router.push("/"); return; }
                     setActiveCategory(cat.key);
                   }}
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                  className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 ${
                     activeCategory === cat.key
-                      ? "bg-white text-primary shadow-card"
-                      : "text-white/75 hover:text-white hover:bg-white/10"
+                      ? "bg-white text-primary shadow-md font-bold"
+                      : "text-white/90 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/15"
                   }`}
                 >
                   {cat.icon}
-                  {cat.label}
+                  <span>{cat.label}</span>
                 </button>
               ))}
               <Link
                 href="/cars"
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 ${
                   initialCategory === "cars"
-                    ? "bg-white text-primary shadow-card"
-                    : "text-white/75 hover:text-white hover:bg-white/10"
+                    ? "bg-white text-primary shadow-md font-bold"
+                    : "text-white/90 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/15"
                 }`}
               >
                 <Car className="h-4 w-4" />
-                Cars
+                <span>Cars</span>
               </Link>
               <button
                 type="button"
                 onClick={() => router.push("/umrah-packages")}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 ${
                   initialCategory === "umrah"
-                    ? "bg-white text-primary shadow-card"
-                    : "text-white/75 hover:text-white hover:bg-white/10"
+                    ? "bg-white text-primary shadow-md font-bold"
+                    : "text-white/90 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-xs border border-white/15"
                 }`}
               >
                 <Moon className="h-4 w-4" />
-                Umrah Packages
+                <span>Umrah Packages</span>
               </button>
             </div>
 
             {/* Search form — contained white card */}
-            <div id="hero-search" className="bg-white rounded-2xl border border-slate-100 overflow-visible p-6 animate-fade-in" style={{ boxShadow: 'rgba(0, 0, 0, 0.1) 0px 10px 50px' }}>
+            <div id="hero-search" className="bg-white rounded-3xl border border-slate-100 overflow-visible p-3.5 sm:p-6 animate-fade-in" style={{ boxShadow: 'rgba(0, 0, 0, 0.1) 0px 10px 50px' }}>
               <FlightSearchForm />
             </div>
 

@@ -14,7 +14,7 @@ export function Footer() {
 
   return (
     <footer className="bg-card border-t border-border">
-      <div className="container py-12">
+      <div className="container py-6 sm:py-12">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand + address */}
           <div className="lg:col-span-1">
@@ -182,11 +182,11 @@ export function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground">
+        <div className="mt-10 pt-6 pb-8 md:pb-0 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground text-center sm:text-left">
             &copy; {year} {siteConfig.name}. All rights reserved.
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground text-center sm:text-right">
             Built for global travelers, powered by {siteConfig.shortName}.
           </p>
         </div>

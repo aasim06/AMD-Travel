@@ -330,50 +330,47 @@ export function FlightSearchForm() {
       {/* ══════════════════════════════════════════════════════════════════════
           MOBILE LAYOUT  (block md:hidden)
       ══════════════════════════════════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════════════════════════════════
+          MOBILE LAYOUT  (block md:hidden)
+      ══════════════════════════════════════════════════════════════════════ */}
       <div className="block md:hidden">
-        <form onSubmit={handleSearch} className="flex flex-col gap-2.5 w-full px-3 py-2">
+        <form onSubmit={handleSearch} className="flex flex-col gap-3 w-full p-1">
 
-          {/* Row 1 — Trip type + Pax/Bags summary */}
-          <div className="grid grid-cols-2 gap-2">
-            {/* Trip type pill */}
-            <div className="rounded-lg border border-slate-300 bg-white p-3 flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-700">
-                {TRIP_TYPES.find((t) => t.value === tripType)?.label}
-              </span>
-              <div className="flex flex-col gap-0.5">
-                {TRIP_TYPES.map((t) => (
-                  <button
-                    key={t.value}
-                    type="button"
-                    onClick={() => setTripType(t.value)}
-                    className={`text-[10px] font-medium px-1.5 py-0.5 rounded transition-colors ${
-                      tripType === t.value
-                        ? "bg-primary text-primary-foreground"
-                        : "text-slate-400 hover:text-slate-700"
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
+          {/* Segmented Trip Type Switcher */}
+          <div className="grid grid-cols-3 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80">
+            {TRIP_TYPES.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                onClick={() => setTripType(t.value)}
+                className={`py-2 px-1 text-xs font-semibold rounded-lg transition-all text-center ${
+                  tripType === t.value
+                    ? "bg-white dark:bg-slate-900 text-primary shadow-sm font-bold"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Pax + Bags summary button */}
+          <button
+            type="button"
+            onClick={() => setMobileSheet("pax")}
+            className="rounded-xl border border-slate-200 bg-white p-3 flex items-center justify-between shadow-xs active:scale-[0.99] transition-all hover:border-primary/40 text-left"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <Users className="h-4 w-4" />
+              </div>
+              <div className="flex flex-col text-left min-w-0">
+                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Class & Passengers</span>
+                <span className="text-xs font-bold text-slate-800 truncate">{paxLabel} · {bagsLabel}</span>
               </div>
             </div>
-
-            {/* Pax + Bags summary */}
-            <button
-              type="button"
-              onClick={() => setMobileSheet("pax")}
-              className="rounded-lg border border-slate-300 bg-white p-3 flex flex-col justify-center text-left"
-            >
-              <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-                <Users className="h-3.5 w-3.5 text-primary" />
-                {paxLabel}
-              </span>
-              <span className="flex items-center gap-1.5 text-xs text-slate-500 mt-0.5">
-                <Luggage className="h-3 w-3" />
-                {bagsLabel}
-              </span>
-            </button>
-          </div>
+            <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
+          </button>
 
           {/* ── Multi-city legs (mobile) ── */}
           {tripType === "multi-city" ? (
@@ -382,7 +379,7 @@ export function FlightSearchForm() {
                 <div
                   key={leg.id}
                   ref={idx === legs.length - 1 ? newLegRef : undefined}
-                  className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3"
+                  className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/80 p-3"
                 >
                   {/* Leg header */}
                   <div className="flex items-center justify-between">
@@ -402,7 +399,7 @@ export function FlightSearchForm() {
                   </div>
 
                   {/* From */}
-                  <div className="w-full rounded-lg border border-slate-300 bg-white flex items-center px-3 py-3 gap-2">
+                  <div className="w-full rounded-xl border border-slate-200 bg-white flex items-center px-3 py-2.5 gap-2.5">
                     <PlaneTakeoff className="h-4 w-4 text-primary shrink-0" />
                     <AirportInput
                       id={`m-mc-origin-${leg.id}`}
@@ -416,8 +413,8 @@ export function FlightSearchForm() {
                   </div>
 
                   {/* To */}
-                  <div className="w-full rounded-lg border border-slate-300 bg-white flex items-center px-3 py-3 gap-2">
-                    <PlaneLanding className="h-4 w-4 text-primary shrink-0" />
+                  <div className="w-full rounded-xl border border-slate-200 bg-white flex items-center px-3 py-2.5 gap-2.5">
+                    <PlaneLanding className="h-4 w-4 text-emerald-600 shrink-0" />
                     <AirportInput
                       id={`m-mc-dest-${leg.id}`}
                       value={leg.destination}
@@ -430,7 +427,7 @@ export function FlightSearchForm() {
                   </div>
 
                   {/* Departure date */}
-                  <div className="w-full rounded-lg border border-slate-300 bg-white">
+                  <div className="w-full rounded-xl border border-slate-200 bg-white">
                     <DatePickerPopover
                       value={{ departure: leg.departureDate, returnDate: null }}
                       onChange={(r) => updateLeg(leg.id, { departureDate: r.departure })}
@@ -455,53 +452,64 @@ export function FlightSearchForm() {
             </>
           ) : (
             <>
-              {/* Row 2 — From */}
-              <div className="w-full rounded-lg border border-slate-300 bg-white flex items-center px-3 py-3 gap-2">
-                <PlaneTakeoff className="h-4 w-4 text-primary shrink-0" />
-                <AirportInput
-                  id="m-origin"
-                  value={origin}
-                  onChange={(v, display) => { setOrigin(v); setOriginDisplay(display); }}
-                  placeholder="Where from?"
-                  icon={<></>}
-                  label="From"
-                  mobileSheet
-                />
+              {/* From & To inputs with Swap Button */}
+              <div className="relative flex flex-col gap-2">
+                {/* From */}
+                <div className="w-full rounded-xl border border-slate-200 bg-white flex items-center px-3.5 py-3 gap-3 shadow-xs focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                  <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-primary shrink-0">
+                    <PlaneTakeoff className="h-4.5 w-4.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <AirportInput
+                      id="m-origin"
+                      value={origin}
+                      onChange={(v, display) => { setOrigin(v); setOriginDisplay(display); }}
+                      placeholder="Where from?"
+                      icon={<></>}
+                      label="Departure City or Airport"
+                      mobileSheet
+                    />
+                  </div>
+                </div>
+
+                {/* Floating Swap button */}
+                <div className="absolute right-5 top-1/2 -translate-y-1/2 z-20">
+                  <button
+                    type="button"
+                    onClick={handleSwap}
+                    aria-label="Swap airports"
+                    className="h-8 w-8 rounded-full border-2 border-white bg-primary text-white flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all"
+                    style={{
+                      transform: swapping ? "rotate(180deg)" : "rotate(0deg)",
+                      transition: "transform 0.32s cubic-bezier(.4,0,.2,1)",
+                    }}
+                  >
+                    <ArrowLeftRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                {/* To */}
+                <div className="w-full rounded-xl border border-slate-200 bg-white flex items-center px-3.5 py-3 gap-3 shadow-xs focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                  <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-emerald-600 shrink-0">
+                    <PlaneLanding className="h-4.5 w-4.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <AirportInput
+                      id="m-destination"
+                      value={destination}
+                      onChange={(v, display) => { setDestination(v); setDestDisplay(display); }}
+                      placeholder="Where to?"
+                      icon={<></>}
+                      label="Destination City or Airport"
+                      mobileSheet
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* Swap button */}
-              <div className="flex justify-center -my-1">
-                <button
-                  type="button"
-                  onClick={handleSwap}
-                  aria-label="Swap airports"
-                  className="h-7 w-7 rounded-full border border-slate-300 bg-white flex items-center justify-center text-slate-500 hover:text-primary hover:border-primary/60 transition-all shadow-sm"
-                  style={{
-                    transform: swapping ? "rotate(180deg)" : "rotate(0deg)",
-                    transition: "transform 0.32s cubic-bezier(.4,0,.2,1)",
-                  }}
-                >
-                  <ArrowLeftRight className="h-3.5 w-3.5" />
-                </button>
-              </div>
-
-              {/* Row 3 — To */}
-              <div className="w-full rounded-lg border border-slate-300 bg-white flex items-center px-3 py-3 gap-2">
-                <PlaneLanding className="h-4 w-4 text-primary shrink-0" />
-                <AirportInput
-                  id="m-destination"
-                  value={destination}
-                  onChange={(v, display) => { setDestination(v); setDestDisplay(display); }}
-                  placeholder="Where to?"
-                  icon={<></>}
-                  label="To"
-                  mobileSheet
-                />
-              </div>
-
-              {/* Row 4 — Dates */}
+              {/* Departure & Return Dates */}
               <div className="w-full">
-                <div className={`rounded-lg border bg-white ${ returnDateError ? "border-rose-400" : "border-slate-300" }`}>
+                <div className={`rounded-xl border bg-white shadow-xs ${ returnDateError ? "border-rose-400" : "border-slate-200" }`}>
                   <DatePickerPopover
                     value={dateRange}
                     onChange={(r) => { setDateRange(r); if (r.returnDate) setReturnDateError(false); }}
@@ -510,19 +518,19 @@ export function FlightSearchForm() {
                   />
                 </div>
                 {returnDateError && (
-                  <p className="text-[11px] text-rose-500 mt-1 pl-1">Please select a return date</p>
+                  <p className="text-[11px] text-rose-500 font-medium mt-1 pl-1">Please select a return date</p>
                 )}
               </div>
             </>
           )}
 
-          {/* CTA */}
+          {/* CTA Submit Button */}
           <button
             type="submit"
-            className="w-full py-3.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg text-center shadow-sm flex items-center justify-center gap-2 transition-colors"
+            className="w-full py-4 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-amber-600 text-white font-heading font-bold rounded-xl text-base shadow-lg shadow-orange-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 mt-1"
           >
-            <Search className="h-4 w-4" />
-            Search Flights
+            <Search className="h-5 w-5" />
+            <span>Search Flights</span>
           </button>
         </form>
 

@@ -148,7 +148,7 @@ export default function CarsPage() {
       <Hero initialCategory="cars" />
 
       {/* ── Perks ── */}
-      <div className="max-w-6xl mx-auto px-4 py-10">
+      <div className="max-w-6xl mx-auto px-4 pt-6 sm:pt-10 pb-4 sm:pb-10">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {PERKS.map(p => (
             <div key={p.title} className={`rounded-2xl border p-4 flex flex-col gap-2.5 ${p.bg}`} style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
@@ -276,7 +276,7 @@ export default function CarsPage() {
 
         {/* ── CTA Banner ── */}
         <div
-          className="mt-12 rounded-2xl overflow-hidden relative"
+          className="mt-6 sm:mt-12 rounded-2xl overflow-hidden relative"
           style={{ background: "radial-gradient(ellipse at top right, #1e4080 0%, #0B1D3A 55%, #060f22 100%)" }}
         >
           <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-blue-500/5 blur-3xl pointer-events-none" />
@@ -286,12 +286,12 @@ export default function CarsPage() {
               <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">Get a Custom Car Rental Quote</h2>
               <p className="text-white/50 text-sm">Tell us your dates, location, and preferences — we&apos;ll find the perfect car for you.</p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0">
               <a
                 href="https://wa.me/4917972968560?text=Hi, I'd like a custom car rental quote"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2.5 bg-emerald-500 hover:bg-emerald-600 transition-colors text-white font-bold text-sm px-5 py-3 rounded-xl"
+                className="flex items-center justify-center gap-2.5 bg-emerald-500 hover:bg-emerald-600 transition-colors text-white font-bold text-sm px-5 py-3 rounded-xl w-full sm:w-auto text-center"
                 style={{ boxShadow: "0 4px 14px rgba(16,185,129,0.35)" }}
               >
                 <MessageCircle className="h-4 w-4" />
@@ -299,7 +299,7 @@ export default function CarsPage() {
               </a>
               <a
                 href="mailto:team@amdglobal.org"
-                className="flex items-center gap-2.5 bg-white/10 hover:bg-white/15 border border-white/15 transition-colors text-white font-bold text-sm px-5 py-3 rounded-xl"
+                className="flex items-center justify-center gap-2.5 bg-white/10 hover:bg-white/15 border border-white/15 transition-colors text-white font-bold text-sm px-5 py-3 rounded-xl w-full sm:w-auto text-center"
               >
                 Email Us
                 <ArrowRight className="h-4 w-4" />

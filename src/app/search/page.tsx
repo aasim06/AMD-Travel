@@ -293,6 +293,14 @@ function DateRangePicker({
     }
   }
 
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   const deptLabel = deptDate ? format(deptDate, "EEE, MMM d") : "Departure";
   const retLabel  = retDate  ? format(retDate,  "EEE, MMM d") : "Return";
 
@@ -311,57 +319,81 @@ function DateRangePicker({
     modifiersClassNames.range_start = "!bg-primary !text-primary-foreground rounded-lg";
   }
 
-  const dropdown = open && dropCoords ? createPortal(
-    <div
-      id="date-picker-portal"
-      className="fixed z-[9999] bg-white rounded-2xl border border-slate-200 shadow-2xl"
-      style={{
-        top: dropCoords.top,
-        left: Math.min(dropCoords.left, window.innerWidth - (isRound ? 600 : 300)),
-        minWidth: isRound ? 580 : 280,
-      }}
-    >
-      {/* Hint bar for round-trip */}
-      {isRound && (
-        <div className="flex items-center gap-3 px-4 pt-3 pb-2 border-b border-slate-100">
-          <button
-            type="button"
-            onClick={() => setPicking("dept")}
-            className={`flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-              picking === "dept" ? "bg-primary text-primary-foreground" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-            }`}
-          >
-            {deptDate ? format(deptDate, "EEE, MMM d") : "Departure"}
-          </button>
-          <ArrowRight className="h-3 w-3 text-slate-300 shrink-0" />
-          <button
-            type="button"
-            onClick={() => setPicking("ret")}
-            className={`flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-              picking === "ret" ? "bg-primary text-primary-foreground" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-            }`}
-          >
-            {retDate ? format(retDate, "EEE, MMM d") : "Return"}
-          </button>
-        </div>
-      )}
-      <Calendar
-        mode="single"
-        selected={picking === "dept" ? deptDate : retDate}
-        onSelect={handleDayClick}
-        disabled={(d) => d < today}
-        numberOfMonths={isRound ? 2 : 1}
-        modifiers={modifiers}
-        modifiersClassNames={modifiersClassNames}
-        initialFocus
+  const dropdown = open ? createPortal(
+    <>
+      {/* Mobile backdrop */}
+      <div
+        className="fixed inset-0 z-[9998] bg-black/40 backdrop-blur-xs sm:hidden"
+        onClick={() => setOpen(false)}
       />
-    </div>,
+      <div
+        id="date-picker-portal"
+        className={
+          isMobile
+            ? "fixed left-3 right-3 top-16 bottom-16 z-[9999] max-w-md mx-auto bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-y-auto p-3 animate-in fade-in-0 zoom-in-95 duration-200"
+            : "fixed z-[9999] bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-y-auto max-h-[85vh]"
+        }
+        style={
+          isMobile
+            ? {}
+            : {
+                top: dropCoords?.top ?? 100,
+                left: Math.max(12, Math.min(dropCoords?.left ?? 0, window.innerWidth - (isRound ? 600 : 300))),
+                minWidth: isRound ? 580 : 280,
+              }
+        }
+      >
+        {/* Hint bar for round-trip */}
+        {isRound && (
+          <div className="flex items-center gap-2 px-3 pt-2 pb-2 border-b border-slate-100 mb-2">
+            <button
+              type="button"
+              onClick={() => setPicking("dept")}
+              className={`flex-1 text-center py-2 rounded-xl text-xs font-semibold transition-colors ${
+                picking === "dept" ? "bg-primary text-primary-foreground shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              {deptDate ? format(deptDate, "EEE, MMM d") : "Departure"}
+            </button>
+            <ArrowRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+            <button
+              type="button"
+              onClick={() => setPicking("ret")}
+              className={`flex-1 text-center py-2 rounded-xl text-xs font-semibold transition-colors ${
+                picking === "ret" ? "bg-primary text-primary-foreground shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              {retDate ? format(retDate, "EEE, MMM d") : "Return"}
+            </button>
+          </div>
+        )}
+        <Calendar
+          mode="single"
+          selected={picking === "dept" ? deptDate : retDate}
+          onSelect={handleDayClick}
+          disabled={(d) => d < today}
+          numberOfMonths={isRound ? 2 : 1}
+          modifiers={modifiers}
+          modifiersClassNames={modifiersClassNames}
+          initialFocus
+        />
+        {isMobile && (
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="mt-3 w-full py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200 transition-colors"
+          >
+            Done
+          </button>
+        )}
+      </div>
+    </>,
     document.body
   ) : null;
 
   return (
     <>
-      <div ref={containerRef} className="flex-1" style={{ minWidth: isRound ? "260px" : "150px" }}>
+      <div ref={containerRef} className="flex-1 w-full sm:w-auto">
         <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">
           {isRound ? "Departure — Return" : "Departure"}
         </p>
@@ -504,92 +536,86 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
         <button
           type="button"
           onClick={() => setExpanded(v => !v)}
-          className={`flex items-center gap-0 bg-white border rounded-full shadow-sm h-9 overflow-hidden transition-all duration-200 hover:shadow-md ${
+          className={`w-full max-w-md mx-auto flex items-center justify-between gap-2 px-3.5 py-2 bg-white border rounded-full shadow-sm min-h-[42px] transition-all duration-200 hover:shadow-md ${
             expanded ? "border-primary ring-2 ring-primary/20" : "border-slate-200"
           }`}
         >
-          {/* Route */}
-          <span className="flex items-center gap-1.5 px-3 h-full border-r border-slate-100">
-            <Plane className="h-3 w-3 text-primary shrink-0" />
-            <span className="text-xs font-semibold text-slate-800 max-w-[160px] truncate">
-              {fromShort} → {toShort}
-            </span>
-          </span>
-          {/* Date */}
-          <span className="flex items-center gap-1.5 px-3 h-full border-r border-slate-100">
-            <CalendarDays className="h-3 w-3 text-slate-400 shrink-0" />
-            <span className="text-xs font-medium text-slate-600 whitespace-nowrap">{dateShort}</span>
-          </span>
-          {/* Pax */}
-          <span className="flex items-center gap-1.5 px-3 h-full border-r border-slate-100">
-            <Users className="h-3 w-3 text-slate-400 shrink-0" />
-            <span className="text-xs font-medium text-slate-600 whitespace-nowrap">{paxShort}</span>
-          </span>
-          {/* Search icon */}
-          <span className="flex items-center justify-center h-full px-3 bg-primary hover:bg-primary/90 transition-colors"
-            onClick={(e) => { e.stopPropagation(); handleSearch(); }}>
-            <Search className="h-3.5 w-3.5 text-primary-foreground" />
-          </span>
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Plane className="h-4 w-4 text-primary shrink-0" />
+            <div className="flex items-center gap-1.5 text-xs text-slate-800 truncate font-semibold">
+              <span className="truncate">{fromShort} → {toShort}</span>
+              <span className="text-slate-300">·</span>
+              <span className="text-slate-500 font-medium whitespace-nowrap">{dateShort}</span>
+              <span className="hidden sm:inline text-slate-300">·</span>
+              <span className="hidden sm:inline text-slate-500 font-medium whitespace-nowrap">{paxShort}</span>
+            </div>
+          </div>
+          <div className="h-7 w-7 rounded-full bg-primary text-white flex items-center justify-center shrink-0 shadow-xs">
+            <Search className="h-3.5 w-3.5" />
+          </div>
         </button>
 
         {/* Expanded dropdown */}
         {expanded && (
-          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-[min(900px,95vw)] bg-white rounded-2xl border border-slate-200 overflow-hidden
-            animate-in fade-in-0 zoom-in-95 duration-200 ease-out"
+          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-[min(900px,95vw)] bg-white rounded-2xl border border-slate-200 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200 ease-out"
             style={{ boxShadow: "0 20px 60px -10px rgba(0,0,0,0.18), 0 8px 24px -6px rgba(0,0,0,0.10)" }}
           >
-            <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between gap-3 px-4 sm:px-5 pt-3.5 pb-3 border-b border-slate-100">
               <div className="flex items-center bg-slate-100 rounded-lg p-0.5 gap-0.5">
                 {(["one-way", "round-trip"] as const).map((t) => (
                   <button key={t} type="button" onClick={() => handleTripTypeChange(t)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
                       tripType === t ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
                     }`}>
-                    <Plane className={`h-3 w-3 ${tripType === t ? "text-primary" : "text-slate-400"}`} />
+                    <Plane className={`h-3 w-3 ${tripType === t ? "text-primary" : "text-slate-400"} ${t === "round-trip" ? "rotate-180" : ""}`} />
                     {t === "one-way" ? "One Way" : "Round Trip"}
                   </button>
                 ))}
               </div>
-              <span className="text-[11px] text-slate-400 font-medium ml-auto">Modify your search</span>
+              <span className="hidden sm:inline text-[11px] text-slate-400 font-medium">Modify your search</span>
             </div>
-            <div className="px-5 py-4">
-              <div className="flex flex-wrap items-end gap-3">
-                <AirportCombobox value={fromCode} label="From"
-                  onChange={(code, lbl) => { setFromCode(code); setFromLabel(lbl); }}
-                  placeholder="City or airport" icon={<PlaneTakeoff className="h-4 w-4" />}
-                  minWidth="140px" />
-                <div className="shrink-0 pb-0.5">
-                  <button type="button"
-                    onClick={() => { setFromCode(toCode); setFromLabel(toLabel); setToCode(fromCode); setToLabel(fromLabel); }}
-                    className="h-11 w-11 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95">
-                    <ArrowLeftRight className="h-4 w-4" />
-                  </button>
+            <div className="p-4 sm:p-5">
+              <div className="flex flex-col lg:flex-row lg:items-end gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2 sm:gap-3 flex-1 min-w-0">
+                  <AirportCombobox value={fromCode} label="From"
+                    onChange={(code, lbl) => { setFromCode(code); setFromLabel(lbl); }}
+                    placeholder="City or airport" icon={<PlaneTakeoff className="h-4 w-4" />}
+                    minWidth="100%" />
+                  <div className="shrink-0 flex justify-center pb-0.5">
+                    <button type="button"
+                      onClick={() => { setFromCode(toCode); setFromLabel(toLabel); setToCode(fromCode); setToLabel(fromLabel); }}
+                      className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95">
+                      <ArrowLeftRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <AirportCombobox value={toCode} label="To"
+                    onChange={(code, lbl) => { setToCode(code); setToLabel(lbl); }}
+                    placeholder="City or airport" icon={<PlaneLanding className="h-4 w-4" />}
+                    minWidth="100%" />
                 </div>
-                <AirportCombobox value={toCode} label="To"
-                  onChange={(code, lbl) => { setToCode(code); setToLabel(lbl); }}
-                  placeholder="City or airport" icon={<PlaneLanding className="h-4 w-4" />}
-                  minWidth="140px" />
-                <div className="hidden lg:block self-stretch w-px bg-slate-100 mx-1" />
-                <DateRangePicker dept={dept} ret={ret} isRound={isRound}
-                  onDeptChange={setDept} onRetChange={setRet} />
-                <div className="relative shrink-0">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Passengers</p>
-                  <button
-                    data-pax-trigger
-                    type="button"
-                    onClick={openPax}
-                    className={`flex items-center gap-2.5 h-11 px-3.5 rounded-xl border bg-white transition-all text-sm font-medium text-slate-700 ${
-                      paxOpen ? "border-primary ring-2 ring-primary/15 shadow-sm" : "border-slate-200 hover:border-slate-300"}`}>
-                    <Users className={`h-4 w-4 transition-colors ${paxOpen ? "text-primary" : "text-slate-400"}`} />
-                    <span className="font-semibold text-slate-800">{passengers}</span>
-                    <span className="text-slate-500">{passengers === 1 ? "Adult" : "Adults"}</span>
-                    <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ml-1 ${paxOpen ? "rotate-180" : ""}`} />
-                  </button>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 flex-1 min-w-0">
+                  <DateRangePicker dept={dept} ret={ret} isRound={isRound}
+                    onDeptChange={setDept} onRetChange={setRet} />
+                  <div className="relative shrink-0 w-full sm:w-auto">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Passengers</p>
+                    <button
+                      data-pax-trigger
+                      type="button"
+                      onClick={openPax}
+                      className={`w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2.5 h-11 px-3.5 rounded-xl border bg-white transition-all text-sm font-medium text-slate-700 ${
+                        paxOpen ? "border-primary ring-2 ring-primary/15 shadow-sm" : "border-slate-200 hover:border-slate-300"}`}>
+                      <div className="flex items-center gap-2">
+                        <Users className={`h-4 w-4 transition-colors ${paxOpen ? "text-primary" : "text-slate-400"}`} />
+                        <span className="font-semibold text-slate-800">{passengers}</span>
+                        <span className="text-slate-500">{passengers === 1 ? "Adult" : "Adults"}</span>
+                      </div>
+                      <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ml-1 ${paxOpen ? "rotate-180" : ""}`} />
+                    </button>
+                  </div>
                 </div>
-                <div className="shrink-0 pb-0.5 ml-auto">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-transparent mb-1.5 select-none">·</p>
+                <div className="shrink-0 pt-2 lg:pt-0 w-full lg:w-auto">
                   <Button type="button" onClick={() => { handleSearch(); setExpanded(false); }} disabled={!canSearch}
-                    className="h-11 px-6 rounded-xl text-sm font-semibold gap-2 shadow-sm shadow-primary/20">
+                    className="w-full lg:w-auto h-12 sm:h-11 px-6 rounded-xl text-sm font-bold gap-2 shadow-md shadow-primary/20 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-amber-600 text-white">
                     <Search className="h-4 w-4" />Search flights
                   </Button>
                 </div>
@@ -643,7 +669,7 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
 
       {/* ── Header strip: trip type toggle ── */}
-      <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-slate-100">
+      <div className="flex items-center justify-between gap-3 px-4 sm:px-5 pt-3.5 pb-3 border-b border-slate-100">
         {/* Toggle buttons */}
         <div className="flex items-center bg-slate-100 rounded-lg p-0.5 gap-0.5">
           {(["one-way", "round-trip"] as const).map((t) => (
@@ -662,88 +688,88 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
             </button>
           ))}
         </div>
-        <span className="text-[11px] text-slate-400 font-medium">· Modify your search</span>
+        <span className="hidden sm:inline text-[11px] text-slate-400 font-medium">Modify your search</span>
       </div>
 
       {/* ── Form fields ── */}
-      <div className="px-5 py-4">
-        <div className="flex flex-wrap items-end gap-3">
+      <div className="p-4 sm:p-5">
+        <div className="flex flex-col lg:flex-row lg:items-end gap-3">
 
-          {/* ── From ── */}
-          <AirportCombobox
-            value={fromCode}
-            label="From"
-            onChange={(code, lbl) => { setFromCode(code); setFromLabel(lbl); }}
-            placeholder="City or airport"
-            icon={<PlaneTakeoff className="h-4 w-4" />}
-            minWidth="160px"
-          />
+          {/* ── From & To + Swap ── */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2 sm:gap-3 flex-1 min-w-0">
+            <AirportCombobox
+              value={fromCode}
+              label="From"
+              onChange={(code, lbl) => { setFromCode(code); setFromLabel(lbl); }}
+              placeholder="City or airport"
+              icon={<PlaneTakeoff className="h-4 w-4" />}
+              minWidth="100%"
+            />
 
-          {/* ── Swap button ── */}
-          <div className="shrink-0 pb-0.5">
-            <button
-              type="button"
-              onClick={() => {
-                setFromCode(toCode); setFromLabel(toLabel);
-                setToCode(fromCode); setToLabel(fromLabel);
-              }}
-              className="h-11 w-11 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95"
-              title="Swap airports"
-            >
-              <ArrowLeftRight className="h-4 w-4" />
-            </button>
+            {/* Swap button */}
+            <div className="shrink-0 flex justify-center pb-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setFromCode(toCode); setFromLabel(toLabel);
+                  setToCode(fromCode); setToLabel(fromLabel);
+                }}
+                className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95"
+                title="Swap airports"
+              >
+                <ArrowLeftRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            <AirportCombobox
+              value={toCode}
+              label="To"
+              onChange={(code, lbl) => { setToCode(code); setToLabel(lbl); }}
+              placeholder="City or airport"
+              icon={<PlaneLanding className="h-4 w-4" />}
+              minWidth="100%"
+            />
           </div>
 
-          {/* ── To ── */}
-          <AirportCombobox
-            value={toCode}
-            label="To"
-            onChange={(code, lbl) => { setToCode(code); setToLabel(lbl); }}
-            placeholder="City or airport"
-            icon={<PlaneLanding className="h-4 w-4" />}
-            minWidth="160px"
-          />
+          {/* ── Date & Passengers ── */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 flex-1 min-w-0">
+            <DateRangePicker
+              dept={dept}
+              ret={ret}
+              isRound={isRound}
+              onDeptChange={setDept}
+              onRetChange={setRet}
+            />
 
-          {/* ── Divider ── */}
-          <div className="hidden lg:block self-stretch w-px bg-slate-100 mx-1" />
-
-          {/* ── Single date input (departure + optional return) ── */}
-          <DateRangePicker
-            dept={dept}
-            ret={ret}
-            isRound={isRound}
-            onDeptChange={setDept}
-            onRetChange={setRet}
-          />
-
-          {/* ── Passengers ── */}
-          <div className="relative shrink-0">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Passengers</p>
-            <button
-              data-pax-trigger
-              type="button"
-              onClick={openPax}
-              className={`flex items-center gap-2.5 h-11 px-3.5 rounded-xl border bg-white transition-all text-sm font-medium text-slate-700
-                ${paxOpen ? "border-primary ring-2 ring-primary/15 shadow-sm" : "border-slate-200 hover:border-slate-300"}`}
-            >
-              <Users className={`h-4 w-4 transition-colors ${paxOpen ? "text-primary" : "text-slate-400"}`} />
-              <span className="font-semibold text-slate-800">{passengers}</span>
-              <span className="text-slate-500">{passengers === 1 ? "Adult" : "Adults"}</span>
-              <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ml-1 ${paxOpen ? "rotate-180" : ""}`} />
-            </button>
+            <div className="relative shrink-0 w-full sm:w-auto">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Passengers</p>
+              <button
+                data-pax-trigger
+                type="button"
+                onClick={openPax}
+                className={`w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2.5 h-11 px-3.5 rounded-xl border bg-white transition-all text-sm font-medium text-slate-700
+                  ${paxOpen ? "border-primary ring-2 ring-primary/15 shadow-sm" : "border-slate-200 hover:border-slate-300"}`}
+              >
+                <div className="flex items-center gap-2">
+                  <Users className={`h-4 w-4 transition-colors ${paxOpen ? "text-primary" : "text-slate-400"}`} />
+                  <span className="font-semibold text-slate-800">{passengers}</span>
+                  <span className="text-slate-500">{passengers === 1 ? "Adult" : "Adults"}</span>
+                </div>
+                <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ml-1 ${paxOpen ? "rotate-180" : ""}`} />
+              </button>
+            </div>
           </div>
 
           {/* ── Search button ── */}
-          <div className="shrink-0 pb-0.5 ml-auto">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-transparent mb-1.5 select-none">·</p>
+          <div className="shrink-0 pt-2 lg:pt-0 w-full lg:w-auto">
             <Button
               type="button"
               onClick={handleSearch}
               disabled={!canSearch}
-              className="h-11 px-6 rounded-xl text-sm font-semibold gap-2 shadow-sm shadow-primary/20"
+              className="w-full lg:w-auto h-12 sm:h-11 px-6 rounded-xl text-sm font-bold gap-2 shadow-md shadow-primary/20 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-amber-600 text-white"
             >
               <Search className="h-4 w-4" />
-              Search flights
+              <span>Search flights</span>
             </Button>
           </div>
         </div>

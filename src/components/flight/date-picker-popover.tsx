@@ -156,26 +156,29 @@ export function DatePickerPopover({
   // ── Shared calendar panel ─────────────────────────────────────────────────
   function CalendarPanel({ onClose: _onClose }: { onClose: () => void }) {
     return (
-      <div className="flex flex-col">
+      <div className="flex flex-col max-h-[80vh] overflow-y-auto">
         {/* Guide header */}
         {guideText && (
-          <div className="px-6 pt-4 pb-0 flex items-center gap-2">
-            <span className="text-xs font-semibold text-primary uppercase tracking-widest">{guideText}</span>
+          <div className="px-4 sm:px-6 pt-4 pb-0 flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <span className="text-xs font-bold text-primary uppercase tracking-widest">{guideText}</span>
+            {isRoundTrip && (
+              <span className="text-[11px] font-semibold text-slate-400">Showing 2 Months</span>
+            )}
           </div>
         )}
         {/* Calendar */}
         <Calendar
           mode="range"
-          numberOfMonths={2}
+          numberOfMonths={isRoundTrip ? 2 : 1}
           selected={selected}
           onSelect={handleSelect}
           month={month}
           onMonthChange={setMonth}
           disabled={{ before: today }}
           showOutsideDays={false}
-          className="p-6"
+          className="p-3 sm:p-6"
           classNames={{
-            months:              "flex gap-10",
+            months:              "flex flex-col sm:flex-row gap-6 sm:gap-10",
             month:               "flex flex-col gap-4 min-w-[260px]",
             caption:             "relative flex items-center justify-center h-10",
             caption_label:       "text-base font-bold text-slate-800 pointer-events-none",

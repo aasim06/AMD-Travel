@@ -53,7 +53,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={cn("font-sans", geist.variable)}>
       <body
-        className={`${fontHeading.variable} ${fontBody.variable} font-body bg-background text-foreground antialiased`}
+        className={`${fontHeading.variable} ${fontBody.variable} font-body bg-background text-foreground antialiased overflow-x-hidden w-full max-w-full`}
       >
         <CurrencyProvider>
           <NextTopLoader

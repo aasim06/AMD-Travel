@@ -133,16 +133,16 @@ function CurrencyDropdown() {
   const active = CURRENCY_META[currency];
 
   return (
-    <div ref={ref} className="relative hidden md:block">
+    <div ref={ref} className="relative flex items-center">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-foreground/80 rounded-md hover:bg-accent hover:text-primary transition-colors"
+        className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-foreground/80 rounded-lg hover:bg-accent hover:text-primary transition-colors border border-slate-200/60 dark:border-slate-800/60"
       >
         {active?.flagSvg}
-        <span>{active?.symbol}</span>
+        <span className="hidden xs:inline">{active?.symbol}</span>
         <span>{currency}</span>
-        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-3 w-3 sm:h-3.5 sm:w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
         <ul className="absolute right-0 mt-1 w-48 rounded-xl border border-border bg-card shadow-card-hover overflow-hidden z-[80]">
@@ -850,6 +850,12 @@ function UserPopover() {
     return () => document.removeEventListener("mousedown", onDown);
   }, []);
 
+  useEffect(() => {
+    const handleAuthEvent = () => handleOpenAuth("signin");
+    window.addEventListener("open-auth-modal", handleAuthEvent);
+    return () => window.removeEventListener("open-auth-modal", handleAuthEvent);
+  }, []);
+
   const handleOpenAuth = (tab: "signin" | "signup" | "lookup") => {
     setAuthTab(tab);
     setOpen(false);
@@ -858,7 +864,7 @@ function UserPopover() {
 
   return (
     <>
-      <div ref={ref} className="relative hidden sm:block">
+      <div ref={ref} className="relative flex items-center">
         <button
           type="button"
           aria-label="User account"
@@ -961,6 +967,13 @@ export function Header() {
   // Close drawer on route change
   useEffect(() => { setDrawerOpen(false); }, [pathname]);
 
+  // Listen for toggle drawer from mobile bottom dock
+  useEffect(() => {
+    const handleToggle = () => setDrawerOpen(prev => !prev);
+    window.addEventListener("toggle-mobile-drawer", handleToggle);
+    return () => window.removeEventListener("toggle-mobile-drawer", handleToggle);
+  }, []);
+
   const whatsappHref = `https://wa.me/${siteConfig.contact.whatsapp.replace(/\+/g, "")}`;
 
   return (
@@ -974,33 +987,22 @@ export function Header() {
             <button
               onClick={() => setDrawerOpen(true)}
               aria-label="Open navigation menu"
-              className="flex items-center justify-center h-9 w-9 rounded-md text-foreground hover:bg-accent hover:text-primary transition-colors"
+              className="hidden md:flex items-center justify-center h-9 w-9 rounded-md text-foreground hover:bg-accent hover:text-primary transition-colors"
             >
               <Menu className="h-5 w-5" />
             </button>
             <LogoMark />
           </div>
 
-          {/* Center: search slot — used by search page to portal compact bar here */}
-          <div id="header-search-slot" className="flex-1 flex justify-center px-4">
+          {/* Center: search slot — hidden on mobile to prevent overflow and clutter */}
+          <div id="header-search-slot" className="flex-1 hidden md:flex justify-center px-4">
             {isScrolled && pathname !== "/search" && <CompactSearchBar />}
           </div>
 
-          {/* Right: currency + whatsapp + bookings */}
-          <div className="flex items-center gap-2">
+          {/* Right: currency + user account */}
+          <div className="flex items-center gap-2 shrink-0">
             {/* Currency selector */}
             <CurrencyDropdown />
-
-            {/* WhatsApp */}
-            <a
-              href={whatsappHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Chat on WhatsApp"
-              className="hidden sm:flex items-center justify-center h-9 w-9 rounded-full text-success hover:bg-success/10 transition-colors"
-            >
-              <MessageCircle className="h-5 w-5" />
-            </a>
 
             {/* Bell */}
             <button
