@@ -85,7 +85,7 @@ function CheckoutContent() {
 
   return (
     <main className="min-h-screen bg-slate-50/60">
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="container py-8">
 
         {/* Page title */}
         {step !== "confirmation" && (

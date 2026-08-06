@@ -10,7 +10,7 @@ export default function VisaPage() {
 
       {/* ── Notice bar ── */}
       <div className="bg-amber-50 border-b border-amber-100">
-        <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center gap-2.5">
+        <div className="container py-2.5 flex items-center gap-2.5">
           <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0" />
           <p className="text-xs text-amber-700">
             <span className="font-semibold">Important:</span> Ensure all documents are clear and valid. Incomplete applications may cause delays.
@@ -19,7 +19,7 @@ export default function VisaPage() {
       </div>
 
       {/* ── Form ── */}
-      <div className="max-w-5xl mx-auto px-4 py-10">
+      <div className="container py-10">
         <VisaApplicationForm />
       </div>
 

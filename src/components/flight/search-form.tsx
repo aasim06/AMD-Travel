@@ -98,7 +98,7 @@ type CategoryKey = "flights" | "stays" | "cars" | "packages" | "umrah" | "visa";
 
 const CATEGORIES: { key: CategoryKey; label: string; icon: React.ReactNode }[] = [
   { key: "flights",  label: "Flights",         icon: <Plane      className="h-4 w-4" /> },
-  { key: "visa",     label: "Visa Services",   icon: <FileText   className="h-4 w-4" /> },
+  { key: "visa",     label: "Visa",            icon: <FileText   className="h-4 w-4" /> },
 ];
 
 const TRIP_TYPES: { label: string; value: TripType }[] = [
@@ -834,67 +834,73 @@ export function FlightSearchForm() {
 
         {/* ── Main search bar (one-way / round-trip) ── */}
         {tripType !== "multi-city" && (
-        <div className="flex items-center gap-3 w-full">
+        <div className="flex flex-col xl:flex-row items-stretch xl:items-end gap-3 w-full">
 
-          {/* FROM */}
-          <div className="flex-1 min-w-0">
-            <AirportInput
-              id="origin"
-              value={origin}
-              onChange={(v, display) => { setOrigin(v); setOriginDisplay(display); }}
-              placeholder="Where from?"
-              icon={<PlaneTakeoff className="h-4 w-4" />}
-              label="From"
-            />
+          {/* FROM & TO + SWAP */}
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {/* FROM */}
+            <div className="flex-1 min-w-0">
+              <AirportInput
+                id="origin"
+                value={origin}
+                onChange={(v, display) => { setOrigin(v); setOriginDisplay(display); }}
+                placeholder="Where from?"
+                icon={<PlaneTakeoff className="h-4 w-4" />}
+                label="From"
+              />
+            </div>
+
+            {/* SWAP */}
+            <button
+              type="button"
+              onClick={handleSwap}
+              aria-label="Swap airports"
+              className="shrink-0 p-2.5 rounded-full border border-border bg-white text-muted-foreground hover:text-primary hover:border-primary hover:bg-accent transition-all shadow-xs mt-5"
+              style={{
+                transform: swapping ? "rotate(180deg) scale(0.88)" : "rotate(0deg) scale(1)",
+                transition: "transform 0.32s cubic-bezier(.4,0,.2,1)",
+              }}
+            >
+              <ArrowLeftRight className="h-3.5 w-3.5" />
+            </button>
+
+            {/* TO */}
+            <div className="flex-1 min-w-0">
+              <AirportInput
+                id="destination"
+                value={destination}
+                onChange={(v, display) => { setDestination(v); setDestDisplay(display); }}
+                placeholder="Where to?"
+                icon={<PlaneLanding className="h-4 w-4" />}
+                label="To"
+              />
+            </div>
           </div>
 
-          {/* SWAP */}
-          <button
-            type="button"
-            onClick={handleSwap}
-            aria-label="Swap airports"
-            className="shrink-0 p-2 rounded-full border border-border bg-white text-muted-foreground hover:text-primary hover:border-primary hover:bg-accent transition-all shadow-sm mt-5"
-            style={{
-              transform: swapping ? "rotate(180deg) scale(0.88)" : "rotate(0deg) scale(1)",
-              transition: "transform 0.32s cubic-bezier(.4,0,.2,1)",
-            }}
-          >
-            <ArrowLeftRight className="h-3.5 w-3.5" />
-          </button>
+          {/* DATES & SEARCH */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 flex-1 min-w-0">
+            {/* DATES */}
+            <div className="flex-1 min-w-0">
+              <DatePickerPopover
+                value={dateRange}
+                onChange={(r) => { setDateRange(r); if (r.returnDate) setReturnDateError(false); }}
+                isRoundTrip={tripType === "round-trip"}
+                error={returnDateError}
+              />
+              {returnDateError && (
+                <p className="text-[11px] text-rose-500 mt-1 pl-1">Please select a return date</p>
+              )}
+            </div>
 
-          {/* TO */}
-          <div className="flex-1 min-w-0">
-            <AirportInput
-              id="destination"
-              value={destination}
-              onChange={(v, display) => { setDestination(v); setDestDisplay(display); }}
-              placeholder="Where to?"
-              icon={<PlaneLanding className="h-4 w-4" />}
-              label="To"
-            />
+            {/* SEARCH */}
+            <button
+              type="submit"
+              className="shrink-0 inline-flex items-center justify-center gap-2 px-8 h-14 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-amber-600 text-white font-bold shadow-md shadow-orange-500/20 active:scale-[0.97] transition-all duration-200 mt-0 sm:mt-5"
+            >
+              <Search className="h-4.5 w-4.5" />
+              <span>Search Flights</span>
+            </button>
           </div>
-
-          {/* DATES */}
-          <div className="flex-1 min-w-0">
-            <DatePickerPopover
-              value={dateRange}
-              onChange={(r) => { setDateRange(r); if (r.returnDate) setReturnDateError(false); }}
-              isRoundTrip={tripType === "round-trip"}
-              error={returnDateError}
-            />
-            {returnDateError && (
-              <p className="text-[11px] text-rose-500 mt-1 pl-1">Please select a return date</p>
-            )}
-          </div>
-
-          {/* SEARCH */}
-          <button
-            type="submit"
-            className="shrink-0 inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-card hover:shadow-card-hover active:scale-[0.97] transition-all duration-200 mt-5"
-          >
-            <Search className="h-4 w-4" />
-            Search
-          </button>
         </div>
         )}
       </form>

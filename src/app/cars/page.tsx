@@ -148,7 +148,7 @@ export default function CarsPage() {
       <Hero initialCategory="cars" />
 
       {/* ── Perks ── */}
-      <div className="max-w-6xl mx-auto px-4 pt-6 sm:pt-10 pb-4 sm:pb-10">
+      <div className="container pt-6 sm:pt-10 pb-4 sm:pb-10">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {PERKS.map(p => (
             <div key={p.title} className={`rounded-2xl border p-4 flex flex-col gap-2.5 ${p.bg}`} style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
@@ -165,7 +165,7 @@ export default function CarsPage() {
       </div>
 
       {/* ── Filter Bar ── */}
-      <div className="max-w-6xl mx-auto px-4 pb-5">
+      <div className="container pb-5">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-1.5 text-slate-400 text-sm mr-1">
             <Filter className="h-4 w-4" />
@@ -189,7 +189,7 @@ export default function CarsPage() {
       </div>
 
       {/* ── Cars Grid ── */}
-      <div className="max-w-6xl mx-auto px-4 pb-16">
+      <div className="container pb-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map(car => (
             <div

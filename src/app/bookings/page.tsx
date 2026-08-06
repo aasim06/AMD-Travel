@@ -227,7 +227,7 @@ export default function MyBookingsPage() {
         <div className="absolute top-0 left-0 w-96 h-96 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
 
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 z-10">
+        <div className="relative container z-10">
           {/* Eye-brow */}
           <div className="flex items-center gap-2 mb-5">
             <div className="h-9 w-9 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center">
@@ -304,7 +304,7 @@ export default function MyBookingsPage() {
       </section>
 
       {/* ── Filters & Booking List ── */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 pb-24 space-y-6">
+      <section className="container -mt-8 pb-24 space-y-6">
 
         {/* Filter Bar */}
         <div className="bg-background/90 backdrop-blur-xl border border-border rounded-2xl px-4 py-3 shadow-sm flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">

@@ -168,7 +168,7 @@ export default function TourDealsPage() {
         <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-blue-500/5 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 w-64 h-64 rounded-full bg-indigo-500/5 blur-3xl pointer-events-none" />
 
-        <div className="max-w-6xl mx-auto px-4 pt-12 pb-10 sm:pt-16 sm:pb-14 relative">
+        <div className="container pt-12 pb-10 sm:pt-16 sm:pb-14 relative">
 
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-white/40 text-xs mb-6">
@@ -225,7 +225,7 @@ export default function TourDealsPage() {
       </div>
 
       {/* ── Filter Bar ── */}
-      <div className="max-w-6xl mx-auto px-4 py-6">
+      <div className="container py-6">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-1.5 text-slate-400 text-sm mr-1">
             <Filter className="h-4 w-4" />
@@ -249,7 +249,7 @@ export default function TourDealsPage() {
       </div>
 
       {/* ── Deals Grid ── */}
-      <div className="max-w-6xl mx-auto px-4 pb-16">
+      <div className="container pb-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {filtered.map(deal => (
             <div

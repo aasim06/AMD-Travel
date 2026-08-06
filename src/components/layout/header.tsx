@@ -50,8 +50,8 @@ const PRIMARY_NAV = [
   { label: "Stays / Hotels",  href: "/stays",            icon: Hotel,    soon: true  },
   { label: "Cars",            href: "/cars",             icon: Car,      soon: true  },
   { label: "Tour Packages",   href: "/tour-deals",       icon: Package,  soon: false },
-  { label: "Umrah Packages",  href: "/umrah-packages",   icon: Moon,     soon: false },
-  { label: "Visa Services",   href: "/visa",             icon: FileText, soon: false },
+  { label: "Umrah",           href: "/umrah-packages",   icon: Moon,     soon: false },
+  { label: "Visa",            href: "/visa",             icon: FileText, soon: false },
 ];
 
 const SECONDARY_NAV = [
@@ -145,7 +145,7 @@ function CurrencyDropdown() {
         <ChevronDown className={`h-3 w-3 sm:h-3.5 sm:w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <ul className="absolute right-0 mt-1 w-48 rounded-xl border border-border bg-card shadow-card-hover overflow-hidden z-[80]">
+        <ul className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-slate-200 bg-white shadow-xl overflow-hidden z-[80] animate-in fade-in slide-in-from-top-2 duration-150">
           {siteConfig.locale.supportedCurrencies.map((cur) => {
             const meta = CURRENCY_META[cur];
             const isActive = cur === currency;

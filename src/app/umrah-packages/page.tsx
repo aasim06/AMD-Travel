@@ -147,7 +147,7 @@ export default function UmrahPackagesPage() {
       <Hero initialCategory="umrah" />
 
       {/* ── What's Included ── */}
-      <div className="max-w-6xl mx-auto px-4 py-10">
+      <div className="container py-10">
         <div className="mb-6">
           <h2 className="text-lg font-bold text-slate-800">What&apos;s Included in Every Package</h2>
           <p className="text-sm text-slate-400 mt-1">All packages cover the essentials — premium tiers add more.</p>
@@ -172,7 +172,7 @@ export default function UmrahPackagesPage() {
       </div>
 
       {/* ── Filter Bar ── */}
-      <div className="max-w-6xl mx-auto px-4 pb-5">
+      <div className="container pb-5">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-1.5 text-slate-400 text-sm mr-1">
             <Filter className="h-4 w-4" />
@@ -196,7 +196,7 @@ export default function UmrahPackagesPage() {
       </div>
 
       {/* ── Packages Grid ── */}
-      <div className="max-w-6xl mx-auto px-4 pb-16">
+      <div className="container pb-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map(pkg => (
             <div
