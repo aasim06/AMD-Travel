@@ -107,8 +107,8 @@ const CURRENCY_META: Record<string, { flagSvg: React.ReactNode; symbol: string; 
         <rect width="60" height="40" fill="#003399"/>
         {Array.from({length:12}).map((_,i) => {
           const angle = (i * 30 - 90) * Math.PI / 180;
-          const cx = 30 + Math.cos(angle) * 12;
-          const cy = 20 + Math.sin(angle) * 12;
+          const cx = Number((30 + Math.cos(angle) * 12).toFixed(2));
+          const cy = Number((20 + Math.sin(angle) * 12).toFixed(2));
           return <text key={i} x={cx} y={cy} fontSize="5" fill="#FFCC00" textAnchor="middle" dominantBaseline="middle">★</text>;
         })}
       </svg>

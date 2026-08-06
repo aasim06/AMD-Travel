@@ -1,3 +1,6 @@
+import dns from "node:dns";
+try { dns.setDefaultResultOrder("ipv4first"); } catch { /* ignore */ }
+
 import { NextRequest, NextResponse } from "next/server";
 import { getAmadeusToken } from "@/lib/amadeus";
 import COUNTRY_ALIASES from "@/lib/countryAliases";
@@ -92,31 +95,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(localFallback(keyword));
   }
 
-  const url = new URL("https://test.api.amadeus.com/v1/reference-data/locations");
-  url.searchParams.set("subType",     "CITY,AIRPORT");
-  url.searchParams.set("keyword",     keyword);
-  url.searchParams.set("page[limit]", "8");
-  url.searchParams.set("view",        "LIGHT");
-
-  let res: Response;
-  try {
-    res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-  } catch (err) {
-    console.warn("[/api/airports] Network error — using local fallback:", err);
-    return NextResponse.json(localFallback(keyword));
-  }
-
-  if (!res.ok) {
-    console.warn(`[/api/airports] Amadeus HTTP ${res.status} — using local fallback`);
-    return NextResponse.json(localFallback(keyword));
-  }
+  const params = new URLSearchParams({
+    subType:      "CITY,AIRPORT",
+    keyword:      keyword,
+    "page[limit]":"8",
+    view:         "LIGHT",
+  });
 
   let json: { data?: unknown[] };
   try {
-    json = await res.json();
-  } catch {
+    json = await import("@/lib/amadeus").then(m =>
+      m.amadeusGet(`/v1/reference-data/locations?${params.toString()}`, token)
+    ) as { data?: unknown[] };
+  } catch (err) {
+    console.warn("[/api/airports] API error — using local fallback:", err);
     return NextResponse.json(localFallback(keyword));
   }
 

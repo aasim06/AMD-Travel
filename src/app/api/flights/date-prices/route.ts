@@ -1,5 +1,8 @@
+import dns from "node:dns";
+try { dns.setDefaultResultOrder("ipv4first"); } catch { /* ignore */ }
+
 import { NextRequest, NextResponse } from "next/server";
-import { getAmadeusToken, AMADEUS_API_BASE } from "@/lib/amadeus";
+import { getAmadeusToken, amadeusGet } from "@/lib/amadeus";
 
 // ─── Cache ────────────────────────────────────────────────────────────────────
 
@@ -50,25 +53,11 @@ async function fetchCheapestPrice(
 
   if (returnDate) params.set("returnDate", returnDate);
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
-
   try {
-    const res = await fetch(
-      `${AMADEUS_API_BASE}/v2/shopping/flight-offers?${params.toString()}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-        signal: controller.signal,
-      }
-    );
-    clearTimeout(timer);
-
-    if (!res.ok) return null;
-
-    const json = await res.json() as {
-      data?: { price: { total: string } }[];
-      errors?: unknown[];
-    };
+    const json = await amadeusGet(
+      `/v2/shopping/flight-offers?${params.toString()}`,
+      token
+    ) as { data?: { price: { total: string } }[]; errors?: unknown[] };
 
     if (json.errors || !json.data?.length) return null;
 
@@ -76,12 +65,21 @@ async function fetchCheapestPrice(
     return prices.length ? Math.min(...prices) : null;
 
   } catch {
-    clearTimeout(timer);
     return null;
   }
 }
 
 // ─── POST ─────────────────────────────────────────────────────────────────────
+
+function normalizeTravelClass(tc?: string): string {
+  if (!tc) return "ECONOMY";
+  const upper = tc.toUpperCase();
+  if (upper === "1" || upper === "ECONOMY") return "ECONOMY";
+  if (upper === "2" || upper === "PREMIUM_ECONOMY") return "PREMIUM_ECONOMY";
+  if (upper === "3" || upper === "BUSINESS") return "BUSINESS";
+  if (upper === "4" || upper === "FIRST") return "FIRST";
+  return "ECONOMY";
+}
 
 export async function POST(request: NextRequest) {
   const body = await request.json() as {
@@ -98,9 +96,11 @@ export async function POST(request: NextRequest) {
   const {
     origin, destination, centerDate,
     returnDate = null,
-    passengers = 1, travelClass = "ECONOMY",
+    passengers = 1,
     currency = "EUR", range = 3,
   } = body;
+
+  const travelClass = normalizeTravelClass(body.travelClass);
 
   if (!origin || !destination || !centerDate) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -118,8 +118,9 @@ export async function POST(request: NextRequest) {
     console.warn("[date-prices] Token error — using mock prices:", err);
     // Return mock price data when Amadeus is unreachable
     const dates: string[] = [];
-    for (let i = -range; i <= range; i++) dates.push(addDays(centerDate, i));
-    const BASE = 280 + Math.floor(Math.random() * 120);
+    const isDomesticPk = ["LHE","ISB","KHI","PEW","MUX","SKT","UET"].includes(origin.toUpperCase()) &&
+                         ["LHE","ISB","KHI","PEW","MUX","SKT","UET"].includes(destination.toUpperCase());
+    const BASE = isDomesticPk ? (75 + Math.floor(Math.random() * 20)) : (280 + Math.floor(Math.random() * 120));
     const mockResults = dates.map((date, i) => ({
       date,
       price: i === range ? null : Math.round(BASE * (0.85 + Math.random() * 0.3)),

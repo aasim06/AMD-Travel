@@ -1,5 +1,8 @@
+import dns from "node:dns";
+try { dns.setDefaultResultOrder("ipv4first"); } catch { /* ignore */ }
+
 import { NextRequest, NextResponse } from "next/server";
-import { getAmadeusToken, AMADEUS_API_BASE } from "@/lib/amadeus";
+import { getAmadeusToken, amadeusGet, amadeusPost } from "@/lib/amadeus";
 import type {
   FlightOffer,
   FlightSegment,
@@ -22,21 +25,33 @@ function generateMockFlights(
 ): object {
   const isRound = tripType === "round-trip";
 
-  const MOCK_CARRIERS = [
-    { code: "EK", name: "Emirates",       basePrice: 420 },
-    { code: "QR", name: "Qatar Airways",   basePrice: 390 },
-    { code: "TK", name: "Turkish Airlines",basePrice: 340 },
-    { code: "EY", name: "Etihad Airways",  basePrice: 410 },
-    { code: "SV", name: "Saudia",          basePrice: 310 },
-    { code: "FZ", name: "flydubai",        basePrice: 240 },
-  ];
+  const isDomesticPk = ["LHE","ISB","KHI","PEW","MUX","SKT","UET"].includes(origin.toUpperCase()) &&
+                       ["LHE","ISB","KHI","PEW","MUX","SKT","UET"].includes(destination.toUpperCase());
+
+  const MOCK_CARRIERS = isDomesticPk
+    ? [
+        { code: "PK", name: "PIA (Pakistan International Airlines)", basePrice: 85 },
+        { code: "PA", name: "Airblue",                              basePrice: 78 },
+        { code: "PF", name: "AirSial",                              basePrice: 82 },
+        { code: "9P", name: "Fly Jinnah",                           basePrice: 72 },
+        { code: "ER", name: "SereneAir",                            basePrice: 80 },
+      ]
+    : [
+        { code: "EK", name: "Emirates",       basePrice: 420 },
+        { code: "QR", name: "Qatar Airways",   basePrice: 390 },
+        { code: "TK", name: "Turkish Airlines",basePrice: 340 },
+        { code: "EY", name: "Etihad Airways",  basePrice: 410 },
+        { code: "SV", name: "Saudia",          basePrice: 310 },
+        { code: "FZ", name: "flydubai",        basePrice: 240 },
+      ];
 
   const AIRCRAFT: Record<string, string> = {
+    PK: "320", PA: "321", PF: "320", "9P": "320", ER: "738",
     EK: "77W", QR: "359", TK: "321", EY: "789", SV: "333", FZ: "73H",
   };
 
   const depAt = `${departureDate}T${["06:00","09:30","12:15","15:45","18:00","21:30"][Math.floor(Math.random()*6)]}:00`;
-  const durationMins = 120 + Math.floor(Math.random() * 300);
+  const durationMins = isDomesticPk ? (55 + Math.floor(Math.random() * 30)) : (120 + Math.floor(Math.random() * 300));
   const arrAt = new Date(new Date(depAt).getTime() + durationMins * 60000).toISOString().replace(".000Z","");
   const durStr = `PT${Math.floor(durationMins/60)}H${durationMins%60 > 0 ? durationMins%60+"M" : ""}`;
 
@@ -247,37 +262,16 @@ function mapOffer(offer: AmadeusOffer, currency: Currency): FlightOffer {
   };
 }
 
-// ─── Amadeus fetch wrapper ────────────────────────────────────────────────────
+// ─── Amadeus fetch wrappers (use native https via lib/amadeus) ────────────────
 
 async function amadeusFetch(
   path: string,
   token: string,
   params?: URLSearchParams
 ): Promise<AmadeusResponse> {
-  const url = `${AMADEUS_API_BASE}${path}${params ? `?${params.toString()}` : ""}`;
-  console.log("[Amadeus] GET", url);
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10_000);
-
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timer);
-  }
-
-  const json = await res.json() as AmadeusResponse;
-
-  if (!res.ok) {
-    const detail = json.errors?.map(e => e.detail).join("; ") ?? `HTTP ${res.status}`;
-    throw new Error(`Amadeus API error: ${detail}`);
-  }
-
-  return json;
+  const fullPath = `${path}${params ? `?${params.toString()}` : ""}`;
+  console.log("[Amadeus] GET", fullPath);
+  return amadeusGet(fullPath, token) as Promise<AmadeusResponse>;
 }
 
 async function amadeusPostFetch(
@@ -285,38 +279,21 @@ async function amadeusPostFetch(
   token: string,
   body: object
 ): Promise<AmadeusResponse> {
-  const url = `${AMADEUS_API_BASE}${path}`;
-  console.log("[Amadeus] POST", url);
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10_000);
-
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/vnd.amadeus+json",
-      },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timer);
-  }
-
-  const json = await res.json() as AmadeusResponse;
-
-  if (!res.ok) {
-    const detail = json.errors?.map(e => e.detail).join("; ") ?? `HTTP ${res.status}`;
-    throw new Error(`Amadeus API error: ${detail}`);
-  }
-
-  return json;
+  console.log("[Amadeus] POST", path);
+  return amadeusPost(path, token, body) as Promise<AmadeusResponse>;
 }
 
 // ─── POST ─────────────────────────────────────────────────────────────────────
+
+function normalizeTravelClass(tc?: string): TravelClass {
+  if (!tc) return "ECONOMY";
+  const upper = tc.toUpperCase();
+  if (upper === "1" || upper === "ECONOMY") return "ECONOMY";
+  if (upper === "2" || upper === "PREMIUM_ECONOMY") return "PREMIUM_ECONOMY";
+  if (upper === "3" || upper === "BUSINESS") return "BUSINESS";
+  if (upper === "4" || upper === "FIRST") return "FIRST";
+  return "ECONOMY";
+}
 
 export async function POST(request: NextRequest) {
   let body: SearchBody;
@@ -326,7 +303,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { origin, destination, departureDate, returnDate, travelClass, currency, passengers, tripType } = body;
+  const { origin, destination, departureDate, returnDate, passengers, currency, tripType } = body;
+  const travelClass = normalizeTravelClass(body.travelClass);
 
   if (!origin || !destination || !departureDate) {
     return NextResponse.json({ success: false, error: "Missing: origin, destination, departureDate" }, { status: 400 });

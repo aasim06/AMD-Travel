@@ -1,6 +1,21 @@
-const AMADEUS_TOKEN_URL = "https://test.api.amadeus.com/v1/security/oauth2/token";
-export const AMADEUS_API_BASE = "https://test.api.amadeus.com";
-export const amadeusBaseUrl = AMADEUS_API_BASE;
+import dns from "node:dns";
+
+// Fix Node.js IPv6-first DNS resolution issue
+try {
+  dns.setDefaultResultOrder("ipv4first");
+} catch {
+  /* ignore */
+}
+
+// ─── Centralized Amadeus Enterprise API Configuration ──────────────────────────
+
+export const AMADEUS_BASE_URL =
+  process.env.AMADEUS_ENV === "production"
+    ? "https://travel.api.amadeus.com"
+    : "https://test.travel.api.amadeus.com";
+
+export const AMADEUS_API_BASE = AMADEUS_BASE_URL;
+export const amadeusBaseUrl = AMADEUS_BASE_URL;
 
 export function amadeusHeaders(token: string) {
   return {
@@ -16,31 +31,22 @@ interface TokenCache {
 
 let tokenCache: TokenCache | null = null;
 
-// ─── Fetch with timeout helper ─────────────────────────────────────────────────
-async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 8000): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...options, signal: controller.signal });
-  } finally {
-    clearTimeout(timer);
-  }
-}
+// ─── Token Fetch Logic ────────────────────────────────────────────────────────
 
-// ─── Token fetch with retry ────────────────────────────────────────────────────
 export async function getAmadeusToken(): Promise<string> {
   if (tokenCache && Date.now() < tokenCache.expiresAt - 30_000) {
     return tokenCache.token;
   }
 
-  const clientId = process.env.AMADEUS_CLIENT_ID;
-  const clientSecret = process.env.AMADEUS_CLIENT_SECRET;
+  const clientId = (process.env.AMADEUS_CLIENT_ID ?? "").trim();
+  const clientSecret = (process.env.AMADEUS_CLIENT_SECRET ?? "").trim();
 
   if (!clientId || !clientSecret) {
     throw new Error("AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET must be set in environment variables");
   }
 
-  console.log("[Amadeus] Requesting token - client_id:", clientId.slice(0, 6) + "...");
+  const tokenUrl = `${AMADEUS_BASE_URL}/v1/security/oauth2/token`;
+  console.log(`[Amadeus Auth] Requesting token from: ${tokenUrl} (client_id: ${clientId.slice(0, 6)}...)`);
 
   const body = new URLSearchParams({
     grant_type: "client_credentials",
@@ -48,45 +54,93 @@ export async function getAmadeusToken(): Promise<string> {
     client_secret: clientSecret,
   }).toString();
 
-  const options: RequestInit = {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  };
-
-  // Retry up to 2 times with 8s timeout each
-  let lastErr: unknown;
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    let res: Response;
-    try {
-      res = await fetchWithTimeout(AMADEUS_TOKEN_URL, options, 8000);
-    } catch (err) {
-      lastErr = err;
-      const cause = err instanceof Error ? err.message : String(err);
-      console.warn(`[Amadeus] Token fetch attempt ${attempt} FAILED - cause:`, cause);
-      if (attempt < 2) await new Promise(r => setTimeout(r, 1000)); // wait 1s before retry
-      continue;
-    }
-
-    if (!res.ok) {
-      let respBody: unknown = {};
-      try { respBody = await res.json(); } catch { /* ignore */ }
-      console.error("[Amadeus] Token HTTP error - status:", res.status, "body:", JSON.stringify(respBody));
-      throw new Error(`Token request failed: HTTP ${res.status}`);
-    }
-
-    const json = (await res.json()) as { access_token: string; expires_in: number };
-    console.log("[Amadeus] Token OK - expires in", json.expires_in, "s");
-
-    tokenCache = {
-      token: json.access_token,
-      expiresAt: Date.now() + json.expires_in * 1000,
-    };
-
-    return tokenCache.token;
+  let response: Response;
+  try {
+    response = await fetch(tokenUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    });
+  } catch (err: unknown) {
+    const errorObj = err as Error & { cause?: unknown };
+    const causeMsg = errorObj?.cause ? JSON.stringify(errorObj.cause) : errorObj.message;
+    console.error(`[Amadeus Auth DNS/Network Error] Failed to reach ${tokenUrl}:`, causeMsg);
+    throw new Error(`Cannot reach Amadeus auth server at ${tokenUrl}: ${errorObj.message} (cause: ${causeMsg})`);
   }
 
-  const cause = lastErr instanceof Error ? lastErr.message : String(lastErr);
-  console.warn("[Amadeus] Token fetch FAILED after retries - cause:", cause);
-  throw new Error(`Cannot reach Amadeus auth server: ${cause}`);
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[Amadeus Auth HTTP ${response.status}] ${tokenUrl} failed body:`, errorText);
+    throw new Error(`Amadeus token request failed [HTTP ${response.status}]: ${errorText}`);
+  }
+
+  const json = (await response.json()) as { access_token: string; expires_in: number };
+  console.log(`[Amadeus Auth OK] Token received. Expires in ${json.expires_in}s`);
+
+  tokenCache = {
+    token: json.access_token,
+    expiresAt: Date.now() + json.expires_in * 1000,
+  };
+
+  return tokenCache.token;
+}
+
+// ─── Centralized Fetch Helper for Amadeus Endpoints ───────────────────────────
+
+export async function amadeusFetch(
+  endpointPath: string,
+  options: {
+    method?: string;
+    token?: string;
+    body?: unknown;
+    params?: URLSearchParams;
+  } = {}
+): Promise<unknown> {
+  const { method = "GET", token, body, params } = options;
+  const queryString = params ? `?${params.toString()}` : "";
+  const fullUrl = `${AMADEUS_BASE_URL}${endpointPath.startsWith("/") ? "" : "/"}${endpointPath}${queryString}`;
+
+  console.log(`[Amadeus API Call] ${method} ${fullUrl}`);
+
+  const authToken = token ?? (await getAmadeusToken());
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${authToken}`,
+    "Content-Type": "application/json",
+  };
+
+  let response: Response;
+  try {
+    response = await fetch(fullUrl, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (err: unknown) {
+    const errorObj = err as Error & { cause?: unknown };
+    const causeMsg = errorObj?.cause ? JSON.stringify(errorObj.cause) : errorObj.message;
+    console.error(`[Amadeus API Network/DNS Error] ${method} ${fullUrl} failed:`, causeMsg);
+    throw new Error(`Amadeus network request failed for ${fullUrl}: ${errorObj.message}`);
+  }
+
+  const responseText = await response.text();
+
+  if (!response.ok) {
+    console.error(`[Amadeus API Error HTTP ${response.status}] ${fullUrl}:`, responseText);
+    throw new Error(`Amadeus API error [HTTP ${response.status}] at ${fullUrl}: ${responseText}`);
+  }
+
+  try {
+    return JSON.parse(responseText);
+  } catch {
+    return responseText;
+  }
+}
+
+export async function amadeusGet(path: string, token: string): Promise<unknown> {
+  return amadeusFetch(path, { method: "GET", token });
+}
+
+export async function amadeusPost(path: string, token: string, payload: unknown): Promise<unknown> {
+  return amadeusFetch(path, { method: "POST", token, body: payload });
 }
