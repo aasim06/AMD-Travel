@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mail, Phone, MapPin, Globe, Camera, Briefcase, X, MessageCircle } from "lucide-react";
+import { Mail, Phone, MapPin, Globe, Camera, Briefcase, X, MessageCircle, ArrowRight } from "lucide-react";
 import { siteConfig } from "@/config/site";
 
 export function Footer() {
@@ -13,7 +13,48 @@ export function Footer() {
   ];
 
   return (
-    <footer className="bg-card border-t border-border">
+    <footer className="bg-card border-border">
+      {/* Custom Flight & Travel CTA Banner */}
+      <div className="border-b border-border text-white">
+        <div className="container py-8">
+          <div className="relative px-6 py-8 sm:px-10 flex flex-col sm:flex-row items-center justify-between gap-6 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-700/60 shadow-xl overflow-hidden">
+            {/* Ambient background glow */}
+            <div className="absolute -right-16 -top-16 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="flex-1 text-center sm:text-left z-10">
+              <p className="text-orange-400 text-xs font-semibold uppercase tracking-widest mb-2">
+                Need a tailored plan?
+              </p>
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-1.5 font-heading">
+                Get a Custom Flight &amp; Travel Quote
+              </h2>
+              <p className="text-white/70 text-sm max-w-xl">
+                Tell us your preferred dates, destinations, and budget — we&apos;ll arrange the best flight deals for your journey.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0 z-10">
+              <a
+                href="https://wa.me/4917972968560?text=Hi,%20I'd%20like%20a%20custom%20flight%20quote"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2.5 bg-emerald-500 hover:bg-emerald-600 transition-all text-white font-bold text-sm px-5 py-3 rounded-xl w-full sm:w-auto text-center shadow-lg shadow-emerald-500/25 hover:scale-[1.02] active:scale-100"
+              >
+                <MessageCircle className="h-4 w-4" />
+                WhatsApp Us
+              </a>
+              <a
+                href="mailto:team@amdglobal.org"
+                className="flex items-center justify-center gap-2.5 bg-white/10 hover:bg-white/15 border border-white/15 transition-all text-white font-bold text-sm px-5 py-3 rounded-xl w-full sm:w-auto text-center hover:scale-[1.02] active:scale-100"
+              >
+                Email Us
+                <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="container py-6 sm:py-12">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand + address */}
@@ -166,7 +207,7 @@ export function Footer() {
               {/* Apple Pay */}
               <div className="h-8 px-2.5 border border-border bg-black flex items-center justify-center gap-1">
                 <svg viewBox="0 0 14 16" className="h-4 w-auto fill-white" aria-label="Apple Pay" aria-hidden="true">
-                  <path d="M9.02 2.06c.52-.63.87-1.5.77-2.37-.75.03-1.65.5-2.18 1.13-.48.55-.9 1.44-.79 2.29.84.06 1.69-.42 2.2-1.05zM9.78 3.3c-1.21-.07-2.24.69-2.82.69-.58 0-1.47-.65-2.43-.63C3.2 3.38 1.9 4.2 1.18 5.47c-1.46 2.52-.38 6.26 1.04 8.31.69.99 1.52 2.1 2.6 2.06.99-.04 1.38-.65 2.58-.65 1.2 0 1.55.65 2.6.63 1.12-.02 1.83-1.02 2.52-2.01.79-1.14 1.11-2.25 1.13-2.31-.02-.01-2.17-.84-2.19-3.33-.02-2.08 1.7-3.08 1.78-3.13-.97-1.44-2.49-1.6-3.06-1.64z"/>
+                  <path d="M9.02 2.06c.52-.63.87-1.5.77-2.37-.75.03-1.65.5-2.18 1.13-.48.55-.9 1.44-.79 2.29.84.06 1.69-.42 2.2-1.05zM9.78 3.3c-1.21-.07-2.24.69-2.82.69-.58 0-1.47-.65-2.43-.63C3.2 3.38 1.9 4.2 1.18 5.47c-1.46 2.52-.38 6.26 1.04 8.31.69.99 1.52 2.1 2.6 2.06.99-.04 1.38-.65 2.58-.65 1.2 0 1.55.65 2.6.63 1.12-.02 1.83-1.02 2.52-2.01.79-1.14 1.11-2.25 1.13-2.31-.02-.01-2.17-.84-2.19-3.33-.02-2.08 1.7-3.08 1.78-3.13-.97-1.44-2.49-1.6-3.06-1.64z" />
                 </svg>
                 <svg viewBox="0 0 30 12" className="h-3 w-auto" aria-label="Pay text">
                   <text x="0" y="10" fontFamily="Arial" fontWeight="600" fontSize="10" fill="white">Pay</text>

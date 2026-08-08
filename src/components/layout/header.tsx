@@ -875,7 +875,7 @@ function UserPopover() {
         </button>
 
         {open && (
-          <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-slate-200 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.1)] overflow-hidden z-[80] animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="absolute top-full right-0 mt-2 w-64 rounded-2xl border border-slate-200 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.15)] overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-150">
             {/* Header */}
             <div className="px-4 py-4 bg-gradient-to-br from-primary/8 to-primary/3 border-b border-slate-100">
               <div className="flex items-center gap-3">

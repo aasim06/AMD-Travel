@@ -834,10 +834,10 @@ export function FlightSearchForm() {
 
         {/* ── Main search bar (one-way / round-trip) ── */}
         {tripType !== "multi-city" && (
-        <div className="flex flex-col xl:flex-row items-stretch xl:items-end gap-3 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-end w-full">
 
           {/* FROM & TO + SWAP */}
-          <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="lg:col-span-5 flex items-center gap-2 min-w-0">
             {/* FROM */}
             <div className="flex-1 min-w-0">
               <AirportInput
@@ -855,7 +855,7 @@ export function FlightSearchForm() {
               type="button"
               onClick={handleSwap}
               aria-label="Swap airports"
-              className="shrink-0 p-2.5 rounded-full border border-border bg-white text-muted-foreground hover:text-primary hover:border-primary hover:bg-accent transition-all shadow-xs mt-5"
+              className="shrink-0 p-2 rounded-full border border-border bg-white text-muted-foreground hover:text-primary hover:border-primary hover:bg-accent transition-all shadow-xs mt-5"
               style={{
                 transform: swapping ? "rotate(180deg) scale(0.88)" : "rotate(0deg) scale(1)",
                 transition: "transform 0.32s cubic-bezier(.4,0,.2,1)",
@@ -877,30 +877,30 @@ export function FlightSearchForm() {
             </div>
           </div>
 
-          {/* DATES & SEARCH */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 flex-1 min-w-0">
-            {/* DATES */}
-            <div className="flex-1 min-w-0">
-              <DatePickerPopover
-                value={dateRange}
-                onChange={(r) => { setDateRange(r); if (r.returnDate) setReturnDateError(false); }}
-                isRoundTrip={tripType === "round-trip"}
-                error={returnDateError}
-              />
-              {returnDateError && (
-                <p className="text-[11px] text-rose-500 mt-1 pl-1">Please select a return date</p>
-              )}
-            </div>
+          {/* DATES */}
+          <div className="lg:col-span-4 min-w-0">
+            <DatePickerPopover
+              value={dateRange}
+              onChange={(r) => { setDateRange(r); if (r.returnDate) setReturnDateError(false); }}
+              isRoundTrip={tripType === "round-trip"}
+              error={returnDateError}
+            />
+            {returnDateError && (
+              <p className="text-[11px] text-rose-500 mt-1 pl-1">Please select a return date</p>
+            )}
+          </div>
 
-            {/* SEARCH */}
+          {/* SEARCH CTA */}
+          <div className="lg:col-span-3 min-w-0">
             <button
               type="submit"
-              className="shrink-0 inline-flex items-center justify-center gap-2 px-8 h-14 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-amber-600 text-white font-bold shadow-md shadow-orange-500/20 active:scale-[0.97] transition-all duration-200 mt-0 sm:mt-5"
+              className="w-full inline-flex items-center justify-center gap-2 h-14 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-sm xl:text-base shadow-md shadow-orange-500/20 active:scale-[0.97] transition-all duration-200"
             >
               <Search className="h-4.5 w-4.5" />
               <span>Search Flights</span>
             </button>
           </div>
+
         </div>
         )}
       </form>

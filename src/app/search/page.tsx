@@ -83,7 +83,7 @@ function formatDate(iso: string): string {
 
 /** Shadcn-styled airport combobox with Input + floating dropdown */
 function AirportCombobox({
-  value, onChange, placeholder, label, icon, minWidth = "160px",
+  value, onChange, placeholder, label, icon, minWidth = "0",
 }: {
   value: string;
   onChange: (code: string, label: string) => void;
@@ -137,7 +137,7 @@ function AirportCombobox({
   }, []);
 
   return (
-    <div ref={containerRef} className="relative flex-1" style={{ minWidth }}>
+    <div ref={containerRef} className="relative flex-1 min-w-0" style={minWidth && minWidth !== "0" ? { minWidth } : undefined}>
       {/* Label */}
       <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">{label}</p>
       {/* Input wrapper */}
@@ -557,71 +557,142 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
 
         {/* Expanded dropdown */}
         {expanded && (
-          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-[min(900px,95vw)] bg-white rounded-2xl border border-slate-200 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200 ease-out"
-            style={{ boxShadow: "0 20px 60px -10px rgba(0,0,0,0.18), 0 8px 24px -6px rgba(0,0,0,0.10)" }}
-          >
-            <div className="flex items-center justify-between gap-3 px-4 sm:px-5 pt-3.5 pb-3 border-b border-slate-100">
-              <div className="flex items-center bg-slate-100 rounded-lg p-0.5 gap-0.5">
-                {(["one-way", "round-trip"] as const).map((t) => (
-                  <button key={t} type="button" onClick={() => handleTripTypeChange(t)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                      tripType === t ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
-                    }`}>
-                    <Plane className={`h-3 w-3 ${tripType === t ? "text-primary" : "text-slate-400"} ${t === "round-trip" ? "rotate-180" : ""}`} />
-                    {t === "one-way" ? "One Way" : "Round Trip"}
+          <>
+            {/* Backdrop scrim */}
+            <div
+              className="fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-[2px] transition-opacity duration-200"
+              onClick={() => setExpanded(false)}
+            />
+
+            {/* Dropdown container */}
+            <div
+              className="absolute top-full left-1/2 -translate-x-1/2 mt-3 z-50 w-[min(1080px,95vw)] bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 sm:p-5 animate-in fade-in-0 zoom-in-95 duration-200 ease-out"
+              style={{ boxShadow: "0 25px 70px -10px rgba(0,0,0,0.22), 0 10px 30px -5px rgba(0,0,0,0.12)" }}
+            >
+              {/* Dropdown Header */}
+              <div className="flex items-center justify-between gap-3 pb-3.5 mb-4 border-b border-slate-100">
+                <div className="flex items-center bg-slate-100 rounded-lg p-0.5 gap-0.5">
+                  {(["one-way", "round-trip"] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => handleTripTypeChange(t)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                        tripType === t
+                          ? "bg-white text-primary shadow-sm"
+                          : "text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      <Plane
+                        className={`h-3 w-3 ${tripType === t ? "text-primary" : "text-slate-400"} ${
+                          t === "round-trip" ? "rotate-180" : ""
+                        }`}
+                      />
+                      {t === "one-way" ? "One Way" : "Round Trip"}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="hidden sm:inline text-xs font-medium text-slate-400">
+                    Modify your search
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setExpanded(false)}
+                    className="h-7 w-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors shrink-0"
+                    title="Close"
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                      <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
+                    </svg>
                   </button>
-                ))}
+                </div>
               </div>
-              <span className="hidden sm:inline text-[11px] text-slate-400 font-medium">Modify your search</span>
-            </div>
-            <div className="p-4 sm:p-5">
-              <div className="flex flex-col lg:flex-row lg:items-end gap-3">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2 sm:gap-3 flex-1 min-w-0">
-                  <AirportCombobox value={fromCode} label="From"
+
+              {/* Form Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-end">
+                {/* Airports: From + Swap + To */}
+                <div className="lg:col-span-5 flex flex-col sm:flex-row items-stretch sm:items-end gap-2 sm:gap-2.5 min-w-0">
+                  <AirportCombobox
+                    value={fromCode}
+                    label="From"
                     onChange={(code, lbl) => { setFromCode(code); setFromLabel(lbl); }}
-                    placeholder="City or airport" icon={<PlaneTakeoff className="h-4 w-4" />}
-                    minWidth="100%" />
+                    placeholder="City or airport"
+                    icon={<PlaneTakeoff className="h-4 w-4" />}
+                    minWidth="0"
+                  />
                   <div className="shrink-0 flex justify-center pb-0.5">
-                    <button type="button"
-                      onClick={() => { setFromCode(toCode); setFromLabel(toLabel); setToCode(fromCode); setToLabel(fromLabel); }}
-                      className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFromCode(toCode); setFromLabel(toLabel);
+                        setToCode(fromCode); setToLabel(fromLabel);
+                      }}
+                      className="h-11 w-11 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95 shrink-0"
+                      title="Swap airports"
+                    >
                       <ArrowLeftRight className="h-4 w-4" />
                     </button>
                   </div>
-                  <AirportCombobox value={toCode} label="To"
+                  <AirportCombobox
+                    value={toCode}
+                    label="To"
                     onChange={(code, lbl) => { setToCode(code); setToLabel(lbl); }}
-                    placeholder="City or airport" icon={<PlaneLanding className="h-4 w-4" />}
-                    minWidth="100%" />
+                    placeholder="City or airport"
+                    icon={<PlaneLanding className="h-4 w-4" />}
+                    minWidth="0"
+                  />
                 </div>
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 flex-1 min-w-0">
-                  <DateRangePicker dept={dept} ret={ret} isRound={isRound}
-                    onDeptChange={setDept} onRetChange={setRet} />
-                  <div className="relative shrink-0 w-full sm:w-auto">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Passengers</p>
-                    <button
-                      data-pax-trigger
-                      type="button"
-                      onClick={openPax}
-                      className={`w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2.5 h-11 px-3.5 rounded-xl border bg-white transition-all text-sm font-medium text-slate-700 ${
-                        paxOpen ? "border-primary ring-2 ring-primary/15 shadow-sm" : "border-slate-200 hover:border-slate-300"}`}>
-                      <div className="flex items-center gap-2">
-                        <Users className={`h-4 w-4 transition-colors ${paxOpen ? "text-primary" : "text-slate-400"}`} />
-                        <span className="font-semibold text-slate-800">{passengers}</span>
-                        <span className="text-slate-500">{passengers === 1 ? "Adult" : "Adults"}</span>
-                      </div>
-                      <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ml-1 ${paxOpen ? "rotate-180" : ""}`} />
-                    </button>
-                  </div>
+
+                {/* Dates */}
+                <div className="lg:col-span-3 min-w-0">
+                  <DateRangePicker
+                    dept={dept}
+                    ret={ret}
+                    isRound={isRound}
+                    onDeptChange={setDept}
+                    onRetChange={setRet}
+                  />
                 </div>
-                <div className="shrink-0 pt-2 lg:pt-0 w-full lg:w-auto">
-                  <Button type="button" onClick={() => { handleSearch(); setExpanded(false); }} disabled={!canSearch}
-                    className="w-full lg:w-auto h-12 sm:h-11 px-6 rounded-xl text-sm font-bold gap-2 shadow-md shadow-primary/20 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-amber-600 text-white">
-                    <Search className="h-4 w-4" />Search flights
+
+                {/* Passengers */}
+                <div className="lg:col-span-2 min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">
+                    Passengers
+                  </p>
+                  <button
+                    data-pax-trigger
+                    type="button"
+                    onClick={openPax}
+                    className={`w-full flex items-center justify-between gap-1.5 h-11 px-3 rounded-xl border bg-white transition-all text-sm font-medium text-slate-700 ${
+                      paxOpen ? "border-primary ring-2 ring-primary/15 shadow-sm" : "border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0 truncate">
+                      <Users className={`h-4 w-4 shrink-0 ${paxOpen ? "text-primary" : "text-slate-400"}`} />
+                      <span className="font-semibold text-slate-800 shrink-0">{passengers}</span>
+                      <span className="text-slate-500 text-xs truncate">{passengers === 1 ? "Adult" : "Adults"}</span>
+                    </div>
+                    <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${paxOpen ? "rotate-180" : ""}`} />
+                  </button>
+                </div>
+
+                {/* Search Action */}
+                <div className="lg:col-span-2 shrink-0 pt-2 lg:pt-0">
+                  <Button
+                    type="button"
+                    onClick={() => { handleSearch(); setExpanded(false); }}
+                    disabled={!canSearch}
+                    className="w-full h-11 px-4 rounded-xl text-sm font-bold gap-2 shadow-md shadow-primary/20 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-amber-600 text-white"
+                  >
+                    <Search className="h-4 w-4 shrink-0" />
+                    <span>Search</span>
                   </Button>
                 </div>
               </div>
             </div>
-          </div>
+          </>
         )}
       </div>
 
@@ -703,7 +774,7 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
               onChange={(code, lbl) => { setFromCode(code); setFromLabel(lbl); }}
               placeholder="City or airport"
               icon={<PlaneTakeoff className="h-4 w-4" />}
-              minWidth="100%"
+              minWidth="0"
             />
 
             {/* Swap button */}
@@ -727,7 +798,7 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
               onChange={(code, lbl) => { setToCode(code); setToLabel(lbl); }}
               placeholder="City or airport"
               icon={<PlaneLanding className="h-4 w-4" />}
-              minWidth="100%"
+              minWidth="0"
             />
           </div>
 

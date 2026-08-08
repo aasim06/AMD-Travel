@@ -185,6 +185,99 @@ function RangeSlider({
   );
 }
 
+// ─── Custom UI Controls ───────────────────────────────────────────────────────
+
+function CustomRadio({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+}) {
+  return (
+    <div
+      onClick={onChange}
+      className="flex items-center gap-3 cursor-pointer group py-1.5 select-none"
+    >
+      <div
+        className={`h-4 w-4 rounded-full border flex items-center justify-center transition-all duration-200 shrink-0 ${
+          checked
+            ? "border-primary bg-primary shadow-xs ring-2 ring-primary/20"
+            : "border-slate-300 bg-white group-hover:border-slate-400 group-hover:bg-slate-50"
+        }`}
+      >
+        {checked && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+      </div>
+      <span
+        className={`text-sm transition-colors ${
+          checked ? "font-semibold text-slate-900" : "text-slate-600 group-hover:text-slate-900"
+        }`}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function CustomCheckbox({
+  checked,
+  onChange,
+  label,
+  badge,
+  variant = "primary",
+}: {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+  badge?: React.ReactNode;
+  variant?: "primary" | "danger";
+}) {
+  const isDanger = variant === "danger";
+
+  return (
+    <div
+      onClick={onChange}
+      className="flex items-center justify-between gap-3 cursor-pointer group py-1.5 select-none"
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <div
+          className={`h-4 w-4 rounded-md border flex items-center justify-center transition-all duration-200 shrink-0 ${
+            checked
+              ? isDanger
+                ? "border-red-500 bg-red-500 text-white shadow-xs ring-2 ring-red-500/20"
+                : "border-primary bg-primary text-white shadow-xs ring-2 ring-primary/20"
+              : "border-slate-300 bg-white group-hover:border-slate-400 group-hover:bg-slate-50"
+          }`}
+        >
+          {checked && (
+            <svg
+              className="h-3 w-3"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={3}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          )}
+        </div>
+        <span
+          className={`text-sm truncate transition-colors ${
+            checked ? "font-semibold text-slate-900" : "text-slate-600 group-hover:text-slate-900"
+          }`}
+        >
+          {label}
+        </span>
+      </div>
+      {badge}
+    </div>
+  );
+}
+
 // ─── Main Sidebar Panel ───────────────────────────────────────────────────────
 
 function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, filters, onChange }: FilterSidebarProps) {
@@ -230,7 +323,7 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
   ];
 
   return (
-    <div className="bg-white rounded-2xl p-5 space-y-5">
+    <div className="bg-white rounded-2xl p-5 space-y-5 shadow-sm border border-slate-100">
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
@@ -302,23 +395,25 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
       {/* ── Stops ── */}
       <div className="border-t border-slate-100 pt-4 space-y-3">
         <SectionHeader label="Stops" open={stopsOpen} onToggle={() => setStopsOpen(v => !v)} />
-        <div className={`accordion-body ${stopsOpen ? "open" : ""}`}><div className="pt-1 space-y-2">
+        <div className={`accordion-body ${stopsOpen ? "open" : ""}`}>
+          <div className="pt-1 space-y-1">
             {STOP_OPTIONS.map(opt => (
-              <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer group">
-                <input type="radio" name="stops" value={opt.value}
-                  checked={filters.stops === opt.value}
-                  onChange={() => set({ stops: opt.value })}
-                  className="accent-primary h-3.5 w-3.5 cursor-pointer" />
-                <span className="text-sm text-slate-700 group-hover:text-slate-900 transition-colors">{opt.label}</span>
-              </label>
+              <CustomRadio
+                key={opt.value}
+                label={opt.label}
+                checked={filters.stops === opt.value}
+                onChange={() => set({ stops: opt.value })}
+              />
             ))}
-            <label className="flex items-center gap-2.5 cursor-pointer group mt-1 pt-1 border-t border-slate-100">
-              <input type="checkbox" checked={filters.allowOvernightStop}
-                onChange={e => set({ allowOvernightStop: e.target.checked })}
-                className="accent-primary h-3.5 w-3.5 cursor-pointer rounded" />
-              <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Allow overnight stopovers</span>
-            </label>
-        </div></div>
+            <div className="mt-2 pt-2 border-t border-slate-100">
+              <CustomCheckbox
+                label="Allow overnight stopovers"
+                checked={filters.allowOvernightStop}
+                onChange={() => set({ allowOvernightStop: !filters.allowOvernightStop })}
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ── Times ── */}
@@ -421,10 +516,11 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
       {availableAirlines.length > 0 && (
         <div className="border-t border-slate-100 pt-4 space-y-3">
           <SectionHeader label="Airlines" open={airlinesOpen} onToggle={() => setAirlinesOpen(v => !v)} />
-          <div className={`accordion-body ${airlinesOpen ? "open" : ""}`}><div className="pt-1 space-y-2">
+          <div className={`accordion-body ${airlinesOpen ? "open" : ""}`}>
+            <div className="pt-1 space-y-2">
               <div className="flex gap-3 text-[11px] font-medium">
                 <button type="button" onClick={() => set({ selectedAirlines: new Set() })}
-                  className={`transition-colors ${allAirlinesSelected ? "text-primary" : "text-slate-400 hover:text-primary"}`}>
+                  className={`transition-colors ${allAirlinesSelected ? "text-primary font-semibold" : "text-slate-400 hover:text-primary"}`}>
                   Select all
                 </button>
                 <span className="text-slate-200">|</span>
@@ -434,41 +530,47 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
                   Clear
                 </button>
               </div>
-              <div className="max-h-44 overflow-y-auto space-y-2 pr-1 no-scrollbar">
+              <div className="max-h-48 overflow-y-auto space-y-1 pr-1 no-scrollbar">
                 {availableAirlines.map(airline => (
-                  <label key={airline.code} className="flex items-center gap-2.5 cursor-pointer group">
-                    <input type="checkbox"
-                      checked={allAirlinesSelected || filters.selectedAirlines.has(airline.code)}
-                      onChange={() => toggleAirline(airline.code)}
-                      className="accent-primary h-3.5 w-3.5 cursor-pointer rounded" />
-                    <span className="text-sm text-slate-700 group-hover:text-slate-900 transition-colors truncate">{airline.name}</span>
-                  </label>
+                  <CustomCheckbox
+                    key={airline.code}
+                    label={airline.name}
+                    checked={allAirlinesSelected || filters.selectedAirlines.has(airline.code)}
+                    onChange={() => toggleAirline(airline.code)}
+                  />
                 ))}
               </div>
-          </div></div>
+            </div>
+          </div>
         </div>
       )}
 
       {/* ── Exclude Countries ── */}
       <div className="border-t border-slate-100 pt-4 space-y-3">
         <SectionHeader label="Exclude countries" open={countriesOpen} onToggle={() => setCountriesOpen(v => !v)} />
-        <div className={`accordion-body ${countriesOpen ? "open" : ""}`}><div className="pt-1 space-y-2">
+        <div className={`accordion-body ${countriesOpen ? "open" : ""}`}>
+          <div className="pt-1 space-y-2">
             <p className="text-[11px] text-slate-400">Exclude layover/transit countries</p>
-            <div className="space-y-2">
+            <div className="space-y-1">
               {LAYOVER_COUNTRIES.map(c => (
-                <label key={c.code} className="flex items-center gap-2.5 cursor-pointer group">
-                  <input type="checkbox"
-                    checked={filters.excludedCountries.has(c.code)}
-                    onChange={() => toggleCountry(c.code)}
-                    className="accent-red-500 h-3.5 w-3.5 cursor-pointer rounded" />
-                  <span className="text-sm text-slate-700 group-hover:text-slate-900 transition-colors">{c.name}</span>
-                  {filters.excludedCountries.has(c.code) && (
-                    <span className="ml-auto text-[10px] text-red-500 font-medium">Excluded</span>
-                  )}
-                </label>
+                <CustomCheckbox
+                  key={c.code}
+                  label={c.name}
+                  checked={filters.excludedCountries.has(c.code)}
+                  variant="danger"
+                  onChange={() => toggleCountry(c.code)}
+                  badge={
+                    filters.excludedCountries.has(c.code) ? (
+                      <span className="text-[10px] text-red-500 font-semibold bg-red-50 px-1.5 py-0.5 rounded">
+                        Excluded
+                      </span>
+                    ) : undefined
+                  }
+                />
               ))}
             </div>
-        </div></div>
+          </div>
+        </div>
       </div>
 
     </div>
