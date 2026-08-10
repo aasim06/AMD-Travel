@@ -209,6 +209,48 @@ function airlineLogo(code: string): string {
   return `https://content.airhex.com/content/logos/airlines_${code}_32_32_s.png`;
 }
 
+function extractBaggageAllowance(offer: AmadeusOffer): { quantity: number; weight?: number; weightUnit?: string } {
+  let quantity = 0;
+  let weight: number | undefined = undefined;
+  let weightUnit = "KG";
+  let foundInfo = false;
+
+  if (offer.travelerPricings) {
+    for (const traveler of offer.travelerPricings) {
+      if (traveler.fareDetailsBySegment) {
+        for (const fareDetail of traveler.fareDetailsBySegment) {
+          const bags = fareDetail.includedCheckedBags;
+          if (bags) {
+            foundInfo = true;
+            if (typeof bags.quantity === "number" && bags.quantity > 0) {
+              quantity = Math.max(quantity, bags.quantity);
+            }
+            if (typeof bags.weight === "number" && bags.weight > 0) {
+              weight = bags.weight;
+              const u = bags.weightType ?? (bags as Record<string, unknown>).weightUnit ?? "KG";
+              weightUnit = String(u).toUpperCase();
+              if (quantity === 0) {
+                quantity = 1;
+              }
+            }
+            if (quantity === 0 && weight === undefined && bags.quantity !== 0) {
+              quantity = 1;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (!foundInfo) {
+    quantity = 1;
+    weight = 23;
+    weightUnit = "KG";
+  }
+
+  return { quantity, weight, weightUnit };
+}
+
 // ─── Map Amadeus offer → FlightOffer ─────────────────────────────────────────
 
 function mapOffer(offer: AmadeusOffer, currency: Currency): FlightOffer {
@@ -239,9 +281,7 @@ function mapOffer(offer: AmadeusOffer, currency: Currency): FlightOffer {
   const travelerTotal = offer.travelerPricings?.[0]?.price?.total;
   const perPassenger  = travelerTotal ?? String(Math.round(parseFloat(offer.price.total)));
 
-  // Baggage from first fare detail
-  const fareDetail = offer.travelerPricings?.[0]?.fareDetailsBySegment?.[0];
-  const bags       = fareDetail?.includedCheckedBags;
+  const baggageAllowance = extractBaggageAllowance(offer);
 
   return {
     id:                    offer.id,
@@ -256,9 +296,8 @@ function mapOffer(offer: AmadeusOffer, currency: Currency): FlightOffer {
     validatingAirlineCodes: offer.validatingAirlineCodes ?? [],
     numberOfBookableSeats:  offer.numberOfBookableSeats ?? 9,
     lastTicketingDate:      offer.lastTicketingDate ?? "",
-    baggageAllowance: bags
-      ? { quantity: bags.quantity ?? 0, weight: bags.weight ?? 23, weightUnit: bags.weightType ?? "KG" }
-      : { quantity: 0, weight: 23, weightUnit: "KG" },
+    baggageAllowance,
+    rawAmadeusOffer: offer,
   };
 }
 

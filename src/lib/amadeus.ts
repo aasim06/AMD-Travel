@@ -144,3 +144,45 @@ export async function amadeusGet(path: string, token: string): Promise<unknown> 
 export async function amadeusPost(path: string, token: string, payload: unknown): Promise<unknown> {
   return amadeusFetch(path, { method: "POST", token, body: payload });
 }
+
+export interface AmadeusTravelerInput {
+  id: string;
+  dateOfBirth: string;
+  name: {
+    firstName: string;
+    lastName: string;
+  };
+  gender?: "MALE" | "FEMALE";
+  contact?: {
+    emailAddress?: string;
+    phones?: Array<{
+      deviceType: "MOBILE" | "LANDLINE";
+      countryCallingCode?: string;
+      number: string;
+    }>;
+  };
+  documents?: Array<{
+    documentType: "PASSPORT";
+    number: string;
+    expiryDate: string;
+    issuanceCountry: string;
+    nationality: string;
+    holder: boolean;
+  }>;
+}
+
+export async function amadeusCreateFlightOrder(
+  rawOffer: unknown,
+  travelers: AmadeusTravelerInput[],
+  token?: string
+): Promise<unknown> {
+  const authToken = token ?? (await getAmadeusToken());
+  const payload = {
+    data: {
+      type: "flight-order",
+      flightOffers: [rawOffer],
+      travelers,
+    },
+  };
+  return amadeusPost("/v1/booking/flight-orders", authToken, payload);
+}

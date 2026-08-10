@@ -67,6 +67,7 @@ export interface FlightOffer {
   numberOfBookableSeats: number;
   lastTicketingDate: string;
   baggageAllowance?: BaggageAllowance;
+  rawAmadeusOffer?: unknown;
 }
 
 export interface FlightSearchResponse {

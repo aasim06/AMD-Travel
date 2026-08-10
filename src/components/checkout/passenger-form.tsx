@@ -56,11 +56,13 @@ interface DatePickerProps {
   error?: boolean;
   helperText?: string;
   disabled?: (date: Date) => boolean;
+  fromYear?: number;
+  toYear?: number;
 }
 
 function DatePickerField({
   label, value, onChange, error, helperText,
-  disabled,
+  disabled, fromYear, toYear,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const selected = strToDate(value);
@@ -84,7 +86,7 @@ function DatePickerField({
                 : "border-slate-300 focus:border-primary focus:ring-2 focus:ring-primary/20"
             )}
           >
-            <span className={selected ? "text-slate-800" : "text-slate-400"}>
+            <span className={cn("truncate whitespace-nowrap", selected ? "text-slate-800 font-medium" : "text-slate-400")}>
               {selected ? format(selected, "dd MMM yyyy") : "Pick a date"}
             </span>
             <CalendarIcon className="h-4 w-4 text-slate-400 shrink-0" />
@@ -105,6 +107,8 @@ function DatePickerField({
             }}
             defaultMonth={defaultMonth}
             disabled={disabled}
+            fromYear={fromYear}
+            toYear={toYear}
           />
         </PopoverContent>
       </Popover>
@@ -125,12 +129,12 @@ const STEPS = [
 export function StepIndicator({ current }: { current: string }) {
   const idx = STEPS.findIndex((s) => s.key === current);
   return (
-    <div className="flex items-center mb-8">
+    <div className="flex items-center mb-6 sm:mb-8 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
       {STEPS.map((step, i) => (
-        <div key={step.key} className="flex items-center flex-1 last:flex-none">
+        <div key={step.key} className="flex items-center flex-1 last:flex-none min-w-[70px] sm:min-w-0">
           <div className="flex flex-col items-center gap-1">
             <div className={cn(
-              "h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold transition-all",
+              "h-7 w-7 sm:h-8 sm:w-8 rounded-full flex items-center justify-center text-[11px] sm:text-xs font-bold transition-all shrink-0",
               i < idx   ? "bg-emerald-500 text-white"
               : i === idx ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
               :             "bg-slate-100 text-slate-400"
@@ -138,7 +142,7 @@ export function StepIndicator({ current }: { current: string }) {
               {i < idx ? "✓" : i + 1}
             </div>
             <span className={cn(
-              "text-[10px] font-semibold whitespace-nowrap",
+              "text-[9px] sm:text-[10px] font-semibold whitespace-nowrap",
               i === idx ? "text-primary" : i < idx ? "text-emerald-600" : "text-slate-400"
             )}>
               {step.label}
@@ -146,7 +150,7 @@ export function StepIndicator({ current }: { current: string }) {
           </div>
           {i < STEPS.length - 1 && (
             <div className={cn(
-              "flex-1 h-0.5 mx-2 mb-4 transition-all",
+              "flex-1 h-0.5 mx-1 sm:mx-2 mb-3 sm:mb-4 transition-all min-w-[12px]",
               i < idx ? "bg-emerald-400" : "bg-slate-200"
             )} />
           )}
@@ -187,6 +191,7 @@ export function PassengerForm({ passengerCount, defaultValues, onSubmit }: Passe
   const { fields } = useFieldArray({ control, name: "passengers" });
 
   const today = new Date();
+  const currentYr = today.getFullYear();
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -211,13 +216,13 @@ export function PassengerForm({ passengerCount, defaultValues, onSubmit }: Passe
             </div>
           </CardHeader>
 
-          <CardContent className="p-5 space-y-4">
+          <CardContent className="p-4 sm:p-5 space-y-4">
 
             {/* Row 1: Title + First Name + Last Name */}
-            <div className="grid grid-cols-12 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-4">
 
               {/* Title */}
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <FieldLabel>Title</FieldLabel>
                 <Controller
                   name={`passengers.${i}.title`}
@@ -242,7 +247,7 @@ export function PassengerForm({ passengerCount, defaultValues, onSubmit }: Passe
               </div>
 
               {/* First Name */}
-              <div className="col-span-5">
+              <div className="sm:col-span-5">
                 <FieldLabel>First Name</FieldLabel>
                 <Input
                   {...register(`passengers.${i}.firstName`)}
@@ -254,7 +259,7 @@ export function PassengerForm({ passengerCount, defaultValues, onSubmit }: Passe
               </div>
 
               {/* Last Name */}
-              <div className="col-span-5">
+              <div className="sm:col-span-5">
                 <FieldLabel>Last Name</FieldLabel>
                 <Input
                   {...register(`passengers.${i}.lastName`)}
@@ -267,7 +272,7 @@ export function PassengerForm({ passengerCount, defaultValues, onSubmit }: Passe
             </div>
 
             {/* Row 2: Date of Birth + Nationality */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
 
               {/* Date of Birth — Popover Calendar */}
               <Controller
@@ -281,6 +286,8 @@ export function PassengerForm({ passengerCount, defaultValues, onSubmit }: Passe
                     error={!!errors.passengers?.[i]?.dateOfBirth}
                     helperText={errors.passengers?.[i]?.dateOfBirth?.message}
                     disabled={(date) => date > today}
+                    fromYear={1920}
+                    toYear={currentYr}
                   />
                 )}
               />
@@ -309,16 +316,21 @@ export function PassengerForm({ passengerCount, defaultValues, onSubmit }: Passe
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">
                 Passport / Travel Document
               </p>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
 
                 {/* Passport Number */}
                 <div>
-                  <FieldLabel>Passport No.</FieldLabel>
+                  <FieldLabel>Passport No. (6-9 chars)</FieldLabel>
                   <Input
-                    {...register(`passengers.${i}.passportNumber`)}
-                    placeholder="AB1234567"
+                    {...register(`passengers.${i}.passportNumber`, {
+                      onChange: (e) => {
+                        e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 9);
+                      },
+                    })}
+                    maxLength={9}
+                    placeholder="A12345678"
                     aria-invalid={!!errors.passengers?.[i]?.passportNumber}
-                    className="h-10 border-slate-300 hover:border-slate-400 focus-visible:border-primary focus-visible:ring-primary/20 text-slate-800 placeholder:text-slate-400"
+                    className="h-10 border-slate-300 hover:border-slate-400 focus-visible:border-primary focus-visible:ring-primary/20 text-slate-800 placeholder:text-slate-400 uppercase font-mono tracking-wider"
                   />
                   <FieldError msg={errors.passengers?.[i]?.passportNumber?.message} />
                 </div>
@@ -335,6 +347,8 @@ export function PassengerForm({ passengerCount, defaultValues, onSubmit }: Passe
                       error={!!errors.passengers?.[i]?.passportExpiry}
                       helperText={errors.passengers?.[i]?.passportExpiry?.message}
                       disabled={(date) => date < today}
+                      fromYear={currentYr}
+                      toYear={currentYr + 30}
                     />
                   )}
                 />

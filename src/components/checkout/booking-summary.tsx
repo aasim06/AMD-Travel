@@ -1,6 +1,6 @@
 "use client";
 
-import { Plane, Clock, ChevronRight } from "lucide-react";
+import { Plane, Clock, Zap, ArrowRight } from "lucide-react";
 import type { FlightOffer } from "@/types/flight";
 import { AIRLINE_NAMES } from "@/types/flight";
 import { useCurrency } from "@/context/currency-context";
@@ -24,21 +24,25 @@ function parseDuration(iso: string) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 interface BookingSummaryProps {
-  offer:         FlightOffer;
-  carriers:      Record<string, string>;
-  fareClass:     string;
-  passengers:    number;
+  offer:          FlightOffer;
+  carriers:       Record<string, string>;
+  fareClass:      string;
+  passengers:     number;
   selectedPrice?: number | null;
-  compact?:      boolean;
+  compact?:       boolean;
+  onUpgrade?:     (newFareClass: string, newPrice: number) => void;
 }
 
-export function BookingSummary({ offer, carriers, fareClass, passengers, selectedPrice, compact }: BookingSummaryProps) {
+export function BookingSummary({ offer, carriers, fareClass, passengers, selectedPrice, compact, onUpgrade }: BookingSummaryProps) {
   const { formatPrice } = useCurrency();
 
-  const totalPrice = selectedPrice ?? parseFloat(offer.price.total);
-  const basePrice  = parseFloat(offer.price.base);
-  const taxes      = totalPrice - basePrice;
-  const perPax     = totalPrice / passengers;
+  const totalPrice    = selectedPrice ?? parseFloat(offer.price.total);
+  const basePrice     = parseFloat(offer.price.base);
+  const taxes         = totalPrice - basePrice;
+  const perPax        = totalPrice / passengers;
+  const isLightFare   = fareClass === "Economy Light";
+  const standardPrice = Math.round(totalPrice * 1.12);
+  const standardDelta = standardPrice - totalPrice;
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden" style={{ boxShadow: "rgba(0,0,0,0.06) 0px 4px 24px" }}>
@@ -116,6 +120,35 @@ export function BookingSummary({ offer, carriers, fareClass, passengers, selecte
           );
         })}
 
+        {/* Upgrade Banner — shown only for Economy Light */}
+        {isLightFare && onUpgrade && (
+          <button
+            type="button"
+            onClick={() => onUpgrade("Economy Standard", standardPrice)}
+            className="w-full group relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/90 to-primary border border-primary/20 p-3.5 text-left transition-all hover:shadow-md hover:shadow-primary/20 active:scale-[0.99]"
+          >
+            {/* Shimmer effect */}
+            <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Zap className="h-3.5 w-3.5 text-amber-300 fill-amber-300 shrink-0" />
+                  <span className="text-white text-[11px] font-bold uppercase tracking-wider">Upgrade to Standard</span>
+                </div>
+                <p className="text-white/80 text-[11px] leading-snug">
+                  Add 1×23 KG bag + seat selection for only{" "}
+                  <span className="text-white font-bold">{formatPrice(standardDelta)} more</span>
+                </p>
+              </div>
+              <div className="shrink-0 flex items-center gap-1 bg-white/15 rounded-lg px-2.5 py-1.5 text-white text-[11px] font-semibold group-hover:bg-white/25 transition-colors">
+                {formatPrice(standardPrice)}
+                <ArrowRight className="h-3 w-3" />
+              </div>
+            </div>
+          </button>
+        )}
+
         {/* Divider */}
         <div className="border-t border-slate-100" />
 
@@ -131,9 +164,11 @@ export function BookingSummary({ offer, carriers, fareClass, passengers, selecte
             <span className="text-slate-600">Taxes & fees</span>
             <span className="font-medium text-slate-800">{formatPrice(taxes)}</span>
           </div>
-          {offer.baggageAllowance?.quantity ? (
+          {(offer.baggageAllowance?.quantity || offer.baggageAllowance?.weight) ? (
             <div className="flex justify-between text-sm">
-              <span className="text-slate-600">Checked bag ({offer.baggageAllowance.quantity}×{offer.baggageAllowance.weight}{offer.baggageAllowance.weightUnit})</span>
+              <span className="text-slate-600">
+                Checked bag ({offer.baggageAllowance.quantity ? `${offer.baggageAllowance.quantity}× ` : ""}{offer.baggageAllowance.weight ? `${offer.baggageAllowance.weight} ${offer.baggageAllowance.weightUnit ?? 'KG'}` : `${offer.baggageAllowance.quantity} bag`})
+              </span>
               <span className="font-medium text-emerald-600">Included</span>
             </div>
           ) : null}

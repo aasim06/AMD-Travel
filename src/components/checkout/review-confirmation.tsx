@@ -286,9 +286,23 @@ export function ConfirmationStep({ pnr, formData, offer, carriers, selectedPrice
         </p>
 
         {/* PNR */}
-        <div className="mt-4 inline-flex flex-col items-center bg-white border border-emerald-200 rounded-xl px-8 py-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Booking Reference (PNR)</p>
-          <p className="text-3xl font-black text-slate-900 tracking-[0.2em] mt-1">{pnr}</p>
+        <div className="mt-4 inline-flex flex-col items-center bg-white border border-emerald-200 rounded-2xl px-8 py-4 shadow-sm relative group">
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full mb-1">
+            <CheckCircle className="h-3 w-3" /> Amadeus Verified PNR
+          </span>
+          <div className="flex items-center gap-3">
+            <p className="text-3xl font-black text-slate-900 tracking-[0.25em] font-mono">{pnr}</p>
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(pnr);
+                alert(`PNR Code ${pnr} copied to clipboard!`);
+              }}
+              className="text-xs text-primary bg-primary/10 hover:bg-primary/20 px-2.5 py-1 rounded-lg font-semibold transition-colors flex items-center gap-1"
+            >
+              Copy
+            </button>
+          </div>
         </div>
       </div>
 

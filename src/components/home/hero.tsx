@@ -22,32 +22,32 @@ export function Hero({ initialCategory = "flights" }: { initialCategory?: Catego
 
             {/* Headline */}
             <div className="space-y-2">
-              <h1 className="font-heading font-extrabold text-white text-balance text-2xl xs:text-3xl sm:text-4xl lg:text-[2.6rem] leading-snug tracking-tight">
+              <h1 className="font-heading font-extrabold text-white text-2xl xs:text-3xl sm:text-4xl lg:text-[2.6rem] leading-snug tracking-tight">
                 {initialCategory === "visa" ? (
                   <>
                     Fast &amp; Hassle-Free <br />
-                    <span className="inline-block mt-1 sm:mt-2 min-h-[1.2em] font-black text-amber-400">
+                    <span className="inline-block mt-1 sm:mt-2 min-h-[1.6em] font-black text-amber-400">
                       <Typewriter words={["Visa Services.", "Fast Approvals.", "Easy Online Application."]} />
                     </span>
                   </>
                 ) : initialCategory === "umrah" ? (
                   <>
                     Your Sacred Journey <br />
-                    <span className="inline-block mt-1 sm:mt-2 min-h-[1.2em] font-black text-amber-400">
+                    <span className="inline-block mt-1 sm:mt-2 min-h-[1.6em] font-black text-amber-400">
                       <Typewriter words={["Starts Here.", "Custom Packages.", "Luxury & Budget Stays."]} />
                     </span>
                   </>
                 ) : initialCategory === "cars" ? (
                   <>
                     Rent a Car <br />
-                    <span className="inline-block mt-1 sm:mt-2 min-h-[1.2em] font-black text-amber-400">
+                    <span className="inline-block mt-1 sm:mt-2 min-h-[1.6em] font-black text-amber-400">
                       <Typewriter words={["Anywhere, Anytime.", "Best Daily Rates.", "Top Rental Agencies."]} />
                     </span>
                   </>
                 ) : (
                   <>
                     Compare Flights From <br />
-                    <span className="inline-block mt-1 sm:mt-2 min-h-[1.2em] font-black text-amber-400">
+                    <span className="inline-block mt-1 sm:mt-2 min-h-[1.6em] font-black text-amber-400">
                       <Typewriter words={["100s Of Airlines.", "Best Ticket Prices.", "Top Global Routes.", "Exclusive Flight Deals."]} />
                     </span>
                   </>

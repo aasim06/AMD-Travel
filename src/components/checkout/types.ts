@@ -9,7 +9,11 @@ export const passengerSchema = z.object({
   lastName:       z.string().min(2, "Last name required"),
   dateOfBirth:    z.string().min(1, "Date of birth required"),
   nationality:    z.string().min(2, "Nationality required"),
-  passportNumber: z.string().min(5, "Passport number required"),
+  passportNumber: z
+    .string()
+    .min(6, "Passport number must be 6-9 characters")
+    .max(9, "Passport number cannot exceed 9 characters")
+    .regex(/^[A-Z0-9]+$/, "Passport must contain only letters and numbers"),
   passportExpiry: z.string().min(1, "Passport expiry required"),
   passportCountry: z.string().min(2, "Issuing country required"),
 });

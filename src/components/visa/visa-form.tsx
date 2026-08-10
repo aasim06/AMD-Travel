@@ -589,8 +589,8 @@ export function VisaApplicationForm() {
         />
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="Passport Number" required>
-            <Input className={cn("h-10 rounded-xl font-mono tracking-wider", errors.passportNo && "border-rose-400 ring-1 ring-rose-300")} placeholder="AB1234567"
-              value={form.passportNo} onChange={e => set("passportNo", e.target.value)} />
+            <Input className={cn("h-10 rounded-xl font-mono tracking-wider uppercase", errors.passportNo && "border-rose-400 ring-1 ring-rose-300")} placeholder="A12345678" maxLength={9}
+              value={form.passportNo} onChange={e => set("passportNo", e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 9))} />
             {errors.passportNo && <p className="text-[11px] text-rose-500 mt-0.5">{errors.passportNo}</p>}
           </Field>
           <div className="flex flex-col gap-1.5">

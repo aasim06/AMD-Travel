@@ -40,12 +40,14 @@ function CheckoutContent() {
   const [sessionData] = useState(() => readCheckoutSession());
   const [offer]       = useState<FlightOffer | null>(() => sessionData?.offer ?? null);
   const [carriers]    = useState<Record<string, string>>(() => sessionData?.carriers ?? {});
-  const [fareClass]   = useState<string>(() => sessionData?.fareClass ?? "Economy");
-  const [selectedPrice] = useState<number | null>(() => sessionData?.selectedPrice ?? null);
+  const [fareClass,   setFareClass]   = useState<string>(() => sessionData?.fareClass ?? "Economy");
+  const [selectedPrice, setSelectedPrice] = useState<number | null>(() => sessionData?.selectedPrice ?? null);
   const [passengers]  = useState<number>(() => sessionData?.passengers ?? 1);
   const [step,      setStep]      = useState<CheckoutStep>("passengers");
   const [formData,  setFormData]  = useState<Partial<CheckoutData>>({});
   const [pnr,       setPnr]       = useState<string | null>(null);
+  const [isBooking, setIsBooking] = useState(false);
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!offer) {
@@ -67,30 +69,103 @@ function CheckoutContent() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function handleUpgrade(newFareClass: string, newPrice: number) {
+    setFareClass(newFareClass);
+    setSelectedPrice(newPrice);
+  }
+
   function handleReviewConfirm() {
     setStep("payment");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function handlePaymentSuccess() {
-    const newPnr = generatePNR();
-    setPnr(newPnr);
-    setStep("confirmation");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    // Clear session
-    sessionStorage.removeItem("amd_checkout_offer");
+  async function handlePaymentSuccess() {
+    setIsBooking(true);
+    setBookingError(null);
+
+    try {
+      const response = await fetch("/api/flights/book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          offer,
+          passengers: formData.passengers,
+          contact: formData.contact,
+          selectedPrice: selectedPrice ?? (offer ? parseFloat(offer.price.total) : 0),
+          fareClass,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to generate Amadeus booking");
+      }
+
+      const generatedPnr = data.pnr;
+      setPnr(generatedPnr);
+
+      // Save to localStorage for My Bookings tab persistence
+      if (data.booking && typeof window !== "undefined") {
+        try {
+          const existingRaw = localStorage.getItem("amd_user_bookings");
+          const existingBookings = existingRaw ? JSON.parse(existingRaw) : [];
+          const updatedBookings = [data.booking, ...existingBookings];
+          localStorage.setItem("amd_user_bookings", JSON.stringify(updatedBookings));
+        } catch {
+          /* ignore */
+        }
+      }
+
+      setStep("confirmation");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      sessionStorage.removeItem("amd_checkout_offer");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error processing booking";
+      console.error("[Checkout] Booking failed:", msg);
+      setBookingError(msg);
+    } finally {
+      setIsBooking(false);
+    }
   }
 
   const stepLabel = step === "confirmation" ? "confirm" : step;
 
   return (
-    <main className="min-h-screen bg-slate-50/60">
+    <main className="min-h-screen bg-slate-50/60 relative">
+      {/* ── Booking Processing Modal Overlay ── */}
+      {isBooking && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center text-white p-4">
+          <div className="bg-white text-slate-900 p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center space-y-4 border border-slate-100">
+            <div className="relative mx-auto w-16 h-16 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-ping" />
+              <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Creating Amadeus Booking</h3>
+              <p className="text-xs text-slate-500 mt-1">Connecting to GDS to issue live PNR reference & e-ticket...</p>
+            </div>
+            <div className="text-[10px] uppercase font-bold tracking-widest text-primary bg-primary/10 py-1.5 px-3 rounded-full inline-block">
+              Amadeus Live API
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="container py-8">
 
         {/* Page title */}
         {step !== "confirmation" && (
           <div className="mb-6">
             <h1 className="text-xl font-bold text-slate-900">Complete your booking</h1>
+          </div>
+        )}
+
+        {/* Booking error alert */}
+        {bookingError && (
+          <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-center justify-between">
+            <span><strong>Booking Error:</strong> {bookingError}</span>
+            <button onClick={() => setBookingError(null)} className="text-xs underline font-semibold ml-4">Dismiss</button>
           </div>
         )}
 
@@ -152,6 +227,7 @@ function CheckoutContent() {
                 fareClass={fareClass}
                 passengers={passengers}
                 selectedPrice={selectedPrice}
+                onUpgrade={step === "passengers" ? handleUpgrade : undefined}
               />
             </aside>
           )}

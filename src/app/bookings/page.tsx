@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Search, Plane, Package, Car, CheckCircle2, XCircle,
   AlertCircle, Printer, Share2, X, Mail, Hash,
@@ -190,10 +190,29 @@ export default function MyBookingsPage() {
   const [activeStatus, setActiveStatus] = useState<"all" | BookingStatus>("all");
   const [ticketBooking, setTicketBooking] = useState<BookingTicketData | null>(null);
   const [cancelBooking, setCancelBooking] = useState<Booking | null>(null);
+  const [userBookings, setUserBookings] = useState<Booking[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const storedRaw = localStorage.getItem("amd_user_bookings");
+        if (storedRaw) {
+          const parsed = JSON.parse(storedRaw);
+          setUserBookings(parsed);
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+  }, []);
+
+  const allBookings = useMemo(() => {
+    return [...userBookings, ...MOCK_BOOKINGS];
+  }, [userBookings]);
 
   // Filter bookings
   const filtered = useMemo(() => {
-    let result = MOCK_BOOKINGS;
+    let result = allBookings;
     if (pnrInput.trim()) {
       result = result.filter((b) =>
         b.pnr.toLowerCase().includes(pnrInput.trim().toLowerCase())
@@ -202,7 +221,7 @@ export default function MyBookingsPage() {
     if (activeCategory !== "all") result = result.filter((b) => b.type === activeCategory);
     if (activeStatus !== "all") result = result.filter((b) => b.status === activeStatus);
     return result;
-  }, [pnrInput, activeCategory, activeStatus]);
+  }, [allBookings, pnrInput, activeCategory, activeStatus]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -210,10 +229,10 @@ export default function MyBookingsPage() {
   };
 
   const stats = {
-    total: MOCK_BOOKINGS.length,
-    confirmed: MOCK_BOOKINGS.filter((b) => b.status === "confirmed").length,
-    processing: MOCK_BOOKINGS.filter((b) => b.status === "processing").length,
-    completed: MOCK_BOOKINGS.filter((b) => b.status === "completed").length,
+    total: allBookings.length,
+    confirmed: allBookings.filter((b) => b.status === "confirmed").length,
+    processing: allBookings.filter((b) => b.status === "processing").length,
+    completed: allBookings.filter((b) => b.status === "completed").length,
   };
 
   return (
