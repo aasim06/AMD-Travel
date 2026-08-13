@@ -12,6 +12,10 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "flagcdn.com" },
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "upload.wikimedia.org" },
+      { protocol: "https", hostname: "logo.clearbit.com" },
+      { protocol: "https", hostname: "**" },
     ],
   },
   webpack(config) {
