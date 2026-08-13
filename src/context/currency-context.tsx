@@ -15,16 +15,16 @@ interface CurrencyContextValue {
 }
 
 const CurrencyContext = createContext<CurrencyContextValue>({
-  currency: "EUR",
-  language: "de",
+  currency: "USD",
+  language: "en",
   setCurrency: () => {},
-  formatPrice: (n) => _formatPrice(n, "EUR"),
-  t: (key, fallback) => getTranslation("de", key, fallback),
+  formatPrice: (n) => _formatPrice(n, "USD"),
+  t: (key, fallback) => getTranslation("en", key, fallback),
 });
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
-  const [currency, setCurrencyState] = useState<CurrencyCode>("EUR");
-  const language: Language = currency === "USD" ? "en" : "de";
+  const [currency, setCurrencyState] = useState<CurrencyCode>("USD");
+  const language: Language = currency === "EUR" ? "de" : "en";
 
   // Sync html lang attribute
   useEffect(() => {
