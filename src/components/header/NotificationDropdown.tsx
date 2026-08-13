@@ -6,8 +6,31 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [readIds, setReadIds] = useState<Set<string>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("admin_notifications_read");
+        if (saved) {
+          return new Set(JSON.parse(saved));
+        }
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return new Set();
+  });
   const router = useRouter();
+
+  // Save readIds to localStorage whenever changed
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("admin_notifications_read", JSON.stringify(Array.from(readIds)));
+      } catch (e) {
+        // Ignore
+      }
+    }
+  }, [readIds]);
 
   const loadNotifications = async () => {
     try {
@@ -137,7 +160,11 @@ export default function NotificationDropdown() {
         </div>
 
         {/* Notifications Scrollable List */}
-        <ul className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800/60 custom-scrollbar">
+        <ul
+          data-lenis-prevent
+          onWheel={(e) => e.stopPropagation()}
+          className="flex flex-col flex-1 overflow-y-auto overscroll-contain divide-y divide-gray-100 dark:divide-gray-800/60 custom-scrollbar"
+        >
           {notifications.length > 0 ? (
             notifications.map((n) => {
               const isUnread = !readIds.has(n.id);
