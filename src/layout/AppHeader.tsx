@@ -83,21 +83,20 @@ const AppHeader: React.FC = () => {
             {/* Cross Icon */}
           </button>
 
-          <Link href="/" className="lg:hidden">
-            <Image
-              width={154}
-              height={32}
-              className="dark:hidden"
-              src="/images/logo/logo.svg"
-              alt="Logo"
-            />
-            <Image
-              width={154}
-              height={32}
-              className="hidden dark:block"
-              src="/images/logo/logo-dark.svg"
-              alt="Logo"
-            />
+          <Link href="/admin" className="lg:hidden flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-brand-500 text-white shadow-md shadow-brand-500/20 shrink-0">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+              </svg>
+            </div>
+            <div className="flex flex-col leading-none">
+              <span className="text-base font-bold tracking-tight text-gray-900 dark:text-white font-outfit">
+                AMD <span className="text-brand-500">Global</span>
+              </span>
+              <span className="text-[9px] font-semibold tracking-widest uppercase text-gray-400 mt-0.5">
+                Travel Portal
+              </span>
+            </div>
           </Link>
 
           <button
