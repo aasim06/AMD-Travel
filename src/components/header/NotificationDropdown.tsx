@@ -34,13 +34,14 @@ export default function NotificationDropdown() {
 
   const loadNotifications = async () => {
     try {
-      const res = await fetch("/api/admin/notifications", { cache: "no-store" });
-      const json = await res.json();
+      const res = await fetch("/api/admin/notifications", { cache: "no-store" }).catch(() => null);
+      if (!res || !res.ok) return;
+      const json = await res.json().catch(() => null);
       if (json?.data) {
         setNotifications(json.data);
       }
-    } catch (err) {
-      console.error("Failed to load notifications", err);
+    } catch {
+      // Gracefully ignore transient network fetch errors
     }
   };
 
