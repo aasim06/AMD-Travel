@@ -78,7 +78,7 @@ export async function GET() {
     ]);
 
     // 1. Process Visas
-    visas.forEach((v) => {
+    visas.forEach((v: any) => {
       notifications.push({
         id: `visa-${v.id}`,
         title: `Visa Application Submitted`,
@@ -94,7 +94,7 @@ export async function GET() {
     });
 
     // 2. Process Bookings
-    bookings.forEach((b) => {
+    bookings.forEach((b: any) => {
       notifications.push({
         id: `booking-${b.id}`,
         title: `Flight Booking Request`,
@@ -110,7 +110,7 @@ export async function GET() {
     });
 
     // 3. Process Users
-    users.forEach((u) => {
+    users.forEach((u: any) => {
       notifications.push({
         id: `user-${u.id}`,
         title: `New Registered Customer`,
