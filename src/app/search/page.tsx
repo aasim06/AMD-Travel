@@ -20,6 +20,7 @@ import {
   PlaneLanding,
   Minus,
   Plus,
+  Loader2,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -37,6 +38,7 @@ import { DatePriceStrip } from "@/components/flight/date-price-strip";
 import { FareTierModal } from "@/components/flight/fare-tier-modal";
 import type { FareTier } from "@/components/flight/fare-tier-modal";
 import { searchAirports } from "@/lib/data/airportsData";
+import { useAirportSearch } from "@/hooks/useAirportSearch";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -108,10 +110,7 @@ function AirportCombobox({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-  const results = useMemo(() => {
-    const q = query.trim();
-    return q.length >= 2 ? searchAirports(q).slice(0, 6) : [];
-  }, [query]);
+  const { results, isLoading, error } = useAirportSearch(query);
 
   const reposition = useCallback(() => {
     if (!containerRef.current) return;
@@ -172,34 +171,54 @@ function AirportCombobox({
       </div>
 
       {/* Dropdown — rendered via portal so z-index is always on top */}
-      {open && results.length > 0 && dropCoords && createPortal(
+      {open && dropCoords && createPortal(
         <div
-          className="fixed z-[9999] w-64 rounded-xl border border-slate-200 bg-white shadow-xl overflow-hidden"
-          style={{ top: dropCoords.top, left: dropCoords.left, minWidth: dropCoords.width }}
+          className="fixed z-[9999] w-64 rounded-xl border border-slate-200 bg-white overflow-hidden"
+          style={{
+            top: dropCoords.top,
+            left: dropCoords.left,
+            minWidth: dropCoords.width,
+            boxShadow: "rgba(0, 0, 0, 0.35) 0px 5px 15px",
+          }}
         >
-          <div className="py-1.5">
-            {results.map((a) => (
-              <button
-                key={a.code}
-                type="button"
-                onMouseDown={e => {
-                  e.preventDefault();
-                  onChange(a.code, `${a.city} (${a.code})`);
-                  setQuery(`${a.city} (${a.code})`);
-                  setOpen(false);
-                }}
-                className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-slate-50 transition-colors group"
-              >
-                <div className="h-8 w-8 rounded-lg bg-primary/8 flex items-center justify-center shrink-0">
-                  <span className="text-xs font-bold text-primary">{a.code}</span>
-                </div>
-                <div className="flex flex-col min-w-0 flex-1">
-                  <span className="text-sm font-semibold text-slate-800 truncate group-hover:text-primary transition-colors">{a.city}</span>
-                  <span className="text-[11px] text-slate-400 truncate">{a.name ?? a.country}</span>
-                </div>
-                <span className="text-[10px] text-slate-300 shrink-0 font-medium">{a.country}</span>
-              </button>
-            ))}
+          <div className="py-1.5 overflow-hidden no-scrollbar">
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2 px-4 py-3 text-xs text-slate-500 font-medium">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary shrink-0" />
+                <span>Searching locations...</span>
+              </div>
+            ) : error ? (
+              <div className="px-4 py-2 text-xs text-rose-500 text-center font-medium">
+                {error}
+              </div>
+            ) : results.length === 0 && query.trim().length >= 2 ? (
+              <div className="px-4 py-3 text-xs text-slate-400 text-center">
+                No locations found
+              </div>
+            ) : (
+              results.slice(0, 6).map((a, i) => (
+                <button
+                  key={`${a.code}-${i}`}
+                  type="button"
+                  onMouseDown={e => {
+                    e.preventDefault();
+                    onChange(a.code, `${a.city} (${a.code})`);
+                    setQuery(`${a.city} (${a.code})`);
+                    setOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-slate-50 transition-colors group"
+                >
+                  <div className="h-8 w-8 rounded-lg bg-primary/8 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-primary">{a.code}</span>
+                  </div>
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="text-sm font-semibold text-slate-800 truncate group-hover:text-primary transition-colors">{a.city}</span>
+                    <span className="text-[11px] text-slate-400 truncate">{a.name ?? a.country}</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 shrink-0 font-medium">{a.country}</span>
+                </button>
+              ))
+            )}
           </div>
         </div>,
         document.body
@@ -1917,7 +1936,7 @@ const fetchFlights = useCallback(async () => {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="container py-8"><FlightSkeleton /></div>}>
       <SearchContent />
     </Suspense>
   );

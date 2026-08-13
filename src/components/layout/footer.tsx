@@ -1,8 +1,12 @@
+"use client";
+
 import Link from "next/link";
-import { Mail, Phone, MapPin, Globe, Camera, Briefcase, X, MessageCircle, ArrowRight } from "lucide-react";
+import { Mail, MapPin, Globe, Camera, Briefcase, X, MessageCircle, ArrowRight } from "lucide-react";
 import { siteConfig } from "@/config/site";
+import { useCurrency } from "@/context/currency-context";
 
 export function Footer() {
+  const { t } = useCurrency();
   const year = new Date().getFullYear();
 
   const socialLinks = [
@@ -22,14 +26,14 @@ export function Footer() {
             <div className="absolute -right-16 -top-16 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
             <div className="flex-1 text-center sm:text-left z-10">
-              <p className="text-orange-400 text-xs font-semibold uppercase tracking-widest mb-2">
-                Need a tailored plan?
+              <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">
+                {t("quote.needHelp", "Need a tailored plan?")}
               </p>
               <h2 className="text-xl sm:text-2xl font-bold text-white mb-1.5 font-heading">
-                Get a Custom Flight &amp; Travel Quote
+                {t("quote.title", "Get a Custom Flight & Travel Quote")}
               </h2>
               <p className="text-white/70 text-sm max-w-xl">
-                Tell us your preferred dates, destinations, and budget — we&apos;ll arrange the best flight deals for your journey.
+                {t("quote.subtitle", "Tell us your preferred dates, destinations, and budget — we'll arrange the best flight deals for your journey.")}
               </p>
             </div>
 
@@ -120,7 +124,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="flex items-center justify-center h-9 w-9 rounded-full border border-border text-foreground/70 hover:text-primary hover:border-primary transition-colors"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:border-primary hover:bg-primary/5 hover:text-primary transition-colors"
                 >
                   <Icon className="h-4 w-4" />
                 </a>
@@ -130,108 +134,130 @@ export function Footer() {
 
           {/* Quick links */}
           <div>
-            <h3 className="font-heading font-semibold text-sm text-foreground uppercase tracking-wide">
+            <h3 className="font-heading font-semibold text-sm text-foreground uppercase tracking-wider">
               Quick Links
             </h3>
-            <ul className="mt-4 space-y-2.5">
-              {siteConfig.nav.footerQuickLinks.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
+            <ul className="mt-4 space-y-2 text-sm">
+              <li>
+                <Link href="/" className="text-muted-foreground hover:text-primary transition-colors">
+                  Flights
+                </Link>
+              </li>
+              <li>
+                <Link href="/umrah-packages" className="text-muted-foreground hover:text-primary transition-colors">
+                  Umrah Packages
+                </Link>
+              </li>
+              <li>
+                <Link href="/tour-deals" className="text-muted-foreground hover:text-primary transition-colors">
+                  Tour Deals
+                </Link>
+              </li>
+              <li>
+                <Link href="/visa" className="text-muted-foreground hover:text-primary transition-colors">
+                  Visa Services
+                </Link>
+              </li>
+              <li>
+                <Link href="/bookings" className="text-muted-foreground hover:text-primary transition-colors">
+                  My Bookings
+                </Link>
+              </li>
             </ul>
           </div>
 
           {/* Legal */}
           <div>
-            <h3 className="font-heading font-semibold text-sm text-foreground uppercase tracking-wide">
+            <h3 className="font-heading font-semibold text-sm text-foreground uppercase tracking-wider">
               Legal
             </h3>
-            <ul className="mt-4 space-y-2.5">
-              {siteConfig.nav.footerLegal.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
+            <ul className="mt-4 space-y-2 text-sm">
+              <li>
+                <Link href="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors">
+                  Terms of Service
+                </Link>
+              </li>
+              <li>
+                <Link href="/refund-policy" className="text-muted-foreground hover:text-primary transition-colors">
+                  Refund Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/cookies" className="text-muted-foreground hover:text-primary transition-colors">
+                  Cookie Policy
+                </Link>
+              </li>
             </ul>
           </div>
 
-          {/* Payments */}
+          {/* Payment & Security */}
           <div>
-            <h3 className="font-heading font-semibold text-sm text-foreground uppercase tracking-wide">
+            <h3 className="font-heading font-semibold text-sm text-foreground uppercase tracking-wider">
               We Accept
             </h3>
-            <div className="mt-4 flex flex-wrap gap-2">
 
-              {/* Visa */}
-              <div className="h-8 px-2.5 border border-border bg-white flex items-center justify-center">
-                <svg viewBox="0 0 48 16" className="h-4 w-auto" aria-label="Visa">
-                  <text x="0" y="13" fontFamily="Arial" fontWeight="900" fontSize="15" fill="#1A1F71" letterSpacing="-0.5">VISA</text>
-                </svg>
+            {/* Payment badge grid matching original exact design */}
+            <div className="mt-4 flex flex-wrap gap-2.5 items-center">
+              
+              {/* VISA */}
+              <div className="flex items-center justify-center h-8 px-3 rounded border border-slate-200 bg-white shadow-xs">
+                <span className="font-black text-sm tracking-tighter text-[#1A1F71] italic font-serif">
+                  VISA
+                </span>
               </div>
 
               {/* Mastercard */}
-              <div className="h-8 px-2  border border-border bg-white flex items-center justify-center gap-0">
-                <svg viewBox="0 0 38 24" className="h-6 w-auto" aria-label="Mastercard">
-                  <circle cx="13" cy="12" r="10" fill="#EB001B" />
-                  <circle cx="25" cy="12" r="10" fill="#F79E1B" />
-                  <path d="M19 4.8a10 10 0 0 1 0 14.4A10 10 0 0 1 19 4.8z" fill="#FF5F00" />
-                </svg>
+              <div className="flex items-center justify-center h-8 px-3 rounded border border-slate-200 bg-white shadow-xs">
+                <div className="relative flex items-center">
+                  <div className="w-4 h-4 rounded-full bg-[#EB001B]" />
+                  <div className="w-4 h-4 rounded-full bg-[#F79E1B] -ml-2 opacity-90" />
+                </div>
               </div>
 
-              {/* Amex */}
-              <div className="h-8 px-2.5  border border-border bg-[#2E77BC] flex items-center justify-center">
-                <svg viewBox="0 0 60 16" className="h-3.5 w-auto" aria-label="American Express">
-                  <text x="0" y="13" fontFamily="Arial" fontWeight="800" fontSize="12" fill="white" letterSpacing="0.5">AMEX</text>
-                </svg>
+              {/* AMEX */}
+              <div className="flex items-center justify-center h-8 px-3 rounded bg-[#006FCF] text-white shadow-xs">
+                <span className="font-extrabold text-xs tracking-wider font-sans">
+                  AMEX
+                </span>
               </div>
 
               {/* PayPal */}
-              <div className="h-8 px-2.5  border border-border bg-white flex items-center justify-center">
-                <svg viewBox="0 0 60 20" className="h-5 w-auto" aria-label="PayPal">
-                  <text x="0" y="15" fontFamily="Arial" fontWeight="800" fontSize="14" fill="#003087">Pay</text>
-                  <text x="22" y="15" fontFamily="Arial" fontWeight="800" fontSize="14" fill="#009CDE">Pal</text>
-                </svg>
+              <div className="flex items-center justify-center h-8 px-3 rounded border border-slate-200 bg-white shadow-xs">
+                <span className="font-extrabold text-sm text-[#003087]">
+                  Pay<span className="text-[#009CDE]">Pal</span>
+                </span>
               </div>
 
               {/* Apple Pay */}
-              <div className="h-8 px-2.5 border border-border bg-black flex items-center justify-center gap-1">
-                <svg viewBox="0 0 14 16" className="h-4 w-auto fill-white" aria-label="Apple Pay" aria-hidden="true">
-                  <path d="M9.02 2.06c.52-.63.87-1.5.77-2.37-.75.03-1.65.5-2.18 1.13-.48.55-.9 1.44-.79 2.29.84.06 1.69-.42 2.2-1.05zM9.78 3.3c-1.21-.07-2.24.69-2.82.69-.58 0-1.47-.65-2.43-.63C3.2 3.38 1.9 4.2 1.18 5.47c-1.46 2.52-.38 6.26 1.04 8.31.69.99 1.52 2.1 2.6 2.06.99-.04 1.38-.65 2.58-.65 1.2 0 1.55.65 2.6.63 1.12-.02 1.83-1.02 2.52-2.01.79-1.14 1.11-2.25 1.13-2.31-.02-.01-2.17-.84-2.19-3.33-.02-2.08 1.7-3.08 1.78-3.13-.97-1.44-2.49-1.6-3.06-1.64z" />
-                </svg>
-                <svg viewBox="0 0 30 12" className="h-3 w-auto" aria-label="Pay text">
-                  <text x="0" y="10" fontFamily="Arial" fontWeight="600" fontSize="10" fill="white">Pay</text>
-                </svg>
+              <div className="flex items-center justify-center h-8 px-3 rounded bg-black text-white shadow-xs">
+                <span className="font-bold text-xs tracking-tight flex items-center gap-1 font-sans">
+                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 170 170">
+                    <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.34.13-9.14-1.92-14.4-6.15-3.6-2.9-7.66-7.83-12.18-14.8-5.74-8.82-10.15-18.73-13.23-29.74-3.08-11.01-4.62-21.49-4.62-31.44 0-14.28 3.57-26 10.7-35.16 7.14-9.16 16.14-13.82 27.01-13.98 4.88 0 10.02 1.25 15.42 3.75 5.4 2.5 9.17 3.75 11.31 3.75 1.76 0 5.66-1.31 11.71-3.94 6.05-2.63 11.22-3.87 15.51-3.71 12.02.49 21.6 4.9 28.74 13.23-10.74 6.47-15.99 15.54-15.75 27.21.25 9.16 3.86 16.7 10.84 22.62 4.3 3.65 9.18 6.13 14.65 7.44-2.52 7.37-6.02 15.22-10.5 23.54zM119.22 31.81c0-6.72 2.45-13.06 7.35-19.02 5.25-6.38 11.76-10.03 19.53-10.95.16 1.15.25 2.13.25 2.95 0 6.64-2.52 13.06-7.56 19.27-5.04 6.21-11.45 9.87-19.23 10.98-.16-.82-.34-2.23-.34-3.23z"/>
+                  </svg>
+                  Pay
+                </span>
               </div>
 
             </div>
-            <p className="mt-4 text-xs text-muted-foreground leading-relaxed">
-              Prices shown in {siteConfig.locale.defaultCurrency} by default. All bookings
-              are secured with industry-standard encryption.
+
+            <p className="mt-4 text-[11px] text-muted-foreground/80 leading-tight">
+              Prices shown in EUR by default. All bookings are secured with industry-standard encryption.
             </p>
           </div>
         </div>
 
-        {/* Bottom bar */}
-        <div className="mt-10 pt-6 pb-8 md:pb-0 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground text-center sm:text-left">
-            &copy; {year} {siteConfig.name}. All rights reserved.
-          </p>
-          <p className="text-xs text-muted-foreground text-center sm:text-right">
-            Built for global travelers, powered by {siteConfig.shortName}.
-          </p>
+        <div className="mt-10 border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
+          <p>© {year} AMD Global Travel. All rights reserved.</p>
+          <p className="text-[11px]">Built for global travelers, powered by AMD Travel.</p>
         </div>
       </div>
     </footer>
   );
 }
+
+export default Footer;

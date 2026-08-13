@@ -68,6 +68,13 @@ function localFallback(keyword: string): AirportSuggestion[] {
   ).slice(0, 8);
 }
 
+// ─── Formatting Helper ───────────────────────────────────────────────────────
+
+function toTitleCase(str: string): string {
+  if (!str) return "";
+  return str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 // ─── GET handler ──────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
@@ -96,9 +103,9 @@ export async function GET(request: NextRequest) {
   }
 
   const params = new URLSearchParams({
-    subType:      "CITY,AIRPORT",
+    subType:      "AIRPORT,CITY",
     keyword:      keyword,
-    "page[limit]":"8",
+    "page[limit]":"6",
     view:         "LIGHT",
   });
 
@@ -109,18 +116,20 @@ export async function GET(request: NextRequest) {
     ) as { data?: unknown[] };
   } catch (err) {
     console.warn("[/api/airports] API error — using local fallback:", err);
-    return NextResponse.json(localFallback(keyword));
+    return NextResponse.json(localFallback(keyword).slice(0, 6));
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const suggestions: AirportSuggestion[] = ((json.data ?? []) as any[]).map((loc) => ({
-    code:    loc.iataCode,
-    name:    loc.name,
-    city:    loc.address?.cityName ?? loc.name,
-    country: loc.address?.countryName ?? "",
-    type:    loc.subType as "AIRPORT" | "CITY",
-  }));
+  const suggestions: AirportSuggestion[] = ((json.data ?? []) as any[])
+    .filter((loc) => loc.iataCode)
+    .map((loc) => ({
+      code:    loc.iataCode,
+      name:    toTitleCase(loc.name || loc.detailedName || ""),
+      city:    toTitleCase(loc.address?.cityName || loc.name || ""),
+      country: toTitleCase(loc.address?.countryName || loc.address?.countryCode || ""),
+      type:    (loc.subType as "AIRPORT" | "CITY") || "AIRPORT",
+    }));
 
-  // Fallback if Amadeus returned an empty set
-  return NextResponse.json(suggestions.length ? suggestions : localFallback(keyword));
+  const finalResults = suggestions.length ? suggestions : localFallback(keyword);
+  return NextResponse.json(finalResults.slice(0, 6));
 }

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Plane, MapPin, X } from "lucide-react";
+import { Plane, MapPin, X, Loader2, Building2 } from "lucide-react";
 import { searchAirports, POPULAR_AIRPORTS } from "@/lib/data/airportsData";
 import type { AirportOption } from "@/lib/data/airportsData";
+import { useAirportSearch } from "@/hooks/useAirportSearch";
 
 export type { AirportOption } from "@/lib/data/airportsData";
 export { POPULAR_AIRPORTS };
@@ -33,6 +34,9 @@ export function AirportInput({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef     = useRef<HTMLInputElement>(null);
   const sheetInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Debounced Amadeus location search ────────────────────────────────────
+  const { results, isLoading, error } = useAirportSearch(query);
 
   // ── Close on outside click (desktop only) ────────────────────────────────
   useEffect(() => {
@@ -76,13 +80,6 @@ export function AirportInput({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-  // ── Search results ────────────────────────────────────────────────────────
-  const results: AirportOption[] = useMemo(() => {
-    const q = query.trim();
-    if (q.length < 2) return POPULAR_AIRPORTS;
-    return searchAirports(q).slice(0, 12);
-  }, [query]);
-
   const groupLabel = results[0]?.isCountryMatch ? results[0].groupLabel : null;
 
   // ── Handlers ──────────────────────────────────────────────────────────────
@@ -120,53 +117,71 @@ export function AirportInput({
   function ResultList() {
     return (
       <>
-        {groupLabel ? (
-          <li className="px-4 py-2 bg-primary/5 border-b border-border">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-primary">
-              {groupLabel}
-            </span>
+        {isLoading ? (
+          <li className="flex items-center justify-center gap-2.5 px-4 py-4 text-xs font-medium text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
+            <span>Searching locations...</span>
           </li>
-        ) : query.length < 2 ? (
-          <li className="px-4 py-2 border-b border-border">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-              Popular airports
-            </span>
+        ) : error ? (
+          <li className="px-4 py-3 text-xs text-rose-500 text-center font-medium">
+            {error}
           </li>
-        ) : null}
+        ) : (
+          <>
+            {groupLabel ? (
+              <li className="px-4 py-2 bg-primary/5 border-b border-border">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-primary">
+                  {groupLabel}
+                </span>
+              </li>
+            ) : query.trim().length < 2 ? (
+              <li className="px-4 py-2 border-b border-border">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Popular destinations
+                </span>
+              </li>
+            ) : null}
 
-        {results.length === 0 && (
-          <li className="px-4 py-4 text-sm text-muted-foreground text-center">
-            No airports found
-          </li>
+            {results.length === 0 && query.trim().length >= 2 && (
+              <li className="px-4 py-4 text-sm text-muted-foreground text-center">
+                No airports or cities found
+              </li>
+            )}
+
+            {results.slice(0, 6).map((a, i) => (
+              <li key={`${a.code}-${i}`} role="option" aria-selected={i === activeIdx}>
+                <button
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); select(a); }}
+                  onTouchEnd={(e) => { e.preventDefault(); select(a); }}
+                  onMouseEnter={() => setActiveIdx(i)}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left ${
+                    i === activeIdx ? "bg-accent" : "hover:bg-accent"
+                  }`}
+                >
+                  <span className="shrink-0 text-muted-foreground">
+                    {a.type === "CITY"
+                      ? <Building2 className="h-3.5 w-3.5 text-indigo-500" />
+                      : <Plane className="h-3.5 w-3.5 text-primary" />}
+                  </span>
+                  <span className="text-xs font-bold text-primary w-9 shrink-0">{a.code}</span>
+                  <span className="flex flex-col min-w-0 flex-1">
+                    <span className="text-sm font-medium text-foreground truncate">{a.city}</span>
+                    <span className="text-[11px] text-muted-foreground truncate">{a.name}</span>
+                  </span>
+                  <div className="flex flex-col items-end shrink-0 pl-2">
+                    <span className="text-[11px] text-muted-foreground truncate max-w-[80px]">
+                      {a.country}
+                    </span>
+                    <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400">
+                      {a.type}
+                    </span>
+                  </div>
+                </button>
+              </li>
+            ))}
+          </>
         )}
-
-        {results.map((a, i) => (
-          <li key={`${a.code}-${i}`} role="option" aria-selected={i === activeIdx}>
-            <button
-              type="button"
-              onMouseDown={(e) => { e.preventDefault(); select(a); }}
-              onTouchEnd={(e) => { e.preventDefault(); select(a); }}
-              onMouseEnter={() => setActiveIdx(i)}
-              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors text-left ${
-                i === activeIdx ? "bg-accent" : "hover:bg-accent"
-              }`}
-            >
-              <span className="shrink-0 text-muted-foreground">
-                {a.type === "AIRPORT"
-                  ? <Plane  className="h-3.5 w-3.5" />
-                  : <MapPin className="h-3.5 w-3.5" />}
-              </span>
-              <span className="text-xs font-bold text-primary w-9 shrink-0">{a.code}</span>
-              <span className="flex flex-col min-w-0 flex-1">
-                <span className="text-sm font-medium text-foreground truncate">{a.city}</span>
-                <span className="text-[11px] text-muted-foreground truncate">{a.name}</span>
-              </span>
-              <span className="text-[11px] text-muted-foreground ml-auto shrink-0 pl-2">
-                {a.country}
-              </span>
-            </button>
-          </li>
-        ))}
       </>
     );
   }
@@ -264,7 +279,8 @@ export function AirportInput({
       <PortalDropdown open={open} anchorRef={containerRef}>
         <ul
           role="listbox"
-          className="w-[340px] max-h-72 overflow-y-auto no-scrollbar rounded-xl border border-border bg-card shadow-card-hover"
+          className="w-[340px] overflow-hidden no-scrollbar rounded-xl border border-border bg-card"
+          style={{ boxShadow: "rgba(0, 0, 0, 0.35) 0px 5px 15px" }}
         >
           <ResultList />
         </ul>

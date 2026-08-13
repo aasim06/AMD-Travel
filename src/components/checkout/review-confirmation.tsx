@@ -126,13 +126,14 @@ export function ReviewStep({ formData, offer, carriers, fareClass, selectedPrice
 
 interface ConfirmationStepProps {
   pnr:           string;
+  bookingSource?: string | null;
   formData:      CheckoutData;
   offer:         FlightOffer;
   carriers:      Record<string, string>;
   selectedPrice: number;
 }
 
-export function ConfirmationStep({ pnr, formData, offer, carriers, selectedPrice }: ConfirmationStepProps) {
+export function ConfirmationStep({ pnr, bookingSource, formData, offer, carriers, selectedPrice }: ConfirmationStepProps) {
   const { formatPrice } = useCurrency();
   const dep = offer.itineraries[0].segments[0];
   const arr = offer.itineraries[offer.itineraries.length - 1].segments.at(-1)!;
@@ -286,10 +287,18 @@ export function ConfirmationStep({ pnr, formData, offer, carriers, selectedPrice
         </p>
 
         {/* PNR */}
-        <div className="mt-4 inline-flex flex-col items-center bg-white border border-emerald-200 rounded-2xl px-8 py-4 shadow-sm relative group">
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full mb-1">
-            <CheckCircle className="h-3 w-3" /> Amadeus Verified PNR
-          </span>
+        <div className="mt-4 inline-flex flex-col items-center bg-white border border-slate-200 rounded-2xl px-8 py-4 shadow-sm relative group">
+          {bookingSource === "AMADEUS_LIVE" ? (
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-widest text-emerald-700 bg-emerald-100/80 border border-emerald-300 px-3 py-1 rounded-full mb-1">
+              <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
+              Live Amadeus GDS PNR (Verified)
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-widest text-amber-700 bg-amber-100/80 border border-amber-300 px-3 py-1 rounded-full mb-1">
+              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+              Demo / Test PNR Code (Sandbox)
+            </span>
+          )}
           <div className="flex items-center gap-3">
             <p className="text-3xl font-black text-slate-900 tracking-[0.25em] font-mono">{pnr}</p>
             <button

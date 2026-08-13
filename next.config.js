@@ -14,9 +14,31 @@ const nextConfig = {
       { protocol: "https", hostname: "flagcdn.com" },
     ],
   },
+  webpack(config) {
+    const fileLoaderRule = config.module.rules.find((rule) =>
+      rule.test?.test?.('.svg')
+    );
+
+    config.module.rules.push(
+      {
+        ...fileLoaderRule,
+        test: /\.svg$/i,
+        resourceQuery: /url/,
+      },
+      {
+        test: /\.svg$/i,
+        issuer: fileLoaderRule?.issuer,
+        resourceQuery: { not: [/url/] },
+        use: ['@svgr/webpack'],
+      }
+    );
+
+    if (fileLoaderRule) {
+      fileLoaderRule.exclude = /\.svg$/i;
+    }
+
+    return config;
+  },
 };
 
 module.exports = nextConfig;
-
-
-

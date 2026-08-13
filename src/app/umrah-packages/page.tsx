@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Hero } from "@/components/home/hero";
 import {
   MapPin, Clock, Users, Star, ArrowRight, MessageCircle,
@@ -138,8 +139,47 @@ const SERVICES = [
 
 export default function UmrahPackagesPage() {
   const [active, setActive] = useState("All");
+  const [dbPackages, setDbPackages] = useState<any[]>([]);
 
-  const filtered = active === "All" ? PACKAGES : PACKAGES.filter(p => p.category === active);
+  useEffect(() => {
+    async function loadLivePackages() {
+      try {
+        const res = await fetch("/api/cms/packages?type=UMRAH");
+        const json = await res.json();
+        if (json?.data && json.data.length > 0) {
+          const mapped = json.data.map((pkg: any) => ({
+            id: pkg.id,
+            category: pkg.category || "Economy",
+            title: pkg.title,
+            duration: pkg.durationDays || `${(pkg.makkahNights || 5) + (pkg.madinahNights || 4)} Days / ${(pkg.makkahNights || 5) + (pkg.madinahNights || 4) - 1} Nights`,
+            groupSize: pkg.groupSize || "Up to 25 People",
+            departure: pkg.departureCity || "Frankfurt / Islamabad",
+            rating: 4.9,
+            reviews: 120,
+            price: pkg.price,
+            originalPrice: pkg.originalPrice || Math.round(pkg.price * 1.3),
+            badge: pkg.badge || "Live Package",
+            badgeColor: pkg.badgeColor || "bg-emerald-500 text-white",
+            makkahNights: pkg.makkahNights || 5,
+            madinahNights: pkg.madinahNights || 4,
+            hotel: {
+              makkah: pkg.makkahHotel || pkg.destination || "Al Safwah Royale Orchid ★★★",
+              madinah: pkg.madinahHotel || "Dallah Taibah ★★★",
+            },
+            image: pkg.image || "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=600&q=80",
+            includes: pkg.includes ? pkg.includes.split(", ") : ["Return Flights", "Hotel", "Transfers", "Visa"],
+          }));
+          setDbPackages(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to load Umrah DB packages", err);
+      }
+    }
+    loadLivePackages();
+  }, []);
+
+  const allPackages = [...dbPackages, ...PACKAGES];
+  const filtered = active === "All" ? allPackages : allPackages.filter(p => p.category === active);
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -206,11 +246,12 @@ export default function UmrahPackagesPage() {
             >
               {/* Image */}
               <div className="relative h-48 overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={pkg.image}
                   alt={pkg.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
@@ -269,7 +310,7 @@ export default function UmrahPackagesPage() {
 
                 {/* Includes */}
                 <div className="flex flex-wrap gap-1.5 mb-4">
-                  {pkg.includes.map(inc => (
+                  {pkg.includes.map((inc: string) => (
                     <span key={inc} className="flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/8 px-2 py-0.5 rounded-full">
                       <CheckCircle2 className="h-2.5 w-2.5" />{inc}
                     </span>

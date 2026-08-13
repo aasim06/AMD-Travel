@@ -74,6 +74,8 @@ const TAG_STYLES: Record<string, { bg: string; dot: string }> = {
 
 const INITIAL_COUNT = 6;
 
+import Image from "next/image";
+
 function RouteCard({ route, onClick, index }: { route: typeof ROUTES[0]; onClick: () => void; index: number }) {
   const { formatPrice } = useCurrency();
   const [imgError, setImgError] = useState(false);
@@ -89,10 +91,12 @@ function RouteCard({ route, onClick, index }: { route: typeof ROUTES[0]; onClick
       {/* Image */}
       <div className="relative h-44 w-full overflow-hidden bg-slate-100 shrink-0">
         {!imgError ? (
-          <img
+          <Image
             src={route.img}
             alt={`${route.fromCity} to ${route.toCity}`}
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover transition-transform duration-700 group-hover:scale-110"
             onError={() => setImgError(true)}
           />
         ) : (
@@ -167,6 +171,8 @@ export function PopularFlights() {
     );
   }
 
+  const { formatPrice, t } = useCurrency();
+
   return (
     <section className="container py-14">
 
@@ -175,13 +181,13 @@ export function PopularFlights() {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/8 border border-primary/15 mb-3">
             <TrendingUp className="h-3.5 w-3.5 text-primary" />
-            <span className="text-xs font-bold uppercase tracking-widest text-primary">Flights</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-primary">{t("nav.flights", "Flights")}</span>
           </div>
           <h2 className="font-heading font-extrabold text-slate-900 text-2xl sm:text-3xl leading-tight">
-            Popular Flights
+            {t("popular.title", "Popular Flights")}
           </h2>
           <p className="text-slate-500 text-sm mt-1.5 max-w-md">
-            Check these popular routes — great prices, updated daily.
+            {t("popular.subtitle", "Check these popular routes — great prices, updated daily.")}
           </p>
         </div>
 
@@ -193,7 +199,7 @@ export function PopularFlights() {
           {showAll ? (
             <><ChevronUp className="h-4 w-4" /> Show less</>
           ) : (
-            <><ChevronDown className="h-4 w-4" /> View all {ROUTES.length} routes</>
+            <><ChevronDown className="h-4 w-4" /> {t("popular.viewAll", "View all routes")}</>
           )}
         </button>
       </div>

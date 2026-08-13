@@ -78,15 +78,16 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   )
 }
 
-function TableCell({ className, ...props }: React.ComponentProps<"td">) {
+function TableCell({ className, isHeader, ...props }: React.ComponentProps<"td"> & { isHeader?: boolean }) {
+  const CellTag = isHeader ? "th" : "td";
   return (
-    <td
+    <CellTag
       data-slot="table-cell"
       className={cn(
         "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
         className
       )}
-      {...props}
+      {...(props as any)}
     />
   )
 }

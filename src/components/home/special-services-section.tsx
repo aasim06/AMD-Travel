@@ -1,7 +1,8 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import {
-  CheckCircle2,
   ArrowRight,
   Globe,
   Compass,
@@ -13,25 +14,28 @@ import {
   Clock,
   UserCheck,
 } from "lucide-react";
+import { useCurrency } from "@/context/currency-context";
 
 export function SpecialServicesSection() {
+  const { t } = useCurrency();
+
   return (
     <section className="relative bg-slate-50/60 py-16 lg:py-24 border-t border-slate-100/80 overflow-hidden">
       {/* Background Decorative Blur Gradients */}
-      <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-orange-100/40 via-blue-50/30 to-transparent blur-3xl pointer-events-none" />
+      <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-primary/10 via-blue-50/30 to-transparent blur-3xl pointer-events-none" />
 
       <div className="container relative z-10">
         {/* Section Header */}
         <div className="flex flex-col items-center text-center mb-12 lg:mb-16">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-600 text-xs font-bold uppercase tracking-wider mb-3 shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 text-orange-500" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider mb-3 shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
             <span>SPECIAL SERVICES</span>
           </div>
           <h2 className="font-heading font-extrabold text-slate-900 text-3xl sm:text-4xl lg:text-[2.5rem] leading-tight tracking-tight">
-            Tailored Travel Solutions
+            {t("services.title", "Tailored Travel Solutions")}
           </h2>
           <p className="text-slate-500 text-sm sm:text-base mt-3 max-w-xl text-center font-normal leading-relaxed">
-            From sacred pilgrimages to global visa assistance, explore our specialized travel offerings.
+            {t("services.subtitle", "From sacred pilgrimages to global visa assistance, explore our specialized travel offerings.")}
           </p>
         </div>
 
@@ -60,10 +64,10 @@ export function SpecialServicesSection() {
 
               {/* Title & Subtitle */}
               <h3 className="font-heading font-extrabold text-2xl sm:text-3xl text-slate-900 mb-3 leading-tight">
-                Spiritual Journeys Tailored For You
+                {t("services.umrahTitle", "Spiritual Journeys Tailored For You")}
               </h3>
               <p className="text-slate-500 text-sm mb-7 leading-relaxed">
-                Experience a seamless and serene pilgrimage with fully customized Umrah services.
+                {t("services.umrahSubtitle", "Experience a seamless and serene pilgrimage with fully customized Umrah services.")}
               </p>
 
               {/* Features List */}
@@ -104,7 +108,7 @@ export function SpecialServicesSection() {
             <div className="pt-2">
               <Link
                 href="/umrah-packages"
-                className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm transition-all duration-300 shadow-md shadow-orange-500/20 hover:shadow-lg hover:shadow-orange-500/30 hover:-translate-y-0.5 active:translate-y-0 w-full"
+                className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm transition-all duration-300 shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 w-full"
               >
                 <span>Explore Umrah Packages</span>
                 <ArrowRight className="w-4 h-4" />
@@ -134,10 +138,10 @@ export function SpecialServicesSection() {
 
               {/* Title & Subtitle */}
               <h3 className="font-heading font-extrabold text-2xl sm:text-3xl text-slate-900 mb-3 leading-tight">
-                Hassle-Free Visa Processing
+                {t("services.visaTitle", "Hassle-Free Visa Processing")}
               </h3>
               <p className="text-slate-500 text-sm mb-7 leading-relaxed">
-                Fast-track your global travels with expert visa guidance and reliable support.
+                {t("services.visaSubtitle", "Fast-track your global travels with expert visa guidance and reliable support.")}
               </p>
 
               {/* Features List */}

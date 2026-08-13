@@ -1,0 +1,183 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  AGENT
+  CUSTOMER
+}
+
+enum BookingStatus {
+  CONFIRMED
+  PENDING
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PAID
+  PENDING
+  REFUNDED
+  FAILED
+}
+
+model User {
+  id        String    @id @default(cuid())
+  name      String
+  email     String    @unique
+  role      Role      @default(CUSTOMER)
+  phone     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  bookings  Booking[]
+}
+
+model Booking {
+  id            String        @id @default(cuid())
+  pnr           String        @unique
+  userId        String?
+  user          User?         @relation(fields: [userId], references: [id])
+  type          String        @default("flight")
+  origin        String
+  destination   String
+  airline       String
+  flightNumber  String?
+  departureDate DateTime
+  returnDate    DateTime?
+  totalAmount   Float
+  currency      String        @default("USD")
+  status        BookingStatus @default(CONFIRMED)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  passengers    Passenger[]
+  payment       Payment?
+}
+
+model Passenger {
+  id         String   @id @default(cuid())
+  bookingId  String
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  firstName  String
+  lastName   String
+  email      String?
+  phone      String?
+  passportNo String?
+  type       String   @default("ADULT")
+  createdAt  DateTime @default(now())
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  bookingId     String        @unique
+  booking       Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount        Float
+  currency      String        @default("USD")
+  gateway       String        @default("Stripe")
+  transactionId String?
+  status        PaymentStatus @default(PAID)
+  createdAt     DateTime      @default(now())
+}
+
+model FlightRoute {
+  id               String   @id @default(cuid())
+  origin           String
+  destination      String
+  airline          String
+  basePrice        Float
+  markupPercentage Float    @default(0)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model CMSPackage {
+  id             String   @id @default(cuid())
+  title          String
+  type           String   // "UMRAH" | "TOUR"
+  category       String   @default("Economy")
+  destination    String
+  price          Float
+  originalPrice  Float?
+  durationDays   String
+  groupSize      String?  @default("Up to 25 People")
+  departureCity  String?  @default("Frankfurt / Islamabad")
+  makkahNights   Int?     @default(5)
+  madinahNights  Int?     @default(4)
+  makkahHotel    String?  @default("Al Safwah Royale Orchid ★★★")
+  madinahHotel   String?  @default("Dallah Taibah ★★★")
+  badge          String?  @default("Live Package")
+  badgeColor     String?  @default("bg-emerald-500 text-white")
+  includes       String?  @default("Return Flights, Hotel, Transfers, Visa")
+  description    String
+  image          String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model SystemSetting {
+  id        String   @id @default("global")
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model CarListing {
+  id            String   @id @default(cuid())
+  name          String
+  category      String   @default("SUV")
+  subtitle      String   @default("SUV")
+  location      String   @default("Frankfurt Airport")
+  pricePerDay   Float
+  originalPrice Float?
+  seats         Int      @default(5)
+  transmission  String   @default("Automatic")
+  fuelType      String   @default("Petrol")
+  badge         String?  @default("Top Rated")
+  badgeColor    String?  @default("bg-indigo-500 text-white")
+  includes      String?  @default("Free Cancellation, Insurance Included, Unlimited KM")
+  image         String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model VisaApplication {
+  id             String   @id @default(cuid())
+  applicationNo  String   @unique
+  country        String
+  visaType       String
+  visaPlan       String
+  firstName      String
+  middleName     String?
+  surname        String
+  fatherName     String
+  motherName     String
+  dob            DateTime
+  placeOfBirth   String
+  maritalStatus  String
+  occupation     String
+  religion       String
+  nationality    String
+  gender         String
+  email          String
+  phone          String
+  passportNo     String
+  issueDate      DateTime
+  expiryDate     DateTime
+  passportFront  String?
+  passportBack   String?
+  passportPhoto  String?
+  additionalDoc  String?
+  status         String   @default("PENDING")
+  adminNotes     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}

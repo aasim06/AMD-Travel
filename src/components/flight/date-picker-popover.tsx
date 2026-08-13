@@ -252,13 +252,15 @@ export function DatePickerPopover({
             {triggerText}
           </span>
           {depLabel && (
-            <button
-              type="button"
+            <span
+              role="button"
+              tabIndex={0}
               onClick={(e) => { e.stopPropagation(); clearDates(); }}
-              className="shrink-0 h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); clearDates(); } }}
+              className="shrink-0 h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               <X className="h-3 w-3" />
-            </button>
+            </span>
           )}
         </button>
       </div>

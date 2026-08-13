@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Hero } from "@/components/home/hero";
 import { PublicLayout } from "@/components/layout/public-layout";
 import {
@@ -138,7 +139,43 @@ function fuelIcon(fuel: string) {
 
 export default function CarsPage() {
   const [active, setActive] = useState("All");
-  const filtered = active === "All" ? CARS : CARS.filter(c => c.category === active);
+  const [dbCars, setDbCars] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadLiveCars() {
+      try {
+        const res = await fetch("/api/cars");
+        const json = await res.json();
+        if (json?.data && json.data.length > 0) {
+          const mapped = json.data.map((c: any) => ({
+            id: c.id,
+            category: c.category || "SUV",
+            name: c.name,
+            type: c.subtitle || "SUV",
+            location: c.location || "Frankfurt Airport",
+            badge: c.badge || "Top Rated",
+            badgeColor: c.badgeColor || "bg-indigo-500 text-white",
+            seats: c.seats || 5,
+            transmission: c.transmission || "Automatic",
+            fuel: c.fuelType || "Petrol",
+            pricePerDay: c.pricePerDay,
+            originalPrice: c.originalPrice || Math.round(c.pricePerDay * 1.3),
+            rating: 4.9,
+            reviews: 180,
+            image: c.image || "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=600&q=80",
+            includes: c.includes ? c.includes.split(", ") : ["Free Cancellation", "Insurance Included", "Unlimited KM"],
+          }));
+          setDbCars(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to load DB cars", err);
+      }
+    }
+    loadLiveCars();
+  }, []);
+
+  const allCars = [...dbCars, ...CARS];
+  const filtered = active === "All" ? allCars : allCars.filter(c => c.category === active);
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -199,11 +236,12 @@ export default function CarsPage() {
             >
               {/* Image */}
               <div className="relative h-48 overflow-hidden bg-slate-100">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={car.image}
                   alt={car.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                 <span className={`absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-full ${car.badgeColor}`}>
@@ -237,7 +275,7 @@ export default function CarsPage() {
 
                 {/* Features */}
                 <div className="flex flex-wrap gap-1.5 mb-4">
-                  {car.features.map(f => (
+                  {(car.includes || car.features || []).map((f: string) => (
                     <span key={f} className="flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/8 px-2 py-0.5 rounded-full">
                       <CheckCircle2 className="h-2.5 w-2.5" />{f}
                     </span>

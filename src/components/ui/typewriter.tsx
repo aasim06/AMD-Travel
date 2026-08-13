@@ -67,7 +67,7 @@ export function Typewriter({
     <span className={`inline-flex items-center ${className}`}>
       <span>{currentText || "\u00A0"}</span>
       <span
-        className={`inline-block w-[3px] h-[0.85em] ml-1 bg-[#FF6B35] animate-pulse rounded-full ${cursorClassName}`}
+        className={`inline-block w-[3px] h-[0.85em] ml-1 bg-primary animate-pulse rounded-full ${cursorClassName}`}
         aria-hidden="true"
       />
     </span>

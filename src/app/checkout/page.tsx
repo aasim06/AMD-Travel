@@ -45,9 +45,10 @@ function CheckoutContent() {
   const [passengers]  = useState<number>(() => sessionData?.passengers ?? 1);
   const [step,      setStep]      = useState<CheckoutStep>("passengers");
   const [formData,  setFormData]  = useState<Partial<CheckoutData>>({});
-  const [pnr,       setPnr]       = useState<string | null>(null);
-  const [isBooking, setIsBooking] = useState(false);
-  const [bookingError, setBookingError] = useState<string | null>(null);
+  const [pnr,           setPnr]           = useState<string | null>(null);
+  const [bookingSource, setBookingSource] = useState<string | null>(null);
+  const [isBooking,     setIsBooking]     = useState(false);
+  const [bookingError,  setBookingError]  = useState<string | null>(null);
 
   useEffect(() => {
     if (!offer) {
@@ -104,6 +105,7 @@ function CheckoutContent() {
 
       const generatedPnr = data.pnr;
       setPnr(generatedPnr);
+      setBookingSource(data.source || null);
 
       // Save to localStorage for My Bookings tab persistence
       if (data.booking && typeof window !== "undefined") {
@@ -163,9 +165,21 @@ function CheckoutContent() {
 
         {/* Booking error alert */}
         {bookingError && (
-          <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-center justify-between">
-            <span><strong>Booking Error:</strong> {bookingError}</span>
-            <button onClick={() => setBookingError(null)} className="text-xs underline font-semibold ml-4">Dismiss</button>
+          <div className="mb-6 p-5 rounded-2xl bg-rose-50/90 border-2 border-rose-300 text-rose-800 text-sm shadow-md flex items-start gap-3">
+            <div className="h-6 w-6 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center shrink-0 mt-0.5 font-bold">
+              ✕
+            </div>
+            <div className="flex-1">
+              <h4 className="font-extrabold text-rose-900">Amadeus Live Booking Failed</h4>
+              <p className="text-xs text-rose-700 mt-1 font-mono break-all">{bookingError}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setBookingError(null)}
+              className="text-xs font-bold text-rose-800 hover:text-rose-950 bg-rose-200/60 hover:bg-rose-200 px-3 py-1.5 rounded-xl transition-colors shrink-0 ml-2"
+            >
+              Dismiss
+            </button>
           </div>
         )}
 
@@ -210,6 +224,7 @@ function CheckoutContent() {
             {step === "confirmation" && pnr && formData.passengers && formData.contact && (
               <ConfirmationStep
                 pnr={pnr}
+                bookingSource={bookingSource}
                 formData={formData as CheckoutData}
                 offer={offer}
                 carriers={carriers}

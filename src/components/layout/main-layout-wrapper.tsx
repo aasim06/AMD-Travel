@@ -1,9 +1,9 @@
 "use client";
-
 import { usePathname } from "next/navigation";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
+import { FloatingSupport } from "@/components/ui/floating-support";
 
 export function MainLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -19,6 +19,7 @@ export function MainLayoutWrapper({ children }: { children: React.ReactNode }) {
       <div className="min-h-[calc(100vh-4rem)] pb-12 md:pb-0">{children}</div>
       <Footer />
       <MobileBottomNav />
+      <FloatingSupport />
     </>
   );
 }

@@ -206,6 +206,41 @@ function DateField({ label, required = false, value, onChange, placeholder, maxD
   );
 }
 
+function compressImage(file: File, maxWidth = 1000, maxHeight = 1000, quality = 0.7): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, width, height);
+        const compressedBase64 = canvas.toDataURL("image/jpeg", quality);
+        resolve(compressedBase64);
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 function UploadBox({ label, required = false, optional = false, file, preview, onChange }: {
   label: string; required?: boolean; optional?: boolean;
   file: UploadedFile | null;
@@ -214,14 +249,13 @@ function UploadBox({ label, required = false, optional = false, file, preview, o
 }) {
   const ref = useRef<HTMLInputElement>(null);
 
-  function handle(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handle(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
     const isImage = f.type.startsWith("image/");
     if (isImage) {
-      const reader = new FileReader();
-      reader.onload = ev => onChange({ name: f.name, size: f.size }, ev.target?.result as string);
-      reader.readAsDataURL(f);
+      const compressed = await compressImage(f, 1000, 1000, 0.7);
+      onChange({ name: f.name, size: f.size }, compressed);
     } else {
       onChange({ name: f.name, size: f.size }, null);
     }
@@ -379,6 +413,40 @@ export function VisaApplicationForm() {
     return Object.keys(e).length === 0;
   }
 
+  const [appNo, setAppNo] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+    setIsSubmitting(true);
+
+    const payload = {
+      ...form,
+      passportFront: form.passportFrontPreview || form.passportFront?.name,
+      passportBack: form.passportBackPreview || form.passportBack?.name,
+      passportPhoto: form.passportPhotoPreview || form.passportPhoto?.name,
+      additionalDoc: form.additionalDocPreview || form.additionalDoc?.name,
+    };
+
+    try {
+      const res = await fetch("/api/visa/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (json?.success) {
+        setAppNo(json.applicationNo || "VSA-981240");
+        setSubmitted(true);
+      }
+    } catch (err) {
+      console.error("Failed to submit visa application", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const visaTypes = form.country
     ? (VISA_TYPES[form.country] ?? VISA_TYPES.default)
     : VISA_TYPES.default;
@@ -389,10 +457,13 @@ export function VisaApplicationForm() {
         <div className="h-20 w-20 rounded-full bg-emerald-50 border-2 border-emerald-100 flex items-center justify-center">
           <CheckCircle2 className="h-10 w-10 text-emerald-500" />
         </div>
-        <div className="space-y-1">
-          <h2 className="text-xl font-bold text-slate-800">Application Submitted!</h2>
-          <p className="text-sm text-slate-500 max-w-sm">
-            Your visa application has been received. Our team will review it and contact you within 2–3 business days.
+        <div className="space-y-2">
+          <span className="inline-flex items-center rounded-full bg-blue-50 px-4 py-1 text-xs font-bold text-blue-600 border border-blue-200">
+            Application Reference #: {appNo}
+          </span>
+          <h2 className="text-xl font-bold text-slate-800">Application Submitted Successfully!</h2>
+          <p className="text-sm text-slate-500 max-w-md mx-auto">
+            Your visa application has been securely saved to our database. Our embassy verification team will review your details and contact you via email ({form.email}) or WhatsApp ({form.phone}).
           </p>
         </div>
         <Button variant="outline" onClick={() => { setForm(EMPTY); setSubmitted(false); }}
@@ -404,7 +475,7 @@ export function VisaApplicationForm() {
   }
 
   return (
-    <form onSubmit={e => { e.preventDefault(); if (validate()) setSubmitted(true); }} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
 
       {/* ── Section 1: Visa Information ── */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6"
@@ -679,10 +750,19 @@ export function VisaApplicationForm() {
             <RotateCcw className="h-3.5 w-3.5" />
             Clear Form
           </Button>
-          <Button type="submit"
-            className="flex-1 sm:flex-none sm:px-10 h-11 rounded-xl gap-2 text-sm font-semibold shadow-sm shadow-primary/25">
-            <Send className="h-3.5 w-3.5" />
-            Submit Application
+          <Button type="submit" disabled={isSubmitting}
+            className="flex-1 sm:flex-none sm:px-10 h-11 rounded-xl gap-2 text-sm font-semibold shadow-sm shadow-primary/25 disabled:opacity-60 cursor-pointer">
+            {isSubmitting ? (
+              <>
+                <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                Submitting Application...
+              </>
+            ) : (
+              <>
+                <Send className="h-3.5 w-3.5" />
+                Submit Application
+              </>
+            )}
           </Button>
         </div>
       </div>

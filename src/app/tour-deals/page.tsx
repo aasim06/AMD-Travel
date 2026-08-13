@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 import {
   MapPin, Clock, Users, Star, ArrowRight, Plane,
   MessageCircle, Sparkles, Shield, HeartHandshake, Filter,
@@ -154,8 +155,41 @@ const STATS = [
 
 export default function TourDealsPage() {
   const [active, setActive] = useState("All");
+  const [dbPackages, setDbPackages] = useState<any[]>([]);
 
-  const filtered = active === "All" ? DEALS : DEALS.filter(d => d.category === active);
+  useEffect(() => {
+    async function loadLiveTourPackages() {
+      try {
+        const res = await fetch("/api/cms/packages?type=TOUR");
+        const json = await res.json();
+        if (json?.data && json.data.length > 0) {
+          const mapped = json.data.map((pkg: any) => ({
+            id: pkg.id,
+            category: "Asia",
+            destination: pkg.title,
+            image: pkg.image || "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=600&q=80",
+            badge: "Live Deal",
+            badgeColor: "bg-emerald-500 text-white",
+            duration: pkg.durationDays || "7 Days / 6 Nights",
+            groupSize: "2–10 People",
+            rating: 4.9,
+            reviews: 150,
+            price: pkg.price,
+            originalPrice: Math.round(pkg.price * 1.3),
+            includes: ["Flights", "Hotel", "Tours"],
+            highlights: [pkg.destination, "Guided City Tour", "Luxury Transfers"],
+          }));
+          setDbPackages(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to load Tour DB packages", err);
+      }
+    }
+    loadLiveTourPackages();
+  }, []);
+
+  const allDeals = [...dbPackages, ...DEALS];
+  const filtered = active === "All" ? allDeals : allDeals.filter(d => d.category === active);
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -259,11 +293,12 @@ export default function TourDealsPage() {
             >
               {/* Image */}
               <div className="relative h-44 overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={deal.image}
                   alt={deal.destination}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
@@ -302,7 +337,7 @@ export default function TourDealsPage() {
 
                 {/* Highlights */}
                 <div className="flex flex-wrap gap-1.5 mb-4">
-                  {deal.highlights.map(h => (
+                  {deal.highlights.map((h: string) => (
                     <span key={h} className="text-[10px] bg-slate-50 border border-slate-200 text-slate-500 px-2 py-0.5 rounded-full">
                       {h}
                     </span>
@@ -311,7 +346,7 @@ export default function TourDealsPage() {
 
                 {/* Includes */}
                 <div className="flex items-center gap-1.5 mb-4 flex-wrap">
-                  {deal.includes.map(inc => (
+                  {deal.includes.map((inc: string) => (
                     <span key={inc} className="flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/8 px-2 py-0.5 rounded-full">
                       <Tag className="h-2.5 w-2.5" />{inc}
                     </span>

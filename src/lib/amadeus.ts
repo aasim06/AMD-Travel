@@ -10,7 +10,7 @@ try {
 // ─── Centralized Amadeus Enterprise API Configuration ──────────────────────────
 
 export const AMADEUS_BASE_URL =
-  process.env.AMADEUS_ENV === "production"
+  process.env.AMADEUS_ENV === "production" || process.env.AMADEUS_ENV === "pro"
     ? "https://travel.api.amadeus.com"
     : "https://test.travel.api.amadeus.com";
 
@@ -60,12 +60,13 @@ export async function getAmadeusToken(): Promise<string> {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body,
+      signal: AbortSignal.timeout(4000),
     });
   } catch (err: unknown) {
     const errorObj = err as Error & { cause?: unknown };
     const causeMsg = errorObj?.cause ? JSON.stringify(errorObj.cause) : errorObj.message;
     console.error(`[Amadeus Auth DNS/Network Error] Failed to reach ${tokenUrl}:`, causeMsg);
-    throw new Error(`Cannot reach Amadeus auth server at ${tokenUrl}: ${errorObj.message} (cause: ${causeMsg})`);
+    throw new Error(`Cannot reach Amadeus auth server at ${tokenUrl}: ${errorObj.message}`);
   }
 
   if (!response.ok) {
@@ -79,7 +80,7 @@ export async function getAmadeusToken(): Promise<string> {
 
   tokenCache = {
     token: json.access_token,
-    expiresAt: Date.now() + json.expires_in * 1000,
+    expiresAt: Date.now() + (json.expires_in ?? 1799) * 1000,
   };
 
   return tokenCache.token;
@@ -115,6 +116,7 @@ export async function amadeusFetch(
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(3000),
     });
   } catch (err: unknown) {
     const errorObj = err as Error & { cause?: unknown };

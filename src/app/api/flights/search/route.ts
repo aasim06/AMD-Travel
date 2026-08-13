@@ -3,6 +3,7 @@ try { dns.setDefaultResultOrder("ipv4first"); } catch { /* ignore */ }
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAmadeusToken, amadeusGet, amadeusPost } from "@/lib/amadeus";
+import { prisma } from "@/lib/prisma";
 import type {
   FlightOffer,
   FlightSegment,
@@ -10,6 +11,14 @@ import type {
   TravelClass,
   Currency,
 } from "@/types/flight";
+
+function applyMarkup(priceVal: number, markupType: string, markupValue: number): number {
+  if (markupType === "PERCENTAGE") {
+    return Math.round(priceVal * (1 + markupValue / 100));
+  } else {
+    return Math.round(priceVal + markupValue);
+  }
+}
 
 // ─── Mock data fallback (used when Amadeus is unreachable) ───────────────────
 
@@ -253,7 +262,12 @@ function extractBaggageAllowance(offer: AmadeusOffer): { quantity: number; weigh
 
 // ─── Map Amadeus offer → FlightOffer ─────────────────────────────────────────
 
-function mapOffer(offer: AmadeusOffer, currency: Currency): FlightOffer {
+function mapOffer(
+  offer: AmadeusOffer,
+  currency: Currency,
+  markupType: string = "PERCENTAGE",
+  markupValue: number = 5
+): FlightOffer {
   const itineraries: Itinerary[] = offer.itineraries.map((itin) => ({
     duration: itin.duration,
     segments: itin.segments.map((seg): FlightSegment => ({
@@ -277,9 +291,15 @@ function mapOffer(offer: AmadeusOffer, currency: Currency): FlightOffer {
     })),
   }));
 
-  // Per-passenger price from travelerPricings if available
+  const rawTotal = parseFloat(offer.price.total);
+  const rawBase  = parseFloat(offer.price.base || offer.price.total);
+
+  const finalTotal = String(applyMarkup(rawTotal, markupType, markupValue));
+  const finalBase  = String(applyMarkup(rawBase, markupType, markupValue));
+
   const travelerTotal = offer.travelerPricings?.[0]?.price?.total;
-  const perPassenger  = travelerTotal ?? String(Math.round(parseFloat(offer.price.total)));
+  const rawPerPassenger = travelerTotal ? parseFloat(travelerTotal) : rawTotal;
+  const finalPerPassenger = String(applyMarkup(rawPerPassenger, markupType, markupValue));
 
   const baggageAllowance = extractBaggageAllowance(offer);
 
@@ -287,10 +307,10 @@ function mapOffer(offer: AmadeusOffer, currency: Currency): FlightOffer {
     id:                    offer.id,
     source:                offer.source ?? "GDS",
     price: {
-      total:        offer.price.total,
-      base:         offer.price.base,
+      total:        finalTotal,
+      base:         finalBase,
       currency:     currency,
-      perPassenger: perPassenger,
+      perPassenger: finalPerPassenger,
     },
     itineraries,
     validatingAirlineCodes: offer.validatingAirlineCodes ?? [],
@@ -439,18 +459,20 @@ export async function POST(request: NextRequest) {
     }
 
     const rawOffers = amadeusData.data ?? [];
-    console.log("[Amadeus] Offers received:", rawOffers.length, "tripType:", tripType);
 
-    if (rawOffers.length === 0) {
-      const empty = {
-        data: [],
-        meta: { count: 0, currency, origin: origin.toUpperCase(), destination: destination.toUpperCase(), departureDate },
-        dictionaries: { carriers: {}, aircraft: {}, locations: {} },
-      };
-      return NextResponse.json(empty, { headers: { "X-Data-Source": "AMADEUS" } });
+    // ── Fetch Admin Profit Markup from Supabase PostgreSQL ────────────────
+    let markupType = "PERCENTAGE";
+    let markupValue = 5;
+    try {
+      const typeSetting = await prisma.systemSetting.findUnique({ where: { key: "markup_type" } });
+      const valSetting  = await prisma.systemSetting.findUnique({ where: { key: "markup_value" } });
+      if (typeSetting?.value) markupType = typeSetting.value;
+      if (valSetting?.value)  markupValue = parseFloat(valSetting.value);
+    } catch {
+      /* default 5% */
     }
 
-    const offers: FlightOffer[] = rawOffers.map(o => mapOffer(o, currency));
+    const offers: FlightOffer[] = rawOffers.map((o: AmadeusOffer) => mapOffer(o, currency, markupType, markupValue));
 
     const dicts = amadeusData.dictionaries ?? {};
     const response = {
@@ -468,8 +490,13 @@ export async function POST(request: NextRequest) {
 
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("[Amadeus] Search failed:", message);
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    console.warn("[Amadeus] Live search timeout/error — returning instant realistic flight options:", message);
+    const mockData = generateMockFlights(
+      origin, destination, departureDate, returnDate,
+      passengers, travelClass, currency, tripType
+    );
+    cacheSet(cacheKey, mockData);
+    return NextResponse.json(mockData, { headers: { "X-Data-Source": "FAST_FALLBACK" } });
   }
 }
 

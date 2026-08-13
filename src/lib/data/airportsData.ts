@@ -7,7 +7,7 @@ export interface AirportOption {
   name:            string;
   city:            string;
   country:         string;
-  type:            "AIRPORT";
+  type:            "AIRPORT" | "CITY";
   isCountryMatch?: boolean;
   groupLabel?:     string;
 }
@@ -23,12 +23,17 @@ interface RawAirport {
 // ─── Popular airports shown before the user types ─────────────────────────────
 
 export const POPULAR_AIRPORTS: AirportOption[] = [
-  { code: "LHE", name: "Allama Iqbal International Airport", city: "Lahore",    country: "Pakistan",        type: "AIRPORT" },
-  { code: "KHI", name: "Jinnah International Airport",       city: "Karachi",   country: "Pakistan",        type: "AIRPORT" },
-  { code: "ISB", name: "Islamabad International Airport",    city: "Islamabad", country: "Pakistan",        type: "AIRPORT" },
+  { code: "LHR", name: "Heathrow Airport",                   city: "London",    country: "United Kingdom",       type: "AIRPORT" },
+  { code: "JFK", name: "John F. Kennedy International",     city: "New York",  country: "United States",        type: "AIRPORT" },
   { code: "DXB", name: "Dubai International Airport",        city: "Dubai",     country: "United Arab Emirates", type: "AIRPORT" },
-  { code: "LHR", name: "Heathrow Airport",                   city: "London",    country: "United Kingdom",  type: "AIRPORT" },
-  { code: "JED", name: "King Abdulaziz International",       city: "Jeddah",    country: "Saudi Arabia",    type: "AIRPORT" },
+  { code: "FRA", name: "Frankfurt Airport",                  city: "Frankfurt", country: "Germany",             type: "AIRPORT" },
+  { code: "CDG", name: "Charles de Gaulle Airport",          city: "Paris",     country: "France",              type: "AIRPORT" },
+  { code: "IST", name: "Istanbul Airport",                   city: "Istanbul",  country: "Turkey",              type: "AIRPORT" },
+  { code: "JED", name: "King Abdulaziz International",       city: "Jeddah",    country: "Saudi Arabia",        type: "AIRPORT" },
+  { code: "SIN", name: "Singapore Changi Airport",           city: "Singapore", country: "Singapore",           type: "AIRPORT" },
+  { code: "LHE", name: "Allama Iqbal International Airport", city: "Lahore",    country: "Pakistan",            type: "AIRPORT" },
+  { code: "ISB", name: "Islamabad International Airport",    city: "Islamabad", country: "Pakistan",            type: "AIRPORT" },
+  { code: "KHI", name: "Jinnah International Airport",       city: "Karachi",   country: "Pakistan",            type: "AIRPORT" },
 ];
 
 // ─── Build inverted prefix index ──────────────────────────────────────────────

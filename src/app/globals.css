@@ -1,5 +1,6 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "flatpickr/dist/flatpickr.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,7 +8,7 @@
 @layer base {
   :root {
     /* === Core Brand Palette (bare H S% L% — Tailwind wraps with hsl()) === */
-    --primary: 24 100% 62%;
+    --primary: 224 76% 48%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 0 0% 96%;
@@ -36,7 +37,7 @@
 
     --border: 0 0% 89%;
     --input: 0 0% 89%;
-    --ring: 24 100% 62%;
+    --ring: var(--primary);
 
     --radius: 0.625rem;
 
@@ -126,13 +127,20 @@
     font-feature-settings: "cv11", "ss01";
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-heading tracking-tight;
   }
+
   .theme {
     --font-heading: var(--font-sans);
     --font-sans: var(--font-sans);
   }
+
   html {
     @apply font-sans;
   }
@@ -140,15 +148,39 @@
 
 @layer utilities {
   @keyframes progress-fill {
-    0%   { width: 0%; opacity: 1; }
-    70%  { width: 85%; opacity: 1; }
-    100% { width: 85%; opacity: 1; }
+    0% {
+      width: 0%;
+      opacity: 1;
+    }
+
+    70% {
+      width: 85%;
+      opacity: 1;
+    }
+
+    100% {
+      width: 85%;
+      opacity: 1;
+    }
   }
+
   @keyframes progress-complete {
-    0%   { width: 85%; opacity: 1; }
-    60%  { width: 100%; opacity: 1; }
-    100% { width: 100%; opacity: 0; }
+    0% {
+      width: 85%;
+      opacity: 1;
+    }
+
+    60% {
+      width: 100%;
+      opacity: 1;
+    }
+
+    100% {
+      width: 100%;
+      opacity: 0;
+    }
   }
+
   /* Glassmorphism surface — for search bars, sticky headers, filter panels */
   .glass {
     background-color: hsl(var(--glass-bg) / var(--glass-bg-opacity));
@@ -180,8 +212,14 @@
     text-wrap: balance;
   }
 
-  .no-scrollbar::-webkit-scrollbar { display: none; }
-  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 
   /* Dual-range slider thumb styling */
   .range-thumb::-webkit-slider-thumb {
@@ -196,6 +234,7 @@
     cursor: pointer;
     pointer-events: all;
   }
+
   .range-thumb::-moz-range-thumb {
     height: 16px;
     width: 16px;
@@ -206,14 +245,28 @@
     cursor: pointer;
     pointer-events: all;
   }
-  .range-thumb::-webkit-slider-runnable-track { background: transparent; }
-  .range-thumb::-moz-range-track { background: transparent; }
+
+  .range-thumb::-webkit-slider-runnable-track {
+    background: transparent;
+  }
+
+  .range-thumb::-moz-range-track {
+    background: transparent;
+  }
 
   /* Card fade-in animation */
   @keyframes fade-in {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
+
   .animate-fade-in {
     animation: fade-in 0.4s ease both;
   }
@@ -224,10 +277,219 @@
     grid-template-rows: 0fr;
     transition: grid-template-rows 280ms cubic-bezier(0.4, 0, 0.2, 1);
   }
+
   .accordion-body.open {
     grid-template-rows: 1fr;
   }
-  .accordion-body > * {
+
+  .accordion-body>* {
     overflow: hidden;
   }
+
+  /* TailAdmin Utilities */
+  .font-outfit,
+  .font-heading,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-outfit), 'Outfit', sans-serif !important;
+  }
+
+  .shadow-theme-xs {
+    box-shadow: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
+  }
+
+  .shadow-theme-sm {
+    box-shadow: 0px 1px 3px 0px rgba(16, 24, 40, 0.1), 0px 1px 2px 0px rgba(16, 24, 40, 0.06);
+  }
+
+  .shadow-theme-md {
+    box-shadow: 0px 4px 8px -2px rgba(16, 24, 40, 0.1), 0px 2px 4px -2px rgba(16, 24, 40, 0.06);
+  }
+
+  .shadow-theme-lg {
+    box-shadow: 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03);
+  }
+
+  .text-theme-xs {
+    font-size: 12px;
+    line-height: 18px;
+  }
+
+  .text-theme-sm {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .text-theme-xl {
+    font-size: 20px;
+    line-height: 30px;
+  }
+
+  .menu-item {
+    @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-sm;
+  }
+
+  .menu-item-active {
+    @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400;
+  }
+
+  .menu-item-inactive {
+    @apply text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300;
+  }
+
+  .menu-item-icon {
+    @apply text-gray-500 group-hover:text-gray-700 dark:text-gray-400;
+  }
+
+  .menu-item-icon-active {
+    @apply text-brand-500 dark:text-brand-400;
+  }
+
+  .menu-item-icon-inactive {
+    @apply text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300;
+  }
+
+  .menu-dropdown-item {
+    @apply relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium;
+  }
+
+  .menu-dropdown-item-active {
+    @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400;
+  }
+
+  .menu-dropdown-item-inactive {
+    @apply text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5;
+  }
+
+  .menu-dropdown-badge {
+    @apply block rounded-full px-2.5 py-0.5 text-xs font-medium uppercase text-brand-500 dark:text-brand-400;
+  }
+
+  .menu-dropdown-badge-active {
+    @apply bg-brand-100 dark:bg-brand-500/20;
+  }
+}
+
+/* ApexCharts Dark Mode CSS Overrides */
+.apexcharts-canvas,
+.apexcharts-canvas svg,
+.apexcharts-canvas .apexcharts-theme-dark,
+.apexcharts-canvas .apexcharts-theme-light {
+  background: transparent !important;
+}
+
+.dark .apexcharts-text,
+.dark .apexcharts-text tspan {
+  fill: #98a2b3 !important;
+}
+
+.dark .apexcharts-legend-text {
+  color: #98a2b3 !important;
+}
+
+.dark .apexcharts-gridline {
+  stroke: #1e293b !important;
+}
+
+.dark .apexcharts-xcrosshairs,
+.dark .apexcharts-ycrosshairs {
+  stroke: #334155 !important;
+}
+
+.dark .apexcharts-tooltip {
+  background: #101828 !important;
+  border-color: #1d2939 !important;
+  color: #f2f4f7 !important;
+}
+
+.dark .apexcharts-tooltip-title {
+  background: #1d2939 !important;
+  color: #ffffff !important;
+}
+
+/* ── Lenis Smooth Scroll Engine Styles ── */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+/* ── Luxury Custom Scrollbar ── */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(203, 213, 225, 0.9);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff8a3d;
+}
+
+/* ── Magic UI Marquee Infinite Animation ── */
+@keyframes marquee {
+  from {
+    transform: translateX(0%);
+  }
+
+  to {
+    transform: translateX(calc(-100% - var(--gap, 1rem)));
+  }
+}
+
+@keyframes marquee-vertical {
+  from {
+    transform: translateY(0%);
+  }
+
+  to {
+    transform: translateY(calc(-100% - var(--gap, 1rem)));
+  }
+}
+
+.animate-marquee {
+  animation: marquee var(--duration, 25s) linear infinite;
+}
+
+.animate-marquee-reverse {
+  animation: marquee var(--duration, 25s) linear infinite reverse;
+}
+
+.animate-marquee-vertical {
+  animation: marquee-vertical var(--duration, 25s) linear infinite;
+}
+
+/* Dynamic Top Loader Progress Bar */
+#nprogress .bar {
+  background: hsl(var(--primary)) !important;
+}
+
+#nprogress .peg {
+  box-shadow: 0 0 10px hsl(var(--primary)), 0 0 5px hsl(var(--primary)) !important;
 }
