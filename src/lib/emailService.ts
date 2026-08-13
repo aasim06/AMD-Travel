@@ -1,7 +1,13 @@
 import { Resend } from "resend";
 
-const resendApiKey = process.env.RESEND_API_KEY || "";
-const resend = new Resend(resendApiKey);
+function getResendClient(): Resend | null {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    console.warn("[Resend Email] RESEND_API_KEY is not configured in environment variables.");
+    return null;
+  }
+  return new Resend(key);
+}
 
 // Sender address configuration
 const DEFAULT_FROM = process.env.EMAIL_FROM || "AMD Global <onboarding@resend.dev>";
@@ -194,6 +200,12 @@ export async function sendPNRNotification(pnrData: PNRNotificationData) {
 
     console.log(`[Resend Email] Sending PNR notification (${pnrNumber}) to:`, recipientList);
 
+    const resend = getResendClient();
+    if (!resend) {
+      console.warn(`[Resend Email Skipped] RESEND_API_KEY is not configured.`);
+      return { success: false, error: "RESEND_API_KEY missing" };
+    }
+
     const response = await resend.emails.send({
       from: DEFAULT_FROM,
       to: recipientList,
@@ -315,6 +327,12 @@ export async function sendVisaSubmissionNotification(visaData: VisaSubmissionNot
     `;
 
     console.log(`[Resend Email] Sending Visa notification (${applicationId}) to:`, recipientList);
+
+    const resend = getResendClient();
+    if (!resend) {
+      console.warn(`[Resend Email Skipped] RESEND_API_KEY is not configured.`);
+      return { success: false, error: "RESEND_API_KEY missing" };
+    }
 
     const response = await resend.emails.send({
       from: DEFAULT_FROM,
