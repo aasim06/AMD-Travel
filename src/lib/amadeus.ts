@@ -116,7 +116,7 @@ export async function amadeusFetch(
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(12000),
     });
   } catch (err: unknown) {
     const errorObj = err as Error & { cause?: unknown };

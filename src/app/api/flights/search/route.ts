@@ -67,9 +67,15 @@ function generateMockFlights(
   const carriers: Record<string, string> = {};
   const aircraft: Record<string, string> = { "77W": "Boeing 777-300ER", "359": "Airbus A350-900", "321": "Airbus A321", "789": "Boeing 787-9", "333": "Airbus A330-300", "73H": "Boeing 737-800" };
 
+  let routeSeed = 0;
+  for (let i = 0; i < (origin + destination).length; i++) {
+    routeSeed += (origin + destination).charCodeAt(i);
+  }
+  const routeMult = 0.75 + (routeSeed % 15) * 0.08;
+
   const offers: FlightOffer[] = MOCK_CARRIERS.map((c, i) => {
     carriers[c.code] = c.name;
-    const variation = 1 + (i * 0.07);
+    const variation = (1 + (i * 0.07)) * routeMult;
     const baseTotal  = Math.round(c.basePrice * variation * passengers);
     const roundMult  = isRound ? 1.85 : 1;
     const total      = Math.round(baseTotal * roundMult);
