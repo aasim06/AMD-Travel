@@ -19,6 +19,7 @@ import {
   Sparkles,
   Briefcase,
   Crown,
+  Loader2,
 } from "lucide-react";
 import { Trash2 } from "lucide-react";
 import type { TravelClass } from "@/types/flight";
@@ -154,6 +155,7 @@ export function FlightSearchForm() {
   const [dateRange, setDateRange]           = useState<DateRange>({ departure: null, returnDate: null });
   const [swapping, setSwapping]             = useState(false);
   const [returnDateError, setReturnDateError] = useState(false);
+  const [isSearching, setIsSearching]       = useState(false);
   const [legs, setLegs]                     = useState<FlightLeg[]>(DEFAULT_LEGS);
   const newLegRef                            = useRef<HTMLDivElement>(null);
 
@@ -223,6 +225,7 @@ export function FlightSearchForm() {
     if (tripType === "multi-city") {
       const valid = legs.every((l) => l.origin && l.destination && l.departureDate);
       if (!valid) return;
+      setIsSearching(true);
       const params = new URLSearchParams({
         tripType,
         passengers: String(passengers),
@@ -246,6 +249,7 @@ export function FlightSearchForm() {
       return;
     }
     setReturnDateError(false);
+    setIsSearching(true);
     saveRecentSearch({
       origin,
       destination,
@@ -457,10 +461,20 @@ export function FlightSearchForm() {
           {/* CTA Submit Button */}
           <button
             type="submit"
-            className="w-full py-4 bg-primary text-primary-foreground hover:bg-primary/90 font-heading font-bold rounded-xl text-base shadow-lg shadow-primary/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 mt-1"
+            disabled={isSearching}
+            className="w-full py-4 bg-primary text-primary-foreground hover:bg-primary/90 font-heading font-bold rounded-xl text-base shadow-lg shadow-primary/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 mt-1 disabled:opacity-85"
           >
-            <Search className="h-5 w-5" />
-            <span>Search Flights</span>
+            {isSearching ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Searching Flights...</span>
+              </>
+            ) : (
+              <>
+                <Search className="h-5 w-5" />
+                <span>Search Flights</span>
+              </>
+            )}
           </button>
         </form>
 
@@ -760,10 +774,20 @@ export function FlightSearchForm() {
             <div className="flex justify-end pt-1">
               <button
                 type="submit"
-                className="inline-flex items-center justify-center gap-2 h-12 px-8 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-card hover:shadow-card-hover hover:brightness-110 active:scale-[0.97] transition-all duration-200"
+                disabled={isSearching}
+                className="inline-flex items-center justify-center gap-2 h-12 px-8 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-card hover:shadow-card-hover hover:brightness-110 active:scale-[0.97] transition-all duration-200 disabled:opacity-85 cursor-pointer"
               >
-                <Search className="h-4 w-4" />
-                Search Flights
+                {isSearching ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Searching...</span>
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-4 w-4" />
+                    <span>Search Flights</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -831,10 +855,20 @@ export function FlightSearchForm() {
           <div className="lg:col-span-3 min-w-0">
             <button
               type="submit"
-              className="w-full inline-flex items-center justify-center gap-2 h-14 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-sm xl:text-base shadow-md shadow-primary/20 active:scale-[0.97] transition-all duration-200"
+              disabled={isSearching}
+              className="w-full inline-flex items-center justify-center gap-2 h-14 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-sm xl:text-base shadow-md shadow-primary/20 active:scale-[0.97] transition-all duration-200 disabled:opacity-85 cursor-pointer"
             >
-              <Search className="h-4.5 w-4.5" />
-              <span>Search Flights</span>
+              {isSearching ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Searching Flights...</span>
+                </>
+              ) : (
+                <>
+                  <Search className="h-4.5 w-4.5" />
+                  <span>Search Flights</span>
+                </>
+              )}
             </button>
           </div>
 
