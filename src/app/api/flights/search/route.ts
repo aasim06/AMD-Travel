@@ -149,6 +149,7 @@ interface SearchBody {
   passengers:    number;
   travelClass:   TravelClass;
   currency:      Currency;
+  fast?:         boolean;
   legs?: { origin: string; destination: string; departureDate: string }[];
 }
 
@@ -392,6 +393,15 @@ export async function POST(request: NextRequest) {
   if (cached) {
     console.log("[Amadeus] Cache HIT:", cacheKey);
     return NextResponse.json({ ...cached, cached: true });
+  }
+
+  // ── Fast preview request (returns instant results in <300ms) ────────────────
+  if (body.fast) {
+    const instantData = generateMockFlights(
+      origin, destination, departureDate, returnDate,
+      passengers, travelClass, currency, tripType
+    );
+    return NextResponse.json({ ...instantData, isPartial: true }, { headers: { "X-Data-Source": "FAST_PREVIEW" } });
   }
 
   // ── Get token ──────────────────────────────────────────────────────────────

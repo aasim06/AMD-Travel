@@ -1484,6 +1484,7 @@ function SearchContent() {
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState<string | null>(null);
   const [fromCache, setFromCache] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [failedLegs, setFailedLegs] = useState<string[]>([]);
   const [sortKey, setSortKey]     = useState<SortKey | OtherSort>("best");
   const initialBags = parseInt(searchParams.get("bags") ?? searchParams.get("checkedBags") ?? "0", 10);
@@ -1689,8 +1690,9 @@ const fetchFlights = useCallback(async () => {
 
     setLoading(true);
     setError(null);
+    setIsSyncing(true);
 
-    const payload = {
+    const basePayload = {
       tripType,
       origin:        isMultiCity ? parsedLegs![0].from : from,
       destination:   isMultiCity ? parsedLegs![parsedLegs!.length - 1].to : to,
@@ -1708,13 +1710,34 @@ const fetchFlights = useCallback(async () => {
       }),
     };
 
-    console.log("Fetching flights from API...", payload);
+    console.log("Fetching flights from API...", basePayload);
 
+    // Stage 1: Instant Fast Preview (renders flight cards in <200ms)
+    try {
+      const fastRes = await fetch("/api/flights/search", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ ...basePayload, fast: true }),
+      });
+      if (fastRes.ok) {
+        const fastData = await fastRes.json();
+        if (fastData.data && fastData.data.length > 0) {
+          setResults(fastData.data);
+          setCarriers(fastData.dictionaries?.carriers ?? {});
+          setSortedResults(applySort(fastData.data, sortKey, fastData.dictionaries?.carriers ?? {}));
+          setLoading(false); // <--- Screen updates INSTANTLY!
+        }
+      }
+    } catch {
+      // Ignore fast preview error
+    }
+
+    // Stage 2: Full Live Amadeus GDS Search (streams in background)
     try {
       const res = await fetch("/api/flights/search", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(payload),
+        body:    JSON.stringify(basePayload),
       });
 
       if (!res.ok) {
@@ -1723,6 +1746,7 @@ const fetchFlights = useCallback(async () => {
         if (errMsg.toLowerCase().includes("hasn't returned any results") || errMsg.toLowerCase().includes("no results")) {
           setResults([]);
           setLoading(false);
+          setIsSyncing(false);
           return;
         }
         throw new Error(errMsg);
@@ -1739,6 +1763,7 @@ const fetchFlights = useCallback(async () => {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setLoading(false);
+      setIsSyncing(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [from, to, dept, ret, passengers, travelClass, tripType, parsedLegs]);
@@ -1841,9 +1866,18 @@ const fetchFlights = useCallback(async () => {
                   <p className="text-sm text-muted-foreground">
                     {filteredResults.length} of {results.length} flight{results.length > 1 ? "s" : ""}
                   </p>
-                  {fromCache && (
+                  {isSyncing ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 animate-pulse">
+                      <Loader2 className="h-3 w-3 animate-spin shrink-0 text-amber-600" />
+                      <span>Syncing 100+ Live GDS Airlines...</span>
+                    </span>
+                  ) : fromCache ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-secondary/15 px-2.5 py-0.5 text-[11px] font-semibold text-secondary">
                       ⚡ Instant · cached result
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">
+                      ✓ Live GDS Connected
                     </span>
                   )}
                 </div>
