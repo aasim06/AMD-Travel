@@ -33,10 +33,10 @@ interface AskAiDrawerProps {
 }
 
 const SAMPLE_PROMPTS = [
-  { icon: "🕋", text: "Best Umrah Packages with 5★ Hotel" },
-  { icon: "✈️", text: "Cheapest Flights from Lahore to Jeddah" },
-  { icon: "🚗", text: "Rent an SUV at Frankfurt Airport" },
-  { icon: "📄", text: "Dubai Tourist Visa Requirements" },
+  { text: "Best Umrah Packages with 5★ Hotel" },
+  { text: "Cheapest Flights from Lahore to Jeddah" },
+  { text: "Rent an SUV at Frankfurt Airport" },
+  { text: "Dubai Tourist Visa Requirements" },
 ];
 
 export default function AskAiDrawer({ isOpen, onClose }: AskAiDrawerProps) {
@@ -47,7 +47,7 @@ export default function AskAiDrawer({ isOpen, onClose }: AskAiDrawerProps) {
     {
       id: "welcome-1",
       sender: "ai",
-      text: "Aap ka Khushamdeed! Main AMD Global Travel AI Assistant hoon. Aap Flights, Umrah Packages, Rent a Car ya Visas ke baaray me Roman Urdu ya English me kuch bhi pooch saktay hain! ✈️🕋",
+      text: "Aap ka Khushamdeed! Main AMD Global Travel AI Assistant hoon. Aap Flights, Umrah Packages, Rent a Car ya Visas ke baaray me Roman Urdu ya English me kuch bhi pooch saktay hain!",
       cards: [
         {
           title: "All-Inclusive Umrah Packages",
@@ -160,7 +160,7 @@ export default function AskAiDrawer({ isOpen, onClose }: AskAiDrawerProps) {
 
       {/* Kayak-Style Left Slide-Over Drawer (Responsive Light / Dark Mode) */}
       <div className="relative z-10 w-full max-w-lg bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl text-slate-900 dark:text-white border-r border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col h-full animate-in slide-in-from-left duration-300">
-        
+
         {/* ── Top Header Bar ── */}
         <div className="p-4 sm:p-5 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-950/60">
           <div className="flex items-center gap-3">
@@ -173,11 +173,11 @@ export default function AskAiDrawer({ isOpen, onClose }: AskAiDrawerProps) {
                   AMD <span className="text-[#FF8B3D]">Global</span> AI
                 </span>
                 <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest bg-[#FF8B3D]/15 text-[#FF8B3D] border border-[#FF8B3D]/30">
-                  Kayak Mode
+                  AI Travel Assistant
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                Travel Assistant • Smart Gemini AI
+                Ask AI
               </p>
             </div>
           </div>
@@ -200,7 +200,6 @@ export default function AskAiDrawer({ isOpen, onClose }: AskAiDrawerProps) {
               onClick={() => handleSendMessage(p.text)}
               className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-[#FF8B3D]/15 hover:text-[#FF8B3D] border border-slate-200 dark:border-slate-700/60 hover:border-[#FF8B3D]/40 text-slate-700 dark:text-slate-300 transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 cursor-pointer shadow-2xs"
             >
-              <span>{p.icon}</span>
               <span>{p.text}</span>
             </button>
           ))}
@@ -211,17 +210,15 @@ export default function AskAiDrawer({ isOpen, onClose }: AskAiDrawerProps) {
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex gap-3 ${
-                msg.sender === "user" ? "flex-row-reverse" : "flex-row"
-              }`}
+              className={`flex gap-3 ${msg.sender === "user" ? "flex-row-reverse" : "flex-row"
+                }`}
             >
               {/* Avatar Icon */}
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-xs ${
-                  msg.sender === "user"
-                    ? "bg-[#FF8B3D] text-white"
-                    : "bg-slate-100 dark:bg-slate-800 text-[#FF8B3D] border border-slate-200 dark:border-slate-700"
-                }`}
+                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-xs ${msg.sender === "user"
+                  ? "bg-[#FF8B3D] text-white"
+                  : "bg-slate-100 dark:bg-slate-800 text-[#FF8B3D] border border-slate-200 dark:border-slate-700"
+                  }`}
               >
                 {msg.sender === "user" ? (
                   <User className="w-4 h-4" />
@@ -232,20 +229,18 @@ export default function AskAiDrawer({ isOpen, onClose }: AskAiDrawerProps) {
 
               {/* Bubble & Cards */}
               <div className={`space-y-3 max-w-[85%] ${msg.sender === "user" ? "items-end" : "items-start"}`}>
-                
+
                 {/* Bubble Text */}
                 <div
-                  className={`p-3.5 rounded-2xl text-xs leading-relaxed font-medium shadow-xs ${
-                    msg.sender === "user"
-                      ? "bg-gradient-to-tr from-[#FF5722] to-[#FF8B3D] text-white rounded-tr-xs"
-                      : "bg-slate-100 dark:bg-slate-800/90 text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-slate-700/80 rounded-tl-xs"
-                  }`}
+                  className={`p-3.5 rounded-2xl text-xs leading-relaxed font-medium shadow-xs ${msg.sender === "user"
+                    ? "bg-gradient-to-tr from-[#FF5722] to-[#FF8B3D] text-white rounded-tr-xs"
+                    : "bg-slate-100 dark:bg-slate-800/90 text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-slate-700/80 rounded-tl-xs"
+                    }`}
                 >
                   <p className="whitespace-pre-wrap">{msg.text}</p>
                   <span
-                    className={`block text-[9px] mt-1.5 font-sans ${
-                      msg.sender === "user" ? "text-white/70 text-right" : "text-slate-400"
-                    }`}
+                    className={`block text-[9px] mt-1.5 font-sans ${msg.sender === "user" ? "text-white/70 text-right" : "text-slate-400"
+                      }`}
                   >
                     {msg.timestamp}
                   </span>
