@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPNRNotification } from "@/lib/emailService";
+import { sendFlightBookingWhatsApp } from "@/lib/whatsappService";
 
 export async function POST(req: Request) {
   try {
@@ -19,6 +20,7 @@ export async function POST(req: Request) {
       passengers = [],
       customerName,
       customerEmail,
+      customerPhone,
     } = body;
 
     if (!origin || !destination || !totalAmount) {
@@ -29,16 +31,18 @@ export async function POST(req: Request) {
     }
 
     const generatedPnr = pnr || `AMD-${Math.floor(1000 + Math.random() * 9000)}`;
+    const phoneNum = customerPhone || passengers?.[0]?.phone || "";
 
     // 1. Ensure or find User in Supabase
     let user;
     if (customerEmail) {
       user = await prisma.user.upsert({
         where: { email: customerEmail },
-        update: { name: customerName || "Passenger" },
+        update: { name: customerName || "Passenger", phone: phoneNum || undefined },
         create: {
           email: customerEmail,
           name: customerName || "Passenger",
+          phone: phoneNum || undefined,
           role: "CUSTOMER",
         },
       });
@@ -84,10 +88,12 @@ export async function POST(req: Request) {
       },
     });
 
-    // Send PNR email notification asynchronously without blocking
+    const pName = customerName || (passengers[0] ? `${passengers[0].firstName} ${passengers[0].lastName}` : "Passenger");
+
+    // Send PNR email notification asynchronously
     sendPNRNotification({
       pnrNumber: generatedPnr,
-      passengerName: customerName || (passengers[0] ? `${passengers[0].firstName} ${passengers[0].lastName}` : "Passenger"),
+      passengerName: pName,
       passengerEmail: customerEmail,
       flightDetails: {
         airline: airline || "Emirates",
@@ -100,6 +106,21 @@ export async function POST(req: Request) {
       },
       status: "CONFIRMED",
     }).catch((emailErr) => console.error("[Booking PNR Email Async Error]:", emailErr));
+
+    // Send Flight Booking UltraMsg WhatsApp notification asynchronously
+    if (phoneNum) {
+      sendFlightBookingWhatsApp({
+        pnr: generatedPnr,
+        passengerName: pName,
+        origin,
+        destination,
+        airline: airline || "Emirates",
+        departureDate: new Date(departureDate || Date.now()).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+        totalAmount,
+        currency,
+        phone: phoneNum,
+      }).catch((waErr) => console.error("[Flight WhatsApp Async Error]:", waErr));
+    }
 
     return NextResponse.json({
       success: true,
@@ -114,3 +135,4 @@ export async function POST(req: Request) {
     );
   }
 }
+

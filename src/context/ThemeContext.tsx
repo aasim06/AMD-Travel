@@ -20,7 +20,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("admin_theme") as Theme | null;
-    const initialTheme = savedTheme || "light";
+    const initialTheme = savedTheme || "dark";
 
     setTheme(initialTheme);
     setIsInitialized(true);
@@ -31,10 +31,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
       localStorage.setItem("admin_theme", theme);
       const isCurrentlyInAdmin = typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
       
-      if (isCurrentlyInAdmin && theme === "dark") {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
+      if (isCurrentlyInAdmin) {
+        if (theme === "dark") {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
       }
     }
   }, [theme, isInitialized]);

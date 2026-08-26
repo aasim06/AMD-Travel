@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendVisaSubmissionNotification } from "@/lib/emailService";
+import { sendVisaSubmissionWhatsApp } from "@/lib/whatsappService";
 
 export const dynamic = "force-dynamic";
 
@@ -111,7 +112,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // Send Visa Submission email notification asynchronously without blocking
+    // Send Visa Submission email notification asynchronously
     sendVisaSubmissionNotification({
       applicationId: application.applicationNo,
       applicantName: `${firstName} ${surname}`.trim(),
@@ -125,6 +126,15 @@ export async function POST(req: Request) {
       phone,
     }).catch((emailErr) => console.error("[Visa Email Async Error]:", emailErr));
 
+    // Send Visa Submission UltraMsg WhatsApp notification asynchronously
+    sendVisaSubmissionWhatsApp({
+      applicationNo: application.applicationNo,
+      applicantName: `${firstName} ${surname}`.trim(),
+      country,
+      visaType,
+      phone,
+    }).catch((waErr) => console.error("[Visa WhatsApp Async Error]:", waErr));
+
     return NextResponse.json({
       success: true,
       message: "Visa Application submitted successfully!",
@@ -136,3 +146,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+

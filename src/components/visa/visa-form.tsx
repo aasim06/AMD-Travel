@@ -614,15 +614,22 @@ export function VisaApplicationForm() {
             <Field label="Gender" required>
               <div className="flex items-center gap-6 h-10">
                 {(["male", "female"] as const).map(g => (
-                  <label key={g} className="flex items-center gap-2.5 cursor-pointer group">
-                    <div onClick={() => set("gender", g)}
+                  <label
+                    key={g}
+                    onClick={() => set("gender", g)}
+                    className="flex items-center gap-2.5 cursor-pointer group select-none py-1"
+                  >
+                    <div
                       className={cn(
-                        "h-4.5 w-4.5 h-[18px] w-[18px] rounded-full border-2 flex items-center justify-center transition-all cursor-pointer",
+                        "h-[18px] w-[18px] rounded-full border-2 flex items-center justify-center transition-all cursor-pointer shrink-0",
                         form.gender === g ? "border-primary bg-primary" : "border-slate-300 group-hover:border-primary/60"
-                      )}>
+                      )}
+                    >
                       {form.gender === g && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
                     </div>
-                    <span className="text-sm font-medium text-slate-700 capitalize">{g}</span>
+                    <span className="text-sm font-medium text-slate-700 capitalize group-hover:text-primary transition-colors">
+                      {g}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -651,6 +658,8 @@ export function VisaApplicationForm() {
           </div>
         </div>
       </div>
+
+      {/* ── Section 3: Passport Details ── */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6"
         style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
         <SectionHeader

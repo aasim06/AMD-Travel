@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Hero } from "@/components/home/hero";
+import { UmrahBookingModal } from "@/components/umrah/UmrahBookingModal";
 import {
   MapPin, Clock, Users, Star, ArrowRight, MessageCircle,
   Shield, HeartHandshake, Filter, Calendar,
@@ -140,6 +141,7 @@ const SERVICES = [
 export default function UmrahPackagesPage() {
   const [active, setActive] = useState("All");
   const [dbPackages, setDbPackages] = useState<any[]>([]);
+  const [selectedPackageForBooking, setSelectedPackageForBooking] = useState<any | null>(null);
 
   useEffect(() => {
     async function loadLivePackages() {
@@ -335,20 +337,26 @@ export default function UmrahPackagesPage() {
                       <Calendar className="h-2.5 w-2.5" /> per person
                     </p>
                   </div>
-                  <a
-                    href={`https://wa.me/4917972968560?text=Hi, I'm interested in the ${pkg.title} (€${pkg.price})`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-colors"
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPackageForBooking(pkg)}
+                    className="flex items-center gap-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all hover:scale-105 shadow-sm cursor-pointer"
                   >
                     Book Now <ArrowRight className="h-3 w-3" />
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
           ))}
         </div>
       </div>
+      {/* ── Umrah Package Booking Modal ── */}
+      <UmrahBookingModal
+        packageItem={selectedPackageForBooking}
+        isOpen={!!selectedPackageForBooking}
+        onClose={() => setSelectedPackageForBooking(null)}
+      />
+
     </main>
   );
 }

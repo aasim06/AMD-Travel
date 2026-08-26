@@ -4,11 +4,13 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Hero } from "@/components/home/hero";
 import { PublicLayout } from "@/components/layout/public-layout";
+import { CarBookingModal } from "@/components/cars/CarBookingModal";
 import {
   MapPin, Star, ArrowRight, MessageCircle, Filter,
   Users, Fuel, Settings, Shield, CheckCircle2,
   Car, Zap, Wind,
 } from "lucide-react";
+
 
 
 const CATEGORIES = ["All", "Economy", "SUV", "Luxury", "Van", "Electric"];
@@ -140,6 +142,7 @@ function fuelIcon(fuel: string) {
 export default function CarsPage() {
   const [active, setActive] = useState("All");
   const [dbCars, setDbCars] = useState<any[]>([]);
+  const [selectedCarForBooking, setSelectedCarForBooking] = useState<any | null>(null);
 
   useEffect(() => {
     async function loadLiveCars() {
@@ -298,20 +301,26 @@ export default function CarsPage() {
                     </div>
                     <p className="text-[10px] text-slate-400 mt-0.5">per day</p>
                   </div>
-                  <a
-                    href={`https://wa.me/4917972968560?text=Hi, I'm interested in renting a ${car.name} (€${car.pricePerDay}/day)`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-colors"
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCarForBooking(car)}
+                    className="flex items-center gap-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all hover:scale-105 shadow-sm cursor-pointer"
                   >
                     Book Now <ArrowRight className="h-3 w-3" />
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* ── Car Rental Booking Modal ── */}
+      <CarBookingModal
+        car={selectedCarForBooking}
+        isOpen={!!selectedCarForBooking}
+        onClose={() => setSelectedCarForBooking(null)}
+      />
 
     </main>
   );

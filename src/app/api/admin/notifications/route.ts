@@ -51,13 +51,15 @@ export async function GET() {
         },
       }),
       prisma.booking.findMany({
-        take: 5,
+        take: 8,
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
           pnr: true,
+          type: true,
           origin: true,
           destination: true,
+          flightNumber: true,
           totalAmount: true,
           currency: true,
           status: true,
@@ -93,20 +95,51 @@ export async function GET() {
       });
     });
 
-    // 2. Process Bookings
+    // 2. Process Bookings (Differentiate between Car Rental, Umrah, and Flight)
     bookings.forEach((b: any) => {
-      notifications.push({
-        id: `booking-${b.id}`,
-        title: `Flight Booking Request`,
-        message: `PNR #${b.pnr}: ${b.origin} ✈️ ${b.destination} (${b.currency} ${b.totalAmount})`,
-        category: "FLIGHT",
-        initials: getInitials(`${b.origin} ${b.destination}`),
-        avatarBg: "bg-emerald-500",
-        badgeBg: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300",
-        timeAgo: getTimeAgo(b.createdAt),
-        createdAt: b.createdAt.toISOString(),
-        link: "/admin/bookings",
-      });
+      const bType = (b.type || "").toLowerCase();
+      const curr = b.currency === "EUR" ? "EUR" : b.currency || "$";
+
+      if (bType === "car") {
+        notifications.push({
+          id: `booking-${b.id}`,
+          title: `Rent a Car Reservation`,
+          message: `PNR #${b.pnr}: ${b.destination} (${b.origin}) - ${curr} ${b.totalAmount}`,
+          category: "CAR RENTAL",
+          initials: getInitials(b.destination || "Car Rental"),
+          avatarBg: "bg-amber-500",
+          badgeBg: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300",
+          timeAgo: getTimeAgo(b.createdAt),
+          createdAt: b.createdAt.toISOString(),
+          link: "/admin/cars",
+        });
+      } else if (bType === "umrah") {
+        notifications.push({
+          id: `booking-${b.id}`,
+          title: `Umrah Package Reservation`,
+          message: `PNR #${b.pnr}: ${b.destination} (${b.origin}) - ${curr} ${b.totalAmount}`,
+          category: "UMRAH",
+          initials: getInitials(b.destination || "Umrah Package"),
+          avatarBg: "bg-teal-500",
+          badgeBg: "bg-teal-100 text-teal-800 dark:bg-teal-500/20 dark:text-teal-300",
+          timeAgo: getTimeAgo(b.createdAt),
+          createdAt: b.createdAt.toISOString(),
+          link: "/admin/umrah-packages",
+        });
+      } else {
+        notifications.push({
+          id: `booking-${b.id}`,
+          title: `Flight Booking Request`,
+          message: `PNR #${b.pnr}: ${b.origin} TO ${b.destination} (${curr} ${b.totalAmount})`,
+          category: "FLIGHT",
+          initials: getInitials(`${b.origin} ${b.destination}`),
+          avatarBg: "bg-emerald-500",
+          badgeBg: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300",
+          timeAgo: getTimeAgo(b.createdAt),
+          createdAt: b.createdAt.toISOString(),
+          link: "/admin/bookings",
+        });
+      }
     });
 
     // 3. Process Users
@@ -125,10 +158,11 @@ export async function GET() {
       });
     });
 
-    // Sort all combined by newest first
+    // Sort by createdAt descending
     notifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    setCachedData("admin_notifications", notifications, 15);
+    // Cache results for 10 seconds
+    setCachedData("admin_notifications", notifications, 10);
 
     return NextResponse.json({
       success: true,
@@ -136,9 +170,9 @@ export async function GET() {
       data: notifications,
     });
   } catch (error: any) {
-    console.error("Failed to fetch admin notifications:", error);
+    console.error("GET /api/admin/notifications error:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to fetch notifications" },
+      { success: false, error: error.message || "Failed to fetch notifications" },
       { status: 500 }
     );
   }

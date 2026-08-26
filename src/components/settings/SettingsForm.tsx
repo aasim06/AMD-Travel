@@ -380,7 +380,7 @@ export default function SettingsForm() {
 
           <div className="sm:col-span-2 rounded-xl bg-white dark:bg-gray-900/80 p-4 border border-gray-200 dark:border-gray-800">
             <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
-              <span>💡 <strong>Live Example:</strong> If Amadeus Base Fare is <strong>$400</strong>:</span>
+              <span><strong>Live Example:</strong> If Amadeus Base Fare is <strong>$400</strong>:</span>
               <span className="font-bold text-brand-600 dark:text-brand-400 text-sm">
                 Customer Price: ${markupType === "PERCENTAGE" ? Math.round(400 * (1 + markupValue / 100)) : 400 + markupValue}
                 {" "}

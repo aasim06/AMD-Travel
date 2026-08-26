@@ -265,8 +265,8 @@ export default function BookingsTable({ bookings }: BookingsTableProps) {
             {/* Header */}
             <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
               <div className="flex items-center gap-2.5">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 font-bold text-xs">
-                  ✈
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 font-bold text-[10px]">
+                  PNR
                 </span>
                 <div>
                   <h3 className="text-lg font-bold text-gray-800 dark:text-white">
@@ -365,7 +365,7 @@ export default function BookingsTable({ bookings }: BookingsTableProps) {
                         <div class="ticket-box">
                           <div class="header">
                             <div>
-                              <div class="logo">✈️ AMD Global Travel</div>
+                              <div class="logo">AMD Global Travel</div>
                               <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Official Electronic Flight Pass</div>
                             </div>
                             <div>

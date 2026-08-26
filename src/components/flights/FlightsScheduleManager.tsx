@@ -43,8 +43,8 @@ export default function FlightsScheduleManager() {
         <FlightsScheduleTable flights={filteredFlights} />
       ) : (
         <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center dark:border-gray-800 dark:bg-white/[0.03]">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-gray-800 font-bold text-xl">
-            ✈
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-gray-800 font-bold text-xs">
+            AMD
           </div>
           <h3 className="mt-4 text-base font-semibold text-gray-800 dark:text-white">
             No flights found

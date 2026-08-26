@@ -539,7 +539,7 @@ export default function VisaApplicationsManager() {
                     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 flex flex-col justify-between">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300">
-                          📄 Passport Front Page
+                          Passport Front Page
                         </span>
                         <span className="text-[10px] text-gray-400 font-mono truncate max-w-[120px]">
                           {selectedApp.passportFront || "passport_front.jpg"}
@@ -577,7 +577,7 @@ export default function VisaApplicationsManager() {
                     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 flex flex-col justify-between">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300">
-                          📄 Passport Back Page
+                          Passport Back Page
                         </span>
                         <span className="text-[10px] text-gray-400 font-mono truncate max-w-[120px]">
                           {selectedApp.passportBack || "passport_back.jpg"}

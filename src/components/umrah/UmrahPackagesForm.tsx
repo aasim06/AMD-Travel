@@ -56,6 +56,19 @@ export default function UmrahPackagesForm() {
   const [newDescription, setNewDescription] = useState("");
   const [isAddingPkg, setIsAddingPkg] = useState(false);
 
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === "string") {
+          setNewImage(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const loadDbPackages = async () => {
     setIsRefreshing(true);
     try {
@@ -354,10 +367,10 @@ export default function UmrahPackagesForm() {
                     {/* Departure & Group */}
                     <td className="px-5 py-4 whitespace-nowrap">
                       <p className="font-medium text-gray-800 text-xs dark:text-gray-200">
-                        ✈️ {pkg.departureCity || "Frankfurt, Germany"}
+                        {pkg.departureCity || "Frankfurt, Germany"}
                       </p>
                       <span className="text-gray-500 text-xs dark:text-gray-400 font-normal">
-                        👥 {pkg.groupSize || "Up to 25 People"}
+                        {pkg.groupSize || "Up to 25 People"}
                       </span>
                     </td>
 
@@ -746,15 +759,60 @@ export default function UmrahPackagesForm() {
                   />
                 </div>
 
-                {/* Cover Image URL */}
-                <div className="sm:col-span-4">
-                  <label className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">Cover Image URL</label>
-                  <input
-                    type="text"
-                    value={newImage}
-                    onChange={(e) => setNewImage(e.target.value)}
-                    className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-xs font-normal text-gray-800 shadow-theme-xs outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 font-mono transition-colors"
-                  />
+                {/* Cover Image Selection (URL or File Upload) */}
+                <div className="sm:col-span-4 space-y-2">
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                    Cover Image (Paste URL or Select from Device)
+                  </label>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                    {/* File Input Button */}
+                    <div>
+                      <label className="flex items-center justify-center gap-2 h-10 px-4 rounded-xl border border-dashed border-emerald-500 bg-emerald-50/50 hover:bg-emerald-50 text-emerald-700 text-xs font-semibold cursor-pointer transition-colors dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:text-emerald-400">
+                        <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                        </svg>
+                        <span>📁 Select Picture File</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageFileChange}
+                        />
+                      </label>
+                    </div>
+
+                    {/* URL Input */}
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Or paste Cover Image URL (https://...)"
+                        value={newImage}
+                        onChange={(e) => setNewImage(e.target.value)}
+                        className="h-10 w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-xs font-normal text-gray-800 shadow-theme-xs outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 font-mono transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Image Preview Thumbnail */}
+                  {newImage && (
+                    <div className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700">
+                      <img src={newImage} alt="Preview" className="w-16 h-12 rounded-lg object-cover border border-gray-200" />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[10px] text-gray-400 block font-semibold uppercase">Selected Image Preview</span>
+                        <span className="text-xs text-gray-700 dark:text-gray-300 truncate block font-mono">
+                          {newImage.startsWith("data:") ? "Uploaded Image File" : newImage}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setNewImage("")}
+                        className="text-xs text-red-500 hover:text-red-700 font-semibold px-2 py-1 cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -386,7 +386,6 @@ export default function TransactionsTable({
             {/* Screen-Only Header Close Button */}
             <div className="no-print flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
               <div className="flex items-center gap-2">
-                <span className="text-xl">📄</span>
                 <h3 className="text-lg font-bold text-gray-800 dark:text-white">
                   Tax Invoice & Payment Receipt
                 </h3>
@@ -406,7 +405,7 @@ export default function TransactionsTable({
               <div className="flex flex-col sm:flex-row justify-between items-start pb-5 border-b border-gray-200 dark:border-gray-700 gap-4">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-xl bg-brand-500 flex items-center justify-center text-white font-bold text-xl shrink-0">
-                    ✈
+                    AMD
                   </div>
                   <div>
                     <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
@@ -531,7 +530,7 @@ export default function TransactionsTable({
                     AMD Global Travel Services Ltd.
                   </p>
                   <p className="text-[10px] text-gray-400">
-                    Thank you for choosing AMD Global Travel! Have a safe trip. ✈
+                    Thank you for choosing AMD Global Travel! Have a safe trip.
                   </p>
                 </div>
                 <div className="text-right">

@@ -7,7 +7,8 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "airports:download": "node scripts/downloadAirports.js"
+    "airports:download": "node scripts/downloadAirports.js",
+    "whatsapp:connect": "node scripts/connectWhatsApp.js"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.21",
@@ -17,9 +18,11 @@
     "@fullcalendar/react": "^6.1.21",
     "@fullcalendar/timegrid": "^6.1.21",
     "@hookform/resolvers": "^5.5.7",
+    "@napi-rs/canvas": "^1.0.8",
     "@prisma/client": "6.4.0",
     "@stripe/react-stripe-js": "^6.8.0",
     "@stripe/stripe-js": "^9.12.1",
+    "@whiskeysockets/baileys": "^7.0.0-rc14",
     "apexcharts": "^6.8.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -34,7 +37,9 @@
     "lucide-react": "^1.26.0",
     "next": "^15.0.0",
     "nextjs-toploader": "^3.9.17",
+    "pino": "^10.3.1",
     "prisma": "6.4.0",
+    "qrcode-terminal": "^0.12.0",
     "radix-ui": "^1.6.7",
     "react": "^18.3.0",
     "react-apexcharts": "^2.1.1",
@@ -53,6 +58,7 @@
   "devDependencies": {
     "@svgr/webpack": "^8.1.0",
     "@types/node": "^20.14.0",
+    "@types/qrcode-terminal": "^0.12.2",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.19",

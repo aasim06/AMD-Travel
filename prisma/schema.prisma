@@ -58,6 +58,11 @@ model Booking {
   updatedAt     DateTime      @updatedAt
   passengers    Passenger[]
   payment       Payment?
+
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@index([userId])
 }
 
 model Passenger {
@@ -71,6 +76,8 @@ model Passenger {
   passportNo String?
   type       String   @default("ADULT")
   createdAt  DateTime @default(now())
+
+  @@index([bookingId])
 }
 
 model Payment {
@@ -120,6 +127,9 @@ model CMSPackage {
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  @@index([type])
+  @@index([isActive])
 }
 
 model SystemSetting {
@@ -147,6 +157,8 @@ model CarListing {
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([isActive])
 }
 
 model VisaApplication {
@@ -180,4 +192,7 @@ model VisaApplication {
   adminNotes     String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
 }

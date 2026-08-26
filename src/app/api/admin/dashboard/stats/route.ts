@@ -12,30 +12,27 @@ export async function GET() {
       });
     }
 
-    // 1. Total Revenue
-    const revenueSum = await prisma.payment.aggregate({
-      _sum: { amount: true },
-      where: { status: "PAID" },
-    });
-    const totalRevenue = revenueSum._sum.amount ?? 45850;
-
-    // 2. Total Bookings
-    const totalBookings = await prisma.booking.count();
-
-    // 3. Active Travelers (Departure Date >= Today)
-    const activeTravelers = await prisma.passenger.count({
-      where: {
-        booking: {
-          departureDate: { gte: new Date() },
-          status: "CONFIRMED",
+    // Parallel DB Queries for maximum speed & 1 network round-trip
+    const [revenueSum, totalBookings, activeTravelers, activeRoutesCount] = await Promise.all([
+      prisma.payment.aggregate({
+        _sum: { amount: true },
+        where: { status: "PAID" },
+      }),
+      prisma.booking.count(),
+      prisma.passenger.count({
+        where: {
+          booking: {
+            departureDate: { gte: new Date() },
+            status: "CONFIRMED",
+          },
         },
-      },
-    });
+      }),
+      prisma.flightRoute.count({
+        where: { isActive: true },
+      }),
+    ]);
 
-    // 4. Active Routes
-    const activeRoutesCount = await prisma.flightRoute.count({
-      where: { isActive: true },
-    });
+    const totalRevenue = revenueSum._sum.amount ?? 45850;
 
     const statsData = {
       revenue: totalRevenue || 45850,

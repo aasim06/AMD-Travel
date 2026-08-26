@@ -47,7 +47,7 @@ const AIRLINES = [
     image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80",
     logoSvg: (
       <div className="flex items-center gap-1 text-rose-600 font-extrabold tracking-tight text-base font-heading">
-        <span className="text-sm">✈️</span> Emirates
+        Emirates
       </div>
     ),
   },

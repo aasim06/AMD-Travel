@@ -15,10 +15,6 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "aasimameer06@gmail.com";
 
 // Helper: Resend testing mode (onboarding@resend.dev) restricts delivery exclusively to the verified account owner email
 function resolveRecipients(primaryEmail?: string): string[] {
-  const isTestSender = DEFAULT_FROM.includes("onboarding@resend.dev");
-  if (isTestSender) {
-    return [ADMIN_EMAIL];
-  }
   const list: string[] = [];
   if (primaryEmail && primaryEmail.trim()) {
     list.push(primaryEmail.trim());
@@ -60,6 +56,38 @@ export interface VisaSubmissionNotificationData {
   submissionDate?: string;
   status?: string;
   phone?: string;
+}
+
+export interface UmrahBookingNotificationData {
+  pnrNumber: string;
+  customerName: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  packageTitle: string;
+  packageCategory?: string;
+  departureCity: string;
+  departureDate: string;
+  totalPilgrims?: number;
+  totalAmount: number | string;
+  currency?: string;
+  status?: string;
+}
+
+export interface CarBookingNotificationData {
+  pnrNumber: string;
+  customerName: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  carName: string;
+  carCategory?: string;
+  pickupLocation: string;
+  dropoffLocation?: string;
+  pickupDate: string;
+  dropoffDate: string;
+  totalDays?: number;
+  totalAmount: number | string;
+  currency?: string;
+  status?: string;
 }
 
 // ─── Email Template Helpers ──────────────────────────────────────────────────
@@ -349,3 +377,285 @@ export async function sendVisaSubmissionNotification(visaData: VisaSubmissionNot
     return { success: false, error: errorMsg };
   }
 }
+
+// ─── 3. Umrah Booking Notification Email ─────────────────────────────────────
+
+export async function sendUmrahBookingNotification(umrahData: UmrahBookingNotificationData) {
+  try {
+    const {
+      pnrNumber,
+      customerName,
+      customerEmail,
+      customerPhone = "N/A",
+      packageTitle,
+      packageCategory = "Standard",
+      departureCity,
+      departureDate,
+      totalPilgrims = 1,
+      totalAmount,
+      currency = "EUR",
+      status = "CONFIRMED",
+    } = umrahData;
+
+    const recipientList = resolveRecipients(customerEmail);
+    const currSymbol = currency === "EUR" ? "€" : "$";
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Umrah Package Reservation - AMD Global Travel</title>
+      </head>
+      <body style="margin: 0; padding: 20px; background-color: #f8fafc; font-family: Arial, sans-serif; color: #1e293b;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+          ${getHeaderHTML("Umrah Package Reservation", "Reservation Confirmation")}
+          
+          <div style="padding: 32px;">
+            <!-- PNR Banner -->
+            <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 24px;">
+              <span style="font-size: 11px; font-weight: bold; color: #16a34a; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 4px;">
+                Umrah Reservation PNR Number
+              </span>
+              <span style="font-size: 26px; font-weight: 800; color: #15803d; font-family: monospace; letter-spacing: 2px;">
+                ${pnrNumber}
+              </span>
+            </div>
+
+            <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-top: 0;">
+              Dear <strong>${customerName}</strong>,
+            </p>
+            <p style="font-size: 14px; line-height: 1.6; color: #475569;">
+              Thank you for choosing AMD Global Travel for your sacred journey! Your Umrah package reservation has been created and received by our team.
+            </p>
+
+            <!-- Application Details Table -->
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; background-color: #f8fafc; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
+              <thead>
+                <tr style="background-color: #f1f5f9; text-align: left;">
+                  <th colSpan="2" style="padding: 12px 16px; font-size: 12px; font-weight: bold; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">
+                    Reservation Summary
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding: 10px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0; width: 40%;">Lead Pilgrim:</td>
+                  <td style="padding: 10px 16px; font-size: 13px; font-weight: bold; color: #0f172a; border-bottom: 1px solid #e2e8f0;">
+                    ${customerName}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">Phone & Contact:</td>
+                  <td style="padding: 10px 16px; font-size: 13px; font-weight: bold; color: #0f172a; font-family: monospace; border-bottom: 1px solid #e2e8f0;">
+                    ${customerPhone}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">Umrah Package:</td>
+                  <td style="padding: 10px 16px; font-size: 13px; font-weight: bold; color: #0f172a; border-bottom: 1px solid #e2e8f0;">
+                    ${packageTitle} (${packageCategory})
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">Departure City:</td>
+                  <td style="padding: 10px 16px; font-size: 13px; font-weight: bold; color: #0f172a; border-bottom: 1px solid #e2e8f0;">
+                    ${departureCity}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">Departure Date:</td>
+                  <td style="padding: 10px 16px; font-size: 13px; font-weight: bold; color: #0f172a; border-bottom: 1px solid #e2e8f0;">
+                    ${departureDate}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">Total Pilgrims:</td>
+                  <td style="padding: 10px 16px; font-size: 13px; font-weight: bold; color: #0f172a; border-bottom: 1px solid #e2e8f0;">
+                    ${totalPilgrims} Person(s)
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">Total Package Amount:</td>
+                  <td style="padding: 10px 16px; font-size: 13px; font-weight: bold; color: #16a34a; border-bottom: 1px solid #e2e8f0;">
+                    ${currSymbol}${totalAmount}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 16px; font-size: 13px; color: #64748b;">Reservation Status:</td>
+                  <td style="padding: 10px 16px; font-size: 13px; font-weight: bold; color: #16a34a;">
+                    ${status.toUpperCase()}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            ${getFooterHTML()}
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    console.log(`[Resend Email] Sending Umrah notification (${pnrNumber}) to:`, recipientList);
+
+    const resend = getResendClient();
+    if (!resend) {
+      console.warn(`[Resend Email Skipped] RESEND_API_KEY is not configured.`);
+      return { success: false, error: "RESEND_API_KEY missing" };
+    }
+
+    const response = await resend.emails.send({
+      from: DEFAULT_FROM,
+      to: recipientList,
+      subject: "Umrah Package Reservation Confirmed - AMD Global Travel",
+      html,
+    });
+
+    console.log(`[Resend Email OK] Umrah notification sent successfully. Result:`, response);
+    return { success: true, data: response };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error(`[Resend Email Error] Failed to send Umrah notification:`, errorMsg);
+    return { success: false, error: errorMsg };
+  }
+}
+
+// ─── 4. Car Booking Notification Email ───────────────────────────────────────
+
+export async function sendCarBookingNotification(carData: CarBookingNotificationData) {
+  try {
+    const {
+      pnrNumber,
+      customerName,
+      customerEmail,
+      customerPhone = "N/A",
+      carName,
+      carCategory = "Standard",
+      pickupLocation,
+      pickupDate,
+      dropoffDate,
+      totalDays = 1,
+      totalAmount,
+      currency = "EUR",
+      status = "CONFIRMED",
+    } = carData;
+
+    const recipientList = resolveRecipients(customerEmail);
+    const currSymbol = currency === "EUR" ? "€" : "$";
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Car Rental Reservation - AMD Global Travel</title>
+      </head>
+      <body style="margin: 0; padding: 20px; background-color: #f8fafc; font-family: Arial, sans-serif; color: #1e293b;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+          ${getHeaderHTML("Car Rental Reservation", "Reservation Confirmation")}
+          
+          <div style="padding: 32px;">
+            <!-- PNR Banner -->
+            <div style="background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 24px;">
+              <span style="font-size: 11px; font-weight: bold; color: #ea580c; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 4px;">
+                Car Rental Booking PNR Number
+              </span>
+              <span style="font-size: 26px; font-weight: 800; color: #c2410c; font-family: monospace; letter-spacing: 2px;">
+                ${pnrNumber}
+              </span>
+            </div>
+
+            <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-top: 0;">
+              Dear <strong>${customerName}</strong>,
+            </p>
+            <p style="font-size: 14px; line-height: 1.6; color: #475569;">
+              Thank you for reserving a vehicle with AMD Global Travel! Your car rental booking details are confirmed as outlined below.
+            </p>
+
+            <!-- Application Details Table -->
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; background-color: #f8fafc; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
+              <thead>
+                <tr style="background-color: #f1f5f9; text-align: left;">
+                  <th colSpan="2" style="padding: 12px 16px; font-size: 12px; font-weight: bold; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">
+                    Rental Vehicle Details
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding: 10px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0; width: 40%;">Primary Driver:</td>
+                  <td style="padding: 10px 16px; font-size: 13px; font-weight: bold; color: #0f172a; border-bottom: 1px solid #e2e8f0;">
+                    ${customerName}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">Driver Phone:</td>
+                  <td style="padding: 10px 16px; font-size: 13px; font-weight: bold; color: #0f172a; font-family: monospace; border-bottom: 1px solid #e2e8f0;">
+                    ${customerPhone}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">Vehicle Model:</td>
+                  <td style="padding: 10px 16px; font-size: 13px; font-weight: bold; color: #0f172a; border-bottom: 1px solid #e2e8f0;">
+                    ${carName} (${carCategory})
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">Pickup Location:</td>
+                  <td style="padding: 10px 16px; font-size: 13px; font-weight: bold; color: #0f172a; border-bottom: 1px solid #e2e8f0;">
+                    ${pickupLocation}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">Rental Dates:</td>
+                  <td style="padding: 10px 16px; font-size: 13px; font-weight: bold; color: #0f172a; border-bottom: 1px solid #e2e8f0;">
+                    ${pickupDate} &rarr; ${dropoffDate} (${totalDays} Days)
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">Total Rental Price:</td>
+                  <td style="padding: 10px 16px; font-size: 13px; font-weight: bold; color: #16a34a; border-bottom: 1px solid #e2e8f0;">
+                    ${currSymbol}${totalAmount}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 16px; font-size: 13px; color: #64748b;">Booking Status:</td>
+                  <td style="padding: 10px 16px; font-size: 13px; font-weight: bold; color: #ea580c;">
+                    ${status.toUpperCase()}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            ${getFooterHTML()}
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    console.log(`[Resend Email] Sending Car notification (${pnrNumber}) to:`, recipientList);
+
+    const resend = getResendClient();
+    if (!resend) {
+      console.warn(`[Resend Email Skipped] RESEND_API_KEY is not configured.`);
+      return { success: false, error: "RESEND_API_KEY missing" };
+    }
+
+    const response = await resend.emails.send({
+      from: DEFAULT_FROM,
+      to: recipientList,
+      subject: "Car Rental Booking Confirmed - AMD Global Travel",
+      html,
+    });
+
+    console.log(`[Resend Email OK] Car notification sent successfully. Result:`, response);
+    return { success: true, data: response };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error(`[Resend Email Error] Failed to send Car notification:`, errorMsg);
+    return { success: false, error: errorMsg };
+  }
+}
+

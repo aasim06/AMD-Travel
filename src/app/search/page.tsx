@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState, useCallback, useMemo, Suspense, useRef } from "react";
+import React, { useEffect, useState, useCallback, useMemo, Suspense, useRef, Fragment } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
@@ -1187,22 +1187,22 @@ function LegRow({
               </>
             ) : (
               layovers.map((lv, i) => (
-                <>
-                  <div key={`line-${i}`} className="flex-1 border-t-2 border-dashed border-slate-200" />
+                <Fragment key={`layover-${i}`}>
+                  <div className="flex-1 border-t-2 border-dashed border-slate-200" />
                   {/* Stop dot + label */}
-                  <div key={`stop-${i}`} className="flex flex-col items-center shrink-0 mx-0.5">
+                  <div className="flex flex-col items-center shrink-0 mx-0.5">
                     <span className="text-[9px] font-semibold text-amber-600 leading-none mb-0.5">{lv.code}</span>
                     <div className="h-2.5 w-2.5 rounded-full bg-amber-400 border-2 border-white shadow-sm" />
                     <span className="text-[8px] text-slate-400 leading-none mt-0.5 whitespace-nowrap">{minsToLabel(lv.mins)}</span>
                   </div>
                   {i === layovers.length - 1 && (
-                    <>
+                    <Fragment key={`layover-end-${i}`}>
                       <div className="flex-1 border-t-2 border-dashed border-slate-200" />
                       <Plane className="h-3.5 w-3.5 text-primary shrink-0" />
                       <div className="flex-1 border-t-2 border-dashed border-slate-200" />
-                    </>
+                    </Fragment>
                   )}
-                </>
+                </Fragment>
               ))
             )}
 
@@ -1873,7 +1873,7 @@ const fetchFlights = useCallback(async () => {
                     </span>
                   ) : fromCache ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-secondary/15 px-2.5 py-0.5 text-[11px] font-semibold text-secondary">
-                      ⚡ Instant · cached result
+                      Instant · cached result
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">

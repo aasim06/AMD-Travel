@@ -665,8 +665,8 @@ export default function TravelersManager() {
                       className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-3.5 dark:border-gray-800 dark:bg-gray-800/50"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 font-bold text-xs">
-                          ✈
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 font-bold text-[10px]">
+                          PNR
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-gray-800 dark:text-white">

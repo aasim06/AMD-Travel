@@ -446,7 +446,7 @@ export default function MyBookingsPage() {
                           <div className="flex items-center gap-2 mt-2">
                             {booking.details.expressOption && (
                               <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-full">
-                                ⚡ Express Processing
+                                Express Processing
                               </span>
                             )}
                             <span className="text-xs text-muted-foreground">{booking.details.country}</span>

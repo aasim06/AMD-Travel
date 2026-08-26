@@ -257,7 +257,7 @@ export function ConfirmationStep({ pnr, bookingSource, formData, offer, carriers
 
   const handleShare = useCallback(async () => {
     const text =
-      `✈️ AMD Global Travel — Booking Confirmed!\n` +
+      `AMD Global Travel — Booking Confirmed!\n` +
       `PNR: ${pnr}\n` +
       `${dep.departure.iataCode} → ${arr.arrival.iataCode}\n` +
       `${new Date(dep.departure.at).toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}\n` +

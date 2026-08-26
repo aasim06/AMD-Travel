@@ -231,7 +231,7 @@ export default function QuickFlightSearch() {
         <div className="mt-5 overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800">
           <div className="bg-gray-50 dark:bg-gray-900/50 px-4 py-2.5 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
             <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-              {origin} ✈ {destination} — {mockFlightResults.length} flights found
+              {origin} to {destination} — {mockFlightResults.length} flights found
             </span>
           </div>
 
