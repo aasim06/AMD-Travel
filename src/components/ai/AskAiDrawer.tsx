@@ -6,15 +6,9 @@ import {
   Sparkles,
   X,
   Send,
-  Plane,
-  Car,
-  Compass,
-  FileCheck,
   ArrowRight,
   Bot,
   User,
-  ExternalLink,
-  RotateCcw,
 } from "lucide-react";
 
 interface ActionCard {
@@ -161,28 +155,28 @@ export default function AskAiDrawer({ isOpen, onClose }: AskAiDrawerProps) {
       {/* Dark Backdrop Overlay */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-300"
+        className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm transition-opacity animate-in fade-in duration-300"
       />
 
-      {/* Kayak-Style Left Slide-Over Drawer */}
-      <div className="relative z-10 w-full max-w-lg bg-slate-900/95 backdrop-blur-2xl text-white border-r border-slate-800 shadow-2xl flex flex-col h-full animate-in slide-in-from-left duration-300">
+      {/* Kayak-Style Left Slide-Over Drawer (Responsive Light / Dark Mode) */}
+      <div className="relative z-10 w-full max-w-lg bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl text-slate-900 dark:text-white border-r border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col h-full animate-in slide-in-from-left duration-300">
         
         {/* ── Top Header Bar ── */}
-        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+        <div className="p-4 sm:p-5 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-950/60">
           <div className="flex items-center gap-3">
             <div className="inline-flex items-center justify-center p-2.5 rounded-xl bg-gradient-to-tr from-[#FF5722] to-[#FF8B3D] text-white shadow-lg shadow-[#FF5722]/30">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-extrabold font-outfit text-base text-white tracking-tight">
+                <span className="font-extrabold font-outfit text-base text-slate-900 dark:text-white tracking-tight">
                   AMD <span className="text-[#FF8B3D]">Global</span> AI
                 </span>
                 <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest bg-[#FF8B3D]/15 text-[#FF8B3D] border border-[#FF8B3D]/30">
                   Kayak Mode
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 font-medium">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                 Travel Assistant • Smart Gemini AI
               </p>
             </div>
@@ -191,20 +185,20 @@ export default function AskAiDrawer({ isOpen, onClose }: AskAiDrawerProps) {
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* ── Sample Prompt Chips ── */}
-        <div className="px-4 py-3 border-b border-slate-800/60 bg-slate-950/30 overflow-x-auto flex items-center gap-2 no-scrollbar">
+        <div className="px-4 py-3 border-b border-slate-200/80 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-950/30 overflow-x-auto flex items-center gap-2 no-scrollbar">
           {SAMPLE_PROMPTS.map((p, idx) => (
             <button
               key={idx}
               type="button"
               onClick={() => handleSendMessage(p.text)}
-              className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-[#FF8B3D]/20 hover:text-[#FF8B3D] border border-slate-700/60 hover:border-[#FF8B3D]/40 text-slate-300 transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 cursor-pointer"
+              className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-[#FF8B3D]/15 hover:text-[#FF8B3D] border border-slate-200 dark:border-slate-700/60 hover:border-[#FF8B3D]/40 text-slate-700 dark:text-slate-300 transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 cursor-pointer shadow-2xs"
             >
               <span>{p.icon}</span>
               <span>{p.text}</span>
@@ -223,10 +217,10 @@ export default function AskAiDrawer({ isOpen, onClose }: AskAiDrawerProps) {
             >
               {/* Avatar Icon */}
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-md ${
+                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-xs ${
                   msg.sender === "user"
                     ? "bg-[#FF8B3D] text-white"
-                    : "bg-slate-800 text-[#FF8B3D] border border-slate-700"
+                    : "bg-slate-100 dark:bg-slate-800 text-[#FF8B3D] border border-slate-200 dark:border-slate-700"
                 }`}
               >
                 {msg.sender === "user" ? (
@@ -241,10 +235,10 @@ export default function AskAiDrawer({ isOpen, onClose }: AskAiDrawerProps) {
                 
                 {/* Bubble Text */}
                 <div
-                  className={`p-3.5 rounded-2xl text-xs leading-relaxed font-medium shadow-md ${
+                  className={`p-3.5 rounded-2xl text-xs leading-relaxed font-medium shadow-xs ${
                     msg.sender === "user"
                       ? "bg-gradient-to-tr from-[#FF5722] to-[#FF8B3D] text-white rounded-tr-xs"
-                      : "bg-slate-800/90 text-slate-100 border border-slate-700/80 rounded-tl-xs"
+                      : "bg-slate-100 dark:bg-slate-800/90 text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-slate-700/80 rounded-tl-xs"
                   }`}
                 >
                   <p className="whitespace-pre-wrap">{msg.text}</p>
@@ -264,18 +258,18 @@ export default function AskAiDrawer({ isOpen, onClose }: AskAiDrawerProps) {
                       <div
                         key={cIdx}
                         onClick={() => handleCardClick(card.actionUrl)}
-                        className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-[#FF8B3D]/50 hover:bg-[#FF8B3D]/10 transition-all cursor-pointer group shadow-lg flex items-center justify-between gap-3"
+                        className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-[#FF8B3D]/50 hover:bg-[#FF8B3D]/5 transition-all cursor-pointer group shadow-sm flex items-center justify-between gap-3"
                       >
                         <div className="space-y-1 flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#FF8B3D]/20 text-[#FF8B3D]">
+                            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#FF8B3D]/15 text-[#FF8B3D]">
                               {card.type}
                             </span>
-                            <span className="text-xs font-extrabold text-white truncate">
+                            <span className="text-xs font-extrabold text-slate-900 dark:text-white truncate">
                               {card.title}
                             </span>
                           </div>
-                          <p className="text-[11px] text-slate-400 truncate">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
                             {card.details}
                           </p>
                         </div>
@@ -284,7 +278,7 @@ export default function AskAiDrawer({ isOpen, onClose }: AskAiDrawerProps) {
                           <span className="text-xs font-black text-[#FF8B3D]">
                             {card.price}
                           </span>
-                          <span className="text-[10px] font-bold text-white group-hover:text-[#FF8B3D] flex items-center gap-0.5">
+                          <span className="text-[10px] font-bold text-slate-700 dark:text-white group-hover:text-[#FF8B3D] flex items-center gap-0.5">
                             View <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                           </span>
                         </div>
@@ -299,10 +293,10 @@ export default function AskAiDrawer({ isOpen, onClose }: AskAiDrawerProps) {
           {/* Typing Indicator Loading Dots */}
           {loading && (
             <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-slate-800 text-[#FF8B3D] border border-slate-700 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-[#FF8B3D] border border-slate-200 dark:border-slate-700 flex items-center justify-center">
                 <Bot className="w-4 h-4" />
               </div>
-              <div className="p-3.5 rounded-2xl bg-slate-800/90 border border-slate-700/80 text-slate-400 text-xs flex items-center gap-1.5">
+              <div className="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/80 text-slate-500 dark:text-slate-400 text-xs flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#FF8B3D] animate-ping" />
                 <span>AI is searching travel catalog...</span>
               </div>
@@ -313,7 +307,7 @@ export default function AskAiDrawer({ isOpen, onClose }: AskAiDrawerProps) {
         </div>
 
         {/* ── Input Box Footer ── */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/80">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-950/80">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -327,7 +321,7 @@ export default function AskAiDrawer({ isOpen, onClose }: AskAiDrawerProps) {
               value={inputMsg}
               onChange={(e) => setInputMsg(e.target.value)}
               disabled={loading}
-              className="w-full pl-4 pr-12 py-3.5 rounded-2xl border border-slate-800 bg-slate-900 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#FF8B3D]/50 focus:border-[#FF8B3D] transition-all placeholder:text-slate-500"
+              className="w-full pl-4 pr-12 py-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#FF8B3D]/50 focus:border-[#FF8B3D] transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
             />
 
             <button
@@ -339,7 +333,7 @@ export default function AskAiDrawer({ isOpen, onClose }: AskAiDrawerProps) {
             </button>
           </form>
 
-          <p className="text-[10px] text-center text-slate-500 mt-2">
+          <p className="text-[10px] text-center text-slate-400 dark:text-slate-500 mt-2">
             Powered by Google Gemini 1.5 Flash • AMD Global Travel
           </p>
         </div>
