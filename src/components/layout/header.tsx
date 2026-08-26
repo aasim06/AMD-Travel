@@ -297,8 +297,13 @@ export function Header() {
   // Listen for toggle drawer from mobile bottom dock
   useEffect(() => {
     const handleToggle = () => setDrawerOpen(prev => !prev);
+    const handleOpenAi = () => setAiDrawerOpen(true);
     window.addEventListener("toggle-mobile-drawer", handleToggle);
-    return () => window.removeEventListener("toggle-mobile-drawer", handleToggle);
+    window.addEventListener("open-ask-ai-drawer", handleOpenAi);
+    return () => {
+      window.removeEventListener("toggle-mobile-drawer", handleToggle);
+      window.removeEventListener("open-ask-ai-drawer", handleOpenAi);
+    };
   }, []);
 
   const whatsappHref = `https://wa.me/${siteConfig.contact.whatsapp.replace(/\+/g, "")}`;

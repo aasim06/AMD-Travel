@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { FloatingSupport } from "@/components/ui/floating-support";
+import { FloatingAiTypewriterPill } from "@/components/ai/FloatingAiTypewriterPill";
 
 export function MainLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -20,6 +21,7 @@ export function MainLayoutWrapper({ children }: { children: React.ReactNode }) {
       <Footer />
       <MobileBottomNav />
       <FloatingSupport />
+      <FloatingAiTypewriterPill />
     </>
   );
 }
