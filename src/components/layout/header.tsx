@@ -314,7 +314,7 @@ export function Header() {
       <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white shadow-sm transition-all duration-300">
         <div className="w-full px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between gap-4">
 
-          {/* Left: hamburger + logo + ✨ Ask AI */}
+          {/* Left: hamburger + logo */}
           <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={() => setDrawerOpen(true)}
@@ -324,16 +324,6 @@ export function Header() {
               <Menu className="h-5 w-5" />
             </button>
             <LogoMark />
-
-            {/* ✨ Kayak-Style Ask AI Header Button */}
-            <button
-              type="button"
-              onClick={() => setAiDrawerOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#FF5722] to-[#FF8B3D] hover:opacity-95 text-white font-extrabold text-xs shadow-md shadow-[#FF5722]/20 hover:shadow-[#FF5722]/40 transition-all cursor-pointer border border-white/20"
-            >
-              <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-              <span>Ask AI</span>
-            </button>
           </div>
 
           {/* Right: currency + user account */}
