@@ -174,7 +174,9 @@ function AirportCombobox({
       {/* Dropdown — rendered via portal so z-index is always on top */}
       {open && dropCoords && createPortal(
         <div
-          className="fixed z-[9999] w-64 rounded-xl border border-slate-200 bg-white overflow-hidden"
+          id="airport-combobox-portal"
+          onMouseDown={(e) => e.stopPropagation()}
+          className="fixed z-[99999] w-64 rounded-xl border border-slate-200 bg-white overflow-hidden shadow-2xl"
           style={{
             top: dropCoords.top,
             left: dropCoords.left,
@@ -690,6 +692,7 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
       // Don't close if click is inside any portal dropdown (calendar, airport, pax)
       const target = e.target as HTMLElement;
       if (
+        target.closest("#airport-combobox-portal") ||
         target.closest("#single-date-picker-portal") ||
         target.closest("#date-picker-portal") ||
         target.closest("#pax-portal") ||
