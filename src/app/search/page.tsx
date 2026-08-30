@@ -20,6 +20,7 @@ import {
   PlaneLanding,
   Minus,
   Plus,
+  Trash2,
   Loader2,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -466,26 +467,50 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.toString()]);
   const [passengers, setPassengers] = useState(parseInt(searchParams.get("passengers") ?? "1", 10));
-  const [tripType,   setTripType]   = useState<"one-way" | "round-trip">(
-    (searchParams.get("tripType") ?? "one-way") as "one-way" | "round-trip"
+  const [tripType,   setTripType]   = useState<"one-way" | "round-trip" | "multi-city">(
+    (searchParams.get("tripType") ?? "one-way") as "one-way" | "round-trip" | "multi-city"
   );
   const [paxOpen,    setPaxOpen]    = useState(false);
   const [paxCoords, setPaxCoords] = useState<{ top: number; left: number } | null>(null);
 
+  const [multiLegs, setMultiLegs] = useState<Array<{ id: string; from: string; to: string; date: string }>>(() => {
+    if (parsedLegs && parsedLegs.length >= 2) {
+      return parsedLegs.map((l, i) => ({ id: `leg-${i + 1}`, from: l.from, to: l.to, date: l.date }));
+    }
+    return [
+      { id: "leg-1", from: searchParams.get("from") || "LHE", to: searchParams.get("to") || "DXB", date: searchParams.get("dept") || "" },
+      { id: "leg-2", from: searchParams.get("to") || "DXB", to: "LHR", date: searchParams.get("ret") || "" },
+    ];
+  });
+
+  function updateMultiLeg(id: string, patch: Partial<{ from: string; to: string; date: string }>) {
+    setMultiLegs((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+  }
+
+  function addMultiLeg() {
+    if (multiLegs.length >= 5) return;
+    const last = multiLegs[multiLegs.length - 1];
+    setMultiLegs((prev) => [
+      ...prev,
+      { id: `leg-${Date.now()}`, from: last?.to || "", to: "", date: "" },
+    ]);
+  }
+
+  function removeMultiLeg(id: string) {
+    if (multiLegs.length <= 2) return;
+    setMultiLegs((prev) => prev.filter((l) => l.id !== id));
+  }
+
   function openPax(e: React.MouseEvent<HTMLButtonElement>) {
     const r = e.currentTarget.getBoundingClientRect();
     setPaxCoords({ top: r.bottom + 6, left: r.left });
-    setPaxOpen(v => !v);
+    setPaxOpen((v) => !v);
   }
 
   const isRound = tripType === "round-trip";
 
   // When switching trip type
   function handleTripTypeChange(t: "one-way" | "round-trip" | "multi-city") {
-    if (t === "multi-city") {
-      router.push("/?tripType=multi-city#search-hero");
-      return;
-    }
     setTripType(t);
     if (t === "one-way") setRet("");
   }
@@ -494,13 +519,10 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
     if (!paxOpen) return;
     function onDown(e: MouseEvent) {
       const portal = document.getElementById("pax-portal");
-      // ignore clicks inside the portal itself
       if (portal && portal.contains(e.target as Node)) return;
-      // ignore the button that opened it (openPax handles toggle)
       if ((e.target as HTMLElement).closest("[data-pax-trigger]")) return;
       setPaxOpen(false);
     }
-    // Use setTimeout so the same click that opens doesn't immediately close
     const tid = setTimeout(() => {
       document.addEventListener("mousedown", onDown);
     }, 0);
@@ -511,10 +533,26 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
   }, [paxOpen]);
 
   function handleSearch() {
+    if (tripType === "multi-city") {
+      const valid = multiLegs.every((l) => l.from && l.to && l.date);
+      if (!valid) return;
+      const p = new URLSearchParams({
+        tripType: "multi-city",
+        passengers: String(passengers),
+        class: searchParams.get("class") ?? "ECONOMY",
+        legs: JSON.stringify(multiLegs.map((l) => ({ from: l.from, to: l.to, date: l.date }))),
+      });
+      router.push(`/search?${p.toString()}`);
+      return;
+    }
+
     if (!fromCode || !toCode || !dept) return;
     const p = new URLSearchParams({
-      from: fromCode, to: toCode,
-      fromLabel, toLabel, dept,
+      from: fromCode,
+      to: toCode,
+      fromLabel,
+      toLabel,
+      dept,
       passengers: String(passengers),
       class: searchParams.get("class") ?? "ECONOMY",
       tripType,
@@ -636,86 +674,172 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
               </div>
 
               {/* Form Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-end">
-                {/* Airports: From + Swap + To */}
-                <div className="lg:col-span-5 flex flex-col sm:flex-row items-stretch sm:items-end gap-2 sm:gap-2.5 min-w-0">
-                  <AirportCombobox
-                    value={fromCode}
-                    label="From"
-                    onChange={(code, lbl) => { setFromCode(code); setFromLabel(lbl); }}
-                    placeholder="City or airport"
-                    icon={<PlaneTakeoff className="h-4 w-4" />}
-                    minWidth="0"
-                  />
-                  <div className="shrink-0 flex justify-center pb-0.5">
+              {tripType === "multi-city" ? (
+                <div className="space-y-3 pt-1">
+                  <div className="flex flex-col gap-2.5 max-h-[55vh] overflow-y-auto pr-1 custom-scrollbar">
+                    {multiLegs.map((leg, idx) => (
+                      <div key={leg.id} className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2.5 p-3 rounded-2xl border border-slate-200 bg-slate-50/50">
+                        <div className="shrink-0 flex sm:flex-col items-center justify-center sm:pb-2.5 gap-1">
+                          <span className="inline-flex items-center justify-center h-6 w-6 rounded-lg bg-primary/10 text-primary text-xs font-bold font-mono">
+                            {idx + 1}
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">Flight</span>
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <AirportCombobox
+                            value={leg.from}
+                            label="From"
+                            onChange={(code) => updateMultiLeg(leg.id, { from: code })}
+                            placeholder="Origin"
+                            icon={<PlaneTakeoff className="h-4 w-4" />}
+                          />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <AirportCombobox
+                            value={leg.to}
+                            label="To"
+                            onChange={(code) => updateMultiLeg(leg.id, { to: code })}
+                            placeholder="Destination"
+                            icon={<PlaneLanding className="h-4 w-4" />}
+                          />
+                        </div>
+
+                        <div className="w-full sm:w-44 shrink-0">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Date</p>
+                          <input
+                            type="date"
+                            value={leg.date}
+                            min={new Date().toISOString().split("T")[0]}
+                            onChange={(e) => updateMultiLeg(leg.id, { date: e.target.value })}
+                            className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                          />
+                        </div>
+
+                        {idx >= 2 && (
+                          <div className="shrink-0 pb-0.5 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => removeMultiLeg(leg.id)}
+                              className="h-11 w-10 flex items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Remove flight"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
+                    {multiLegs.length < 5 && (
+                      <button
+                        type="button"
+                        onClick={addMultiLeg}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-dashed border-primary/40 text-primary text-xs font-bold hover:bg-primary/5 transition-colors cursor-pointer"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Add another flight
+                      </button>
+                    )}
+
+                    <div className="flex items-center gap-2.5 ml-auto">
+                      <Button
+                        type="button"
+                        onClick={() => { handleSearch(); setExpanded(false); }}
+                        disabled={!multiLegs.every(l => l.from && l.to && l.date)}
+                        className="h-11 px-6 rounded-xl text-sm font-bold gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20 cursor-pointer"
+                      >
+                        <Search className="h-4 w-4 shrink-0" />
+                        <span>Search Flights</span>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-end">
+                  {/* Airports: From + Swap + To */}
+                  <div className="lg:col-span-5 flex flex-col sm:flex-row items-stretch sm:items-end gap-2 sm:gap-2.5 min-w-0">
+                    <AirportCombobox
+                      value={fromCode}
+                      label="From"
+                      onChange={(code, lbl) => { setFromCode(code); setFromLabel(lbl); }}
+                      placeholder="City or airport"
+                      icon={<PlaneTakeoff className="h-4 w-4" />}
+                      minWidth="0"
+                    />
+                    <div className="shrink-0 flex justify-center pb-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFromCode(toCode); setFromLabel(toLabel);
+                          setToCode(fromCode); setToLabel(fromLabel);
+                        }}
+                        className="h-11 w-11 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95 shrink-0"
+                        title="Swap airports"
+                      >
+                        <ArrowLeftRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <AirportCombobox
+                      value={toCode}
+                      label="To"
+                      onChange={(code, lbl) => { setToCode(code); setToLabel(lbl); }}
+                      placeholder="City or airport"
+                      icon={<PlaneLanding className="h-4 w-4" />}
+                      minWidth="0"
+                    />
+                  </div>
+
+                  {/* Dates */}
+                  <div className="lg:col-span-3 min-w-0">
+                    <DateRangePicker
+                      dept={dept}
+                      ret={ret}
+                      isRound={isRound}
+                      onDeptChange={setDept}
+                      onRetChange={setRet}
+                    />
+                  </div>
+
+                  {/* Passengers */}
+                  <div className="lg:col-span-2 min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">
+                      Passengers
+                    </p>
                     <button
+                      data-pax-trigger
                       type="button"
-                      onClick={() => {
-                        setFromCode(toCode); setFromLabel(toLabel);
-                        setToCode(fromCode); setToLabel(fromLabel);
-                      }}
-                      className="h-11 w-11 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95 shrink-0"
-                      title="Swap airports"
+                      onClick={openPax}
+                      className={`w-full flex items-center justify-between gap-1.5 h-11 px-3 rounded-xl border bg-white transition-all text-sm font-medium text-slate-700 ${
+                        paxOpen ? "border-primary ring-2 ring-primary/15 shadow-sm" : "border-slate-200 hover:border-slate-300"
+                      }`}
                     >
-                      <ArrowLeftRight className="h-4 w-4" />
+                      <div className="flex items-center gap-1.5 min-w-0 truncate">
+                        <Users className={`h-4 w-4 shrink-0 ${paxOpen ? "text-primary" : "text-slate-400"}`} />
+                        <span className="font-semibold text-slate-800 shrink-0">{passengers}</span>
+                        <span className="text-slate-500 text-xs truncate">{passengers === 1 ? "Adult" : "Adults"}</span>
+                      </div>
+                      <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${paxOpen ? "rotate-180" : ""}`} />
                     </button>
                   </div>
-                  <AirportCombobox
-                    value={toCode}
-                    label="To"
-                    onChange={(code, lbl) => { setToCode(code); setToLabel(lbl); }}
-                    placeholder="City or airport"
-                    icon={<PlaneLanding className="h-4 w-4" />}
-                    minWidth="0"
-                  />
-                </div>
 
-                {/* Dates */}
-                <div className="lg:col-span-3 min-w-0">
-                  <DateRangePicker
-                    dept={dept}
-                    ret={ret}
-                    isRound={isRound}
-                    onDeptChange={setDept}
-                    onRetChange={setRet}
-                  />
+                  {/* Search Action */}
+                  <div className="lg:col-span-2 shrink-0 pt-2 lg:pt-0">
+                    <Button
+                      type="button"
+                      onClick={() => { handleSearch(); setExpanded(false); }}
+                      disabled={!canSearch}
+                      className="w-full h-11 px-4 rounded-xl text-sm font-bold gap-2 shadow-md shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
+                    >
+                      <Search className="h-4 w-4 shrink-0" />
+                      <span>Search</span>
+                    </Button>
+                  </div>
                 </div>
-
-                {/* Passengers */}
-                <div className="lg:col-span-2 min-w-0">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">
-                    Passengers
-                  </p>
-                  <button
-                    data-pax-trigger
-                    type="button"
-                    onClick={openPax}
-                    className={`w-full flex items-center justify-between gap-1.5 h-11 px-3 rounded-xl border bg-white transition-all text-sm font-medium text-slate-700 ${
-                      paxOpen ? "border-primary ring-2 ring-primary/15 shadow-sm" : "border-slate-200 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5 min-w-0 truncate">
-                      <Users className={`h-4 w-4 shrink-0 ${paxOpen ? "text-primary" : "text-slate-400"}`} />
-                      <span className="font-semibold text-slate-800 shrink-0">{passengers}</span>
-                      <span className="text-slate-500 text-xs truncate">{passengers === 1 ? "Adult" : "Adults"}</span>
-                    </div>
-                    <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${paxOpen ? "rotate-180" : ""}`} />
-                  </button>
-                </div>
-
-                {/* Search Action */}
-                <div className="lg:col-span-2 shrink-0 pt-2 lg:pt-0">
-                  <Button
-                    type="button"
-                    onClick={() => { handleSearch(); setExpanded(false); }}
-                    disabled={!canSearch}
-                    className="w-full h-11 px-4 rounded-xl text-sm font-bold gap-2 shadow-md shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground"
-                  >
-                    <Search className="h-4 w-4 shrink-0" />
-                    <span>Search</span>
-                  </Button>
-                </div>
-              </div>
+              )}
             </div>
           </>
         )}
@@ -789,86 +913,171 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
 
       {/* ── Form fields ── */}
       <div className="p-4 sm:p-5">
-        <div className="flex flex-col lg:flex-row lg:items-end gap-3">
+        {tripType === "multi-city" ? (
+          <div className="space-y-3">
+            <div className="flex flex-col gap-2.5">
+              {multiLegs.map((leg, idx) => (
+                <div key={leg.id} className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2.5 p-3 rounded-2xl border border-slate-200 bg-slate-50/50">
+                  <div className="shrink-0 flex sm:flex-col items-center justify-center sm:pb-2.5 gap-1">
+                    <span className="inline-flex items-center justify-center h-6 w-6 rounded-lg bg-primary/10 text-primary text-xs font-bold font-mono">
+                      {idx + 1}
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Flight</span>
+                  </div>
 
-          {/* ── From & To + Swap ── */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2 sm:gap-3 flex-1 min-w-0">
-            <AirportCombobox
-              value={fromCode}
-              label="From"
-              onChange={(code, lbl) => { setFromCode(code); setFromLabel(lbl); }}
-              placeholder="City or airport"
-              icon={<PlaneTakeoff className="h-4 w-4" />}
-              minWidth="0"
-            />
+                  <div className="flex-1 min-w-0">
+                    <AirportCombobox
+                      value={leg.from}
+                      label="From"
+                      onChange={(code) => updateMultiLeg(leg.id, { from: code })}
+                      placeholder="Origin"
+                      icon={<PlaneTakeoff className="h-4 w-4" />}
+                    />
+                  </div>
 
-            {/* Swap button */}
-            <div className="shrink-0 flex justify-center pb-0.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setFromCode(toCode); setFromLabel(toLabel);
-                  setToCode(fromCode); setToLabel(fromLabel);
-                }}
-                className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95"
-                title="Swap airports"
-              >
-                <ArrowLeftRight className="h-4 w-4" />
-              </button>
-            </div>
+                  <div className="flex-1 min-w-0">
+                    <AirportCombobox
+                      value={leg.to}
+                      label="To"
+                      onChange={(code) => updateMultiLeg(leg.id, { to: code })}
+                      placeholder="Destination"
+                      icon={<PlaneLanding className="h-4 w-4" />}
+                    />
+                  </div>
 
-            <AirportCombobox
-              value={toCode}
-              label="To"
-              onChange={(code, lbl) => { setToCode(code); setToLabel(lbl); }}
-              placeholder="City or airport"
-              icon={<PlaneLanding className="h-4 w-4" />}
-              minWidth="0"
-            />
-          </div>
+                  <div className="w-full sm:w-48 shrink-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Date</p>
+                    <input
+                      type="date"
+                      value={leg.date}
+                      min={new Date().toISOString().split("T")[0]}
+                      onChange={(e) => updateMultiLeg(leg.id, { date: e.target.value })}
+                      className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
 
-          {/* ── Date & Passengers ── */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 flex-1 min-w-0">
-            <DateRangePicker
-              dept={dept}
-              ret={ret}
-              isRound={isRound}
-              onDeptChange={setDept}
-              onRetChange={setRet}
-            />
-
-            <div className="relative shrink-0 w-full sm:w-auto">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Passengers</p>
-              <button
-                data-pax-trigger
-                type="button"
-                onClick={openPax}
-                className={`w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2.5 h-11 px-3.5 rounded-xl border bg-white transition-all text-sm font-medium text-slate-700
-                  ${paxOpen ? "border-primary ring-2 ring-primary/15 shadow-sm" : "border-slate-200 hover:border-slate-300"}`}
-              >
-                <div className="flex items-center gap-2">
-                  <Users className={`h-4 w-4 transition-colors ${paxOpen ? "text-primary" : "text-slate-400"}`} />
-                  <span className="font-semibold text-slate-800">{passengers}</span>
-                  <span className="text-slate-500">{passengers === 1 ? "Adult" : "Adults"}</span>
+                  {idx >= 2 && (
+                    <div className="shrink-0 pb-0.5 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => removeMultiLeg(leg.id)}
+                        className="h-11 w-10 flex items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition-colors cursor-pointer"
+                        title="Remove flight"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ml-1 ${paxOpen ? "rotate-180" : ""}`} />
-              </button>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
+              {multiLegs.length < 5 && (
+                <button
+                  type="button"
+                  onClick={addMultiLeg}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-dashed border-primary/40 text-primary text-xs font-bold hover:bg-primary/5 transition-colors cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add another flight
+                </button>
+              )}
+
+              <div className="flex items-center gap-3 ml-auto">
+                <Button
+                  type="button"
+                  onClick={handleSearch}
+                  disabled={!multiLegs.every((l) => l.from && l.to && l.date)}
+                  className="h-11 px-6 rounded-xl text-sm font-bold gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20 cursor-pointer"
+                >
+                  <Search className="h-4 w-4 shrink-0" />
+                  <span>Search Flights</span>
+                </Button>
+              </div>
             </div>
           </div>
+        ) : (
+          <div className="flex flex-col lg:flex-row lg:items-end gap-3">
+            {/* ── From & To + Swap ── */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2 sm:gap-3 flex-1 min-w-0">
+              <AirportCombobox
+                value={fromCode}
+                label="From"
+                onChange={(code, lbl) => { setFromCode(code); setFromLabel(lbl); }}
+                placeholder="City or airport"
+                icon={<PlaneTakeoff className="h-4 w-4" />}
+                minWidth="0"
+              />
 
-          {/* ── Search button ── */}
-          <div className="shrink-0 pt-2 lg:pt-0 w-full lg:w-auto">
-            <Button
-              type="button"
-              onClick={handleSearch}
-              disabled={!canSearch}
-              className="w-full lg:w-auto h-12 sm:h-11 px-6 rounded-xl text-sm font-bold gap-2 shadow-md shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              <Search className="h-4 w-4" />
-              <span>Search flights</span>
-            </Button>
+              {/* Swap button */}
+              <div className="shrink-0 flex justify-center pb-0.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFromCode(toCode); setFromLabel(toLabel);
+                    setToCode(fromCode); setToLabel(fromLabel);
+                  }}
+                  className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95"
+                  title="Swap airports"
+                >
+                  <ArrowLeftRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              <AirportCombobox
+                value={toCode}
+                label="To"
+                onChange={(code, lbl) => { setToCode(code); setToLabel(lbl); }}
+                placeholder="City or airport"
+                icon={<PlaneLanding className="h-4 w-4" />}
+                minWidth="0"
+              />
+            </div>
+
+            {/* ── Date & Passengers ── */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 flex-1 min-w-0">
+              <DateRangePicker
+                dept={dept}
+                ret={ret}
+                isRound={isRound}
+                onDeptChange={setDept}
+                onRetChange={setRet}
+              />
+
+              <div className="relative shrink-0 w-full sm:w-auto">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Passengers</p>
+                <button
+                  data-pax-trigger
+                  type="button"
+                  onClick={openPax}
+                  className={`w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2.5 h-11 px-3.5 rounded-xl border bg-white transition-all text-sm font-medium text-slate-700
+                    ${paxOpen ? "border-primary ring-2 ring-primary/15 shadow-sm" : "border-slate-200 hover:border-slate-300"}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Users className={`h-4 w-4 transition-colors ${paxOpen ? "text-primary" : "text-slate-400"}`} />
+                    <span className="font-semibold text-slate-800">{passengers}</span>
+                    <span className="text-slate-500">{passengers === 1 ? "Adult" : "Adults"}</span>
+                  </div>
+                  <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ml-1 ${paxOpen ? "rotate-180" : ""}`} />
+                </button>
+              </div>
+            </div>
+
+            {/* ── Search button ── */}
+            <div className="shrink-0 pt-2 lg:pt-0 w-full lg:w-auto">
+              <Button
+                type="button"
+                onClick={handleSearch}
+                disabled={!canSearch}
+                className="w-full lg:w-auto h-12 sm:h-11 px-6 rounded-xl text-sm font-bold gap-2 shadow-md shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <Search className="h-4 w-4" />
+                <span>Search flights</span>
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
 
