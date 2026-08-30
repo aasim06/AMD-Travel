@@ -474,8 +474,19 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
   const [paxCoords, setPaxCoords] = useState<{ top: number; left: number } | null>(null);
 
   const [multiLegs, setMultiLegs] = useState<Array<{ id: string; from: string; to: string; date: string }>>(() => {
-    if (parsedLegs && parsedLegs.length >= 2) {
-      return parsedLegs.map((l, i) => ({ id: `leg-${i + 1}`, from: l.from, to: l.to, date: l.date }));
+    const legsParam = searchParams.get("legs");
+    if (legsParam) {
+      try {
+        const raw = JSON.parse(legsParam);
+        if (Array.isArray(raw) && raw.length >= 2) {
+          return raw.map((l: any, i: number) => ({
+            id: `leg-${i + 1}`,
+            from: l.from || l.origin || "",
+            to: l.to || l.destination || "",
+            date: l.date || l.dept || l.departureDate || "",
+          }));
+        }
+      } catch {}
     }
     return [
       { id: "leg-1", from: searchParams.get("from") || "LHE", to: searchParams.get("to") || "DXB", date: searchParams.get("dept") || "" },
