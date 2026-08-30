@@ -222,13 +222,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Segment & Flight details
+    const totalItineraries = currentOfferObj.itineraries?.length || 1;
+    const isMultiCity = totalItineraries > 2 || currentOfferObj.tripType === "multi-city";
+    
     const depSeg = currentOfferObj.itineraries?.[0]?.segments?.[0];
-    const arrSeg = currentOfferObj.itineraries?.[currentOfferObj.itineraries.length - 1]?.segments?.at(-1);
+    const arrSeg = currentOfferObj.itineraries?.[totalItineraries - 1]?.segments?.at(-1);
 
     const originCode = depSeg?.departure?.iataCode || currentOfferObj.origin || "FRA";
-    const destCode = arrSeg?.arrival?.iataCode || currentOfferObj.destination || "ISB";
-    const airlineName = depSeg?.carrierCode || currentOfferObj.airline || "Emirates";
-    const flightNum = `${depSeg?.carrierCode || ""}${depSeg?.flightNumber || depSeg?.number || "786"}`.trim();
+    const destCode = isMultiCity
+      ? currentOfferObj.itineraries.map((it: any) => it.segments?.[0]?.departure?.iataCode).concat(arrSeg?.arrival?.iataCode || "").filter(Boolean).join(" ➔ ")
+      : (arrSeg?.arrival?.iataCode || currentOfferObj.destination || "ISB");
+
+    const allAirlines = Array.from(new Set(
+      currentOfferObj.itineraries?.flatMap((it: any) => it.segments?.map((s: any) => s.carrierCode)).filter(Boolean)
+    ));
+    const airlineName = allAirlines.length > 0 ? allAirlines.join(" / ") : (depSeg?.carrierCode || currentOfferObj.airline || "Emirates");
+
+    const allFlightNums = currentOfferObj.itineraries?.flatMap((it: any) =>
+      it.segments?.map((s: any) => `${s.carrierCode || ""}${s.flightNumber || s.number || ""}`.trim())
+    ).filter(Boolean);
+    const flightNum = allFlightNums && allFlightNums.length > 0 ? allFlightNums.join(", ") : `${depSeg?.carrierCode || ""}${depSeg?.flightNumber || depSeg?.number || "786"}`.trim();
+
     const departureIso = depSeg?.departure?.at ? new Date(depSeg.departure.at) : new Date();
     const returnIso = arrSeg?.arrival?.at ? new Date(arrSeg.arrival.at) : null;
     const finalAmount = selectedPrice ? parseFloat(String(selectedPrice)) : parseFloat(String(currentOfferObj.price?.total || "550"));
@@ -310,7 +324,7 @@ export async function POST(request: NextRequest) {
       amadeusOrderId: amadeusOrderId || undefined,
       type: "flight" as const,
       status: "confirmed" as const,
-      title: `${originCode} → ${destCode}`,
+      title: isMultiCity ? destCode : `${originCode} → ${destCode}`,
       subtitle: `${airlineName} · ${fareClass || "Economy"} Class`,
       bookingDate: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
       travelDate: departureIso.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),

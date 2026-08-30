@@ -49,11 +49,13 @@ export function BookingSummary({ offer, carriers, fareClass, passengers, selecte
 
       {/* Header */}
       <div className="bg-gradient-to-r from-primary to-primary/80 px-5 py-4">
-        <p className="text-xs font-semibold text-white/70 uppercase tracking-widest mb-0.5">Booking Summary</p>
+        <p className="text-xs font-semibold text-white/70 uppercase tracking-widest mb-0.5">
+          {offer.itineraries.length > 2 ? "Multi-City Booking Summary" : "Booking Summary"}
+        </p>
         <p className="text-white font-bold text-base">
-          {offer.itineraries[0].segments[0].departure.iataCode}
-          {" → "}
-          {offer.itineraries[offer.itineraries.length - 1].segments.at(-1)!.arrival.iataCode}
+          {offer.itineraries.length > 2
+            ? offer.itineraries.map((it) => it.segments[0].departure.iataCode).concat(offer.itineraries.at(-1)?.segments.at(-1)?.arrival.iataCode || "").join(" → ")
+            : `${offer.itineraries[0].segments[0].departure.iataCode} → ${offer.itineraries[offer.itineraries.length - 1].segments.at(-1)!.arrival.iataCode}`}
         </p>
       </div>
 
@@ -65,13 +67,20 @@ export function BookingSummary({ offer, carriers, fareClass, passengers, selecte
           const arr = itin.segments.at(-1)!;
           const stops = itin.segments.length - 1;
           const airline = carriers[dep.carrierCode] ?? AIRLINE_NAMES[dep.carrierCode] ?? dep.carrierCode;
+          const isMulti = offer.itineraries.length > 2;
 
           return (
             <div key={i}>
               {i > 0 && <div className="border-t border-dashed border-slate-200 my-4" />}
 
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
-                {i === 0 ? "Outbound" : "Return"} · {formatDate(dep.departure.at)}
+                {isMulti
+                  ? `Flight ${i + 1} (${dep.departure.iataCode} → ${arr.arrival.iataCode})`
+                  : offer.itineraries.length === 1
+                  ? "One-Way Flight"
+                  : i === 0
+                  ? "Outbound"
+                  : "Return"} · {formatDate(dep.departure.at)}
               </p>
 
               <div className="flex items-center gap-3">

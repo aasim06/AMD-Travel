@@ -169,7 +169,14 @@ function ItineraryLeg({
 
   const firstSeg = leg.segments[0];
   const lastSeg  = leg.segments[leg.segments.length - 1];
-  const legLabel = legIndex === 0 ? "Outbound" : "Return";
+  const isMulti  = offer.itineraries.length > 2;
+  const legLabel = isMulti
+    ? `Flight ${legIndex + 1}`
+    : offer.itineraries.length === 1
+    ? "Outbound"
+    : legIndex === 0
+    ? "Outbound"
+    : "Return";
 
   return (
     <div>
@@ -360,7 +367,9 @@ export function FlightDetailsModal({
           <div>
             <h2 className="text-xl font-semibold text-slate-900">Trip Details</h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              {firstSeg.departure.iataCode} → {lastSeg.arrival.iataCode}
+              {offer.itineraries.length > 2
+                ? offer.itineraries.map((it) => it.segments[0].departure.iataCode).concat(offer.itineraries.at(-1)?.segments.at(-1)?.arrival.iataCode || "").join(" → ")
+                : `${firstSeg.departure.iataCode} → ${lastSeg.arrival.iataCode}`}
             </p>
           </div>
 

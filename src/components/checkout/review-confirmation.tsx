@@ -176,8 +176,8 @@ export function ConfirmationStep({ pnr, bookingSource, formData, offer, carriers
     offer.itineraries.forEach((itin, idx) => {
       const s0  = itin.segments[0];
       const sLast = itin.segments.at(-1)!;
-      const airline = carriers[s0.carrierCode] ?? AIRLINE_NAMES[s0.carrierCode] ?? s0.carrierCode;
-      const label = offer.itineraries.length === 1 ? "Outbound" : idx === 0 ? "Outbound" : "Return";
+      const isMulti = offer.itineraries.length > 2;
+      const label = isMulti ? `Flight ${idx + 1}` : offer.itineraries.length === 1 ? "Outbound" : idx === 0 ? "Outbound" : "Return";
 
       y += 18;
       doc.setFillColor(248, 250, 252);

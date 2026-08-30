@@ -2,25 +2,21 @@ import dns from "node:dns";
 try { dns.setDefaultResultOrder("ipv4first"); } catch { /* ignore */ }
 
 import { NextRequest, NextResponse } from "next/server";
-import { getAmadeusToken, amadeusGet, amadeusPost } from "@/lib/amadeus";
+import { getAmadeusToken, amadeusFetch, amadeusPostFetch } from "@/lib/amadeus";
+import type { FlightOffer, FlightSegment, Itinerary, TravelClass, Currency } from "@/types/flight";
 import { prisma } from "@/lib/prisma";
-import type {
-  FlightOffer,
-  FlightSegment,
-  Itinerary,
-  TravelClass,
-  Currency,
-} from "@/types/flight";
 
-function applyMarkup(priceVal: number, markupType: string, markupValue: number): number {
-  if (markupType === "PERCENTAGE") {
-    return Math.round(priceVal * (1 + markupValue / 100));
-  } else {
-    return Math.round(priceVal + markupValue);
+// Force IPv4 resolution
+async function safeLookup(hostname: string): Promise<string> {
+  try {
+    const res = await dns.promises.lookup(hostname, { family: 4 });
+    return res.address;
+  } catch {
+    return hostname;
   }
 }
 
-// ─── Mock data fallback (used when Amadeus is unreachable) ───────────────────
+// ─── Mock data fallback (used when Amadeus is unreachable or for multi-city preview) ───
 
 function generateMockFlights(
   origin: string,
@@ -30,9 +26,11 @@ function generateMockFlights(
   passengers: number,
   travelClass: TravelClass,
   currency: Currency,
-  tripType: string
+  tripType: string,
+  legs?: { origin: string; destination: string; departureDate: string }[]
 ): object {
   const isRound = tripType === "round-trip";
+  const isMultiCity = tripType === "multi-city" && legs && legs.length >= 2;
 
   const isDomesticPk = ["LHE","ISB","KHI","PEW","MUX","SKT","UET"].includes(origin.toUpperCase()) &&
                        ["LHE","ISB","KHI","PEW","MUX","SKT","UET"].includes(destination.toUpperCase());
@@ -59,11 +57,6 @@ function generateMockFlights(
     EK: "77W", QR: "359", TK: "321", EY: "789", SV: "333", FZ: "73H",
   };
 
-  const depAt = `${departureDate}T${["06:00","09:30","12:15","15:45","18:00","21:30"][Math.floor(Math.random()*6)]}:00`;
-  const durationMins = isDomesticPk ? (55 + Math.floor(Math.random() * 30)) : (120 + Math.floor(Math.random() * 300));
-  const arrAt = new Date(new Date(depAt).getTime() + durationMins * 60000).toISOString().replace(".000Z","");
-  const durStr = `PT${Math.floor(durationMins/60)}H${durationMins%60 > 0 ? durationMins%60+"M" : ""}`;
-
   const carriers: Record<string, string> = {};
   const aircraft: Record<string, string> = { "77W": "Boeing 777-300ER", "359": "Airbus A350-900", "321": "Airbus A321", "789": "Boeing 787-9", "333": "Airbus A330-300", "73H": "Boeing 737-800" };
 
@@ -76,6 +69,67 @@ function generateMockFlights(
   const offers: FlightOffer[] = MOCK_CARRIERS.map((c, i) => {
     carriers[c.code] = c.name;
     const variation = (1 + (i * 0.07)) * routeMult;
+
+    if (isMultiCity) {
+      // ── MULTI-CITY ITINERARY GENERATION ────────────────────────────────────
+      const itineraries: Itinerary[] = [];
+      let multiCityTotal = 0;
+
+      legs.forEach((leg, legIdx) => {
+        const legDate = leg.departureDate || departureDate;
+        const depTime = ["06:15", "09:30", "13:45", "16:20", "20:10", "22:45"][(i + legIdx) % 6];
+        const depAt = `${legDate}T${depTime}:00`;
+        const durMins = 120 + ((legIdx * 45 + i * 30) % 360);
+        const arrAt = new Date(new Date(depAt).getTime() + durMins * 60000).toISOString().replace(".000Z", "");
+        const durStr = `PT${Math.floor(durMins / 60)}H${durMins % 60 > 0 ? (durMins % 60) + "M" : ""}`;
+
+        const legPrice = Math.round((c.basePrice * 0.85 + legIdx * 60) * variation);
+        multiCityTotal += legPrice;
+
+        const seg: FlightSegment = {
+          id: `${i + 1}-${legIdx + 1}`,
+          carrierCode: c.code,
+          flightNumber: `${c.code}${100 + (legIdx * 50) + (i * 12)}`,
+          aircraft: AIRCRAFT[c.code] ?? "320",
+          airlineLogo: `https://content.airhex.com/content/logos/airlines_${c.code}_32_32_s.png`,
+          departure: { iataCode: leg.origin.toUpperCase(), at: depAt },
+          arrival: { iataCode: leg.destination.toUpperCase(), at: arrAt },
+          duration: durStr,
+          numberOfStops: legIdx % 2 === 1 ? 1 : 0,
+        };
+
+        itineraries.push({
+          duration: durStr,
+          segments: [seg],
+        });
+      });
+
+      const totalAmount = Math.round(multiCityTotal * passengers);
+      const perPax = Math.round(totalAmount / passengers);
+
+      return {
+        id: `mock-multi-${i}-${c.code}`,
+        source: "GDS" as const,
+        price: {
+          total: String(totalAmount),
+          base: String(Math.round(totalAmount * 0.88)),
+          currency,
+          perPassenger: String(perPax),
+        },
+        itineraries,
+        validatingAirlineCodes: [c.code],
+        numberOfBookableSeats: 9 - i,
+        lastTicketingDate: departureDate,
+        baggageAllowance: { quantity: travelClass === "ECONOMY" ? 1 : 2, weight: 23, weightUnit: "KG" },
+      };
+    }
+
+    // ── ONE-WAY / ROUND-TRIP ITINERARY GENERATION ────────────────────────────
+    const depAt = `${departureDate}T${["06:00","09:30","12:15","15:45","18:00","21:30"][Math.floor(Math.random()*6)]}:00`;
+    const durationMins = isDomesticPk ? (55 + Math.floor(Math.random() * 30)) : (120 + Math.floor(Math.random() * 300));
+    const arrAt = new Date(new Date(depAt).getTime() + durationMins * 60000).toISOString().replace(".000Z","");
+    const durStr = `PT${Math.floor(durationMins/60)}H${durationMins%60 > 0 ? durationMins%60+"M" : ""}`;
+
     const baseTotal  = Math.round(c.basePrice * variation * passengers);
     const roundMult  = isRound ? 1.85 : 1;
     const total      = Math.round(baseTotal * roundMult);
@@ -146,9 +200,9 @@ interface SearchBody {
   destination:   string;
   departureDate: string;
   returnDate?:   string;
-  passengers:    number;
-  travelClass:   TravelClass;
-  currency:      Currency;
+  passengers?:   number;
+  travelClass?:  TravelClass;
+  currency?:     Currency;
   fast?:         boolean;
   legs?: { origin: string; destination: string; departureDate: string }[];
 }
@@ -249,40 +303,50 @@ function extractBaggageAllowance(offer: AmadeusOffer): { quantity: number; weigh
                 quantity = 1;
               }
             }
-            if (quantity === 0 && weight === undefined && bags.quantity !== 0) {
-              quantity = 1;
-            }
           }
         }
       }
     }
   }
 
-  if (!foundInfo) {
-    quantity = 1;
-    weight = 23;
-    weightUnit = "KG";
+  if (foundInfo) {
+    return { quantity, weight, weightUnit };
   }
 
-  return { quantity, weight, weightUnit };
+  return { quantity: 1, weight: 23, weightUnit: "KG" };
 }
 
-// ─── Map Amadeus offer → FlightOffer ─────────────────────────────────────────
+// ─── Map Amadeus offer to our FlightOffer format ──────────────────────────────
 
-function mapOffer(
-  offer: AmadeusOffer,
-  currency: Currency,
-  markupType: string = "PERCENTAGE",
-  markupValue: number = 5
-): FlightOffer {
+function mapOffer(offer: AmadeusOffer, requestedCurrency: Currency, markupType: string = "PERCENTAGE", markupValue: number = 5): FlightOffer {
+  const rawTotal = parseFloat(offer.price.grandTotal ?? offer.price.total);
+  const rawBase  = parseFloat(offer.price.base);
+
+  // Apply Admin Profit Markup dynamically
+  let finalTotal = rawTotal;
+  let finalBase  = rawBase;
+
+  if (markupType === "FIXED") {
+    finalTotal += markupValue;
+    finalBase  += markupValue;
+  } else {
+    // Percentage markup (e.g. +5%)
+    const pct = 1 + markupValue / 100;
+    finalTotal *= pct;
+    finalBase  *= pct;
+  }
+
+  const numTravelers = offer.travelerPricings?.length || 1;
+  const perPax = (finalTotal / numTravelers).toFixed(2);
+
   const itineraries: Itinerary[] = offer.itineraries.map((itin) => ({
     duration: itin.duration,
     segments: itin.segments.map((seg): FlightSegment => ({
-      id:           seg.id,
-      carrierCode:  seg.carrierCode,
-      flightNumber: `${seg.carrierCode}${seg.number}`,
-      aircraft:     seg.aircraft?.code ?? "---",
-      airlineLogo:  airlineLogo(seg.carrierCode),
+      id:            seg.id,
+      carrierCode:   seg.carrierCode,
+      flightNumber:  `${seg.carrierCode}${seg.number}`,
+      aircraft:      seg.aircraft?.code ?? "---",
+      airlineLogo:   airlineLogo(seg.carrierCode),
       departure: {
         iataCode: seg.departure.iataCode,
         terminal: seg.departure.terminal,
@@ -298,82 +362,52 @@ function mapOffer(
     })),
   }));
 
-  const rawTotal = parseFloat(offer.price.total);
-  const rawBase  = parseFloat(offer.price.base || offer.price.total);
-
-  const finalTotal = String(applyMarkup(rawTotal, markupType, markupValue));
-  const finalBase  = String(applyMarkup(rawBase, markupType, markupValue));
-
-  const travelerTotal = offer.travelerPricings?.[0]?.price?.total;
-  const rawPerPassenger = travelerTotal ? parseFloat(travelerTotal) : rawTotal;
-  const finalPerPassenger = String(applyMarkup(rawPerPassenger, markupType, markupValue));
-
   const baggageAllowance = extractBaggageAllowance(offer);
 
   return {
-    id:                    offer.id,
-    source:                offer.source ?? "GDS",
+    id:                     offer.id,
+    source:                 offer.source ?? "GDS",
     price: {
-      total:        finalTotal,
-      base:         finalBase,
-      currency:     currency,
-      perPassenger: finalPerPassenger,
+      total:        finalTotal.toFixed(2),
+      base:         finalBase.toFixed(2),
+      currency:     requestedCurrency,
+      perPassenger: perPax,
     },
     itineraries,
-    validatingAirlineCodes: offer.validatingAirlineCodes ?? [],
+    validatingAirlineCodes: offer.validatingAirlineCodes,
     numberOfBookableSeats:  offer.numberOfBookableSeats ?? 9,
-    lastTicketingDate:      offer.lastTicketingDate ?? "",
+    lastTicketingDate:      offer.lastTicketingDate,
     baggageAllowance,
-    rawAmadeusOffer: offer,
+    rawAmadeusOffer:        offer,
   };
 }
 
-// ─── Amadeus fetch wrappers (use native https via lib/amadeus) ────────────────
+// ─── Route handler ────────────────────────────────────────────────────────────
 
-async function amadeusFetch(
-  path: string,
-  token: string,
-  params?: URLSearchParams
-): Promise<AmadeusResponse> {
-  const fullPath = `${path}${params ? `?${params.toString()}` : ""}`;
-  console.log("[Amadeus] GET", fullPath);
-  return amadeusGet(fullPath, token) as Promise<AmadeusResponse>;
-}
-
-async function amadeusPostFetch(
-  path: string,
-  token: string,
-  body: object
-): Promise<AmadeusResponse> {
-  console.log("[Amadeus] POST", path);
-  return amadeusPost(path, token, body) as Promise<AmadeusResponse>;
-}
-
-// ─── POST ─────────────────────────────────────────────────────────────────────
-
-function normalizeTravelClass(tc?: string): TravelClass {
-  if (!tc) return "ECONOMY";
-  const upper = tc.toUpperCase();
-  if (upper === "1" || upper === "ECONOMY") return "ECONOMY";
-  if (upper === "2" || upper === "PREMIUM_ECONOMY") return "PREMIUM_ECONOMY";
-  if (upper === "3" || upper === "BUSINESS") return "BUSINESS";
-  if (upper === "4" || upper === "FIRST") return "FIRST";
-  return "ECONOMY";
-}
-
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   let body: SearchBody;
   try {
-    body = await request.json();
+    body = await req.json();
   } catch {
-    return NextResponse.json({ success: false, error: "Invalid JSON body" }, { status: 400 });
+    return NextResponse.json({ success: false, error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { origin, destination, departureDate, returnDate, passengers, currency, tripType } = body;
-  const travelClass = normalizeTravelClass(body.travelClass);
+  const {
+    tripType      = "one-way",
+    origin,
+    destination,
+    departureDate,
+    returnDate,
+    passengers  = 1,
+    travelClass = "ECONOMY",
+    currency    = "USD",
+  } = body;
 
   if (!origin || !destination || !departureDate) {
-    return NextResponse.json({ success: false, error: "Missing: origin, destination, departureDate" }, { status: 400 });
+    return NextResponse.json(
+      { success: false, error: "origin, destination, and departureDate are required" },
+      { status: 400 }
+    );
   }
 
   const isRoundTrip = tripType === "round-trip";
@@ -399,7 +433,8 @@ export async function POST(request: NextRequest) {
   if (body.fast) {
     const instantData = generateMockFlights(
       origin, destination, departureDate, returnDate,
-      passengers, travelClass, currency, tripType
+      passengers, travelClass, currency, tripType,
+      body.legs
     );
     return NextResponse.json({ ...instantData, isPartial: true }, { headers: { "X-Data-Source": "FAST_PREVIEW" } });
   }
@@ -411,10 +446,10 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.warn("[Amadeus] Auth failed — using mock fallback:", msg);
-    // Return realistic mock data so the UI still works when Amadeus is unreachable
     const mockData = generateMockFlights(
       origin, destination, departureDate, returnDate,
-      passengers, travelClass, currency, tripType
+      passengers, travelClass, currency, tripType,
+      body.legs
     );
     cacheSet(cacheKey, mockData);
     return NextResponse.json(mockData, { headers: { "X-Data-Source": "MOCK" } });
@@ -476,7 +511,17 @@ export async function POST(request: NextRequest) {
 
     const rawOffers = amadeusData.data ?? [];
 
-    // ── Fetch Admin Profit Markup from Supabase PostgreSQL ────────────────
+    if (rawOffers.length === 0) {
+      console.warn("[Amadeus] 0 live results returned — generating rich fallback options for search");
+      const fallbackData = generateMockFlights(
+        origin, destination, departureDate, returnDate,
+        passengers, travelClass, currency, tripType,
+        body.legs
+      );
+      return NextResponse.json(fallbackData, { headers: { "X-Data-Source": "FALLBACK" } });
+    }
+
+    // ── Fetch Admin Profit Markup from PostgreSQL ─────────────────────────
     let markupType = "PERCENTAGE";
     let markupValue = 5;
     try {
@@ -509,7 +554,8 @@ export async function POST(request: NextRequest) {
     console.warn("[Amadeus] Live search timeout/error — returning instant realistic flight options:", message);
     const mockData = generateMockFlights(
       origin, destination, departureDate, returnDate,
-      passengers, travelClass, currency, tripType
+      passengers, travelClass, currency, tripType,
+      body.legs
     );
     cacheSet(cacheKey, mockData);
     return NextResponse.json(mockData, { headers: { "X-Data-Source": "FAST_FALLBACK" } });

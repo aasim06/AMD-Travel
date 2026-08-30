@@ -1119,7 +1119,14 @@ function LegRow({
   const arr     = leg.segments[leg.segments.length - 1];
   const stops   = leg.segments.length - 1;
   const airline = carriers[dep.carrierCode] ?? AIRLINE_NAMES[dep.carrierCode] ?? dep.carrierCode;
-  const label   = totalLegs === 1 ? "Outbound" : legIndex === 0 ? "Outbound" : "Return";
+  const isMulti = totalLegs > 2;
+  const label   = isMulti
+    ? `Flight ${legIndex + 1} · ${dep.departure.iataCode} → ${arr.arrival.iataCode}`
+    : totalLegs === 1
+    ? "Outbound"
+    : legIndex === 0
+    ? "Outbound"
+    : "Return";
 
   // Overnight: arrival on different calendar day than departure
   const depDay = new Date(dep.departure.at).toDateString();
