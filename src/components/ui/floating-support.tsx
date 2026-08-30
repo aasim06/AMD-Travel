@@ -80,8 +80,8 @@ export function FloatingSupport() {
             }}
             className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-orange-50 hover:text-orange-700 dark:text-slate-200 dark:hover:bg-orange-500/10 dark:hover:text-orange-400 transition-colors w-full text-left cursor-pointer"
           >
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-[#FF5722] to-[#FF8A3D] text-white shadow-xs">
-              <Sparkles className="w-4 h-4 animate-pulse" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#ff8a3d] text-white shadow-xs">
+              <Sparkles className="w-4 h-4" />
             </div>
             <div className="flex flex-col text-left">
               <span>Ask AMD AI Assistant</span>

@@ -332,9 +332,9 @@ export function Header() {
             <button
               type="button"
               onClick={() => setAiDrawerOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#FF5722] via-[#FF8A3D] to-[#FFA000] text-white text-xs font-black shadow-md shadow-[#FF8A3D]/25 hover:shadow-lg hover:shadow-[#FF8A3D]/35 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#ff8a3d] hover:bg-[#ea792d] text-white text-xs font-bold shadow-md shadow-[#ff8a3d]/20 transition-all duration-200 cursor-pointer active:scale-95"
             >
-              <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+              <Sparkles className="w-3.5 h-3.5" />
               <span className="tracking-tight font-outfit">Ask AI</span>
             </button>
 

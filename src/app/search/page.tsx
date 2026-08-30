@@ -480,8 +480,12 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
 
   const isRound = tripType === "round-trip";
 
-  // When switching to one-way, clear return date
-  function handleTripTypeChange(t: "one-way" | "round-trip") {
+  // When switching trip type
+  function handleTripTypeChange(t: "one-way" | "round-trip" | "multi-city") {
+    if (t === "multi-city") {
+      router.push("/?tripType=multi-city#search-hero");
+      return;
+    }
     setTripType(t);
     if (t === "one-way") setRet("");
   }
@@ -705,7 +709,7 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
                     type="button"
                     onClick={() => { handleSearch(); setExpanded(false); }}
                     disabled={!canSearch}
-                    className="w-full h-11 px-4 rounded-xl text-sm font-bold gap-2 shadow-md shadow-primary/20 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-amber-600 text-white"
+                    className="w-full h-11 px-4 rounded-xl text-sm font-bold gap-2 shadow-md shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground"
                   >
                     <Search className="h-4 w-4 shrink-0" />
                     <span>Search</span>
@@ -764,19 +768,19 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
       <div className="flex items-center justify-between gap-3 px-4 sm:px-5 pt-3.5 pb-3 border-b border-slate-100">
         {/* Toggle buttons */}
         <div className="flex items-center bg-slate-100 rounded-lg p-0.5 gap-0.5">
-          {(["one-way", "round-trip"] as const).map((t) => (
+          {(["round-trip", "one-way", "multi-city"] as const).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => handleTripTypeChange(t)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
                 tripType === t
-                  ? "bg-white text-primary shadow-sm"
+                  ? "bg-white text-primary shadow-sm font-bold"
                   : "text-slate-500 hover:text-slate-700"
               }`}
             >
               <Plane className={`h-3 w-3 ${tripType === t ? "text-primary" : "text-slate-400"} ${t === "round-trip" ? "rotate-180" : ""}`} />
-              {t === "one-way" ? "One Way" : "Round Trip"}
+              {t === "one-way" ? "One Way" : t === "round-trip" ? "Round Trip" : "Multi-city"}
             </button>
           ))}
         </div>
@@ -858,7 +862,7 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
               type="button"
               onClick={handleSearch}
               disabled={!canSearch}
-              className="w-full lg:w-auto h-12 sm:h-11 px-6 rounded-xl text-sm font-bold gap-2 shadow-md shadow-primary/20 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-amber-600 text-white"
+              className="w-full lg:w-auto h-12 sm:h-11 px-6 rounded-xl text-sm font-bold gap-2 shadow-md shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               <Search className="h-4 w-4" />
               <span>Search flights</span>
