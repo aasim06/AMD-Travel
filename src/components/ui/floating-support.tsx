@@ -52,7 +52,7 @@ export function FloatingSupport() {
   const strokeDashoffset = circumference - (scrollProgress / 100) * circumference;
 
   return (
-    <div className="fixed bottom-20 right-3.5 sm:bottom-22 sm:right-5 md:bottom-6 md:right-6 z-40 flex flex-col items-end gap-2.5 pointer-events-auto">
+    <div className="fixed bottom-24 right-4 sm:bottom-28 sm:right-6 md:bottom-6 md:right-6 z-40 flex flex-col items-end gap-2.5 pointer-events-auto">
       
       {/* Expanded Quick Action Popover Menu */}
       {isExpanded && (
