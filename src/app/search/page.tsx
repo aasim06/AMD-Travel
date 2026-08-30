@@ -597,14 +597,14 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
               {/* Dropdown Header */}
               <div className="flex items-center justify-between gap-3 pb-3.5 mb-4 border-b border-slate-100">
                 <div className="flex items-center bg-slate-100 rounded-lg p-0.5 gap-0.5">
-                  {(["one-way", "round-trip"] as const).map((t) => (
+                  {(["round-trip", "one-way", "multi-city"] as const).map((t) => (
                     <button
                       key={t}
                       type="button"
                       onClick={() => handleTripTypeChange(t)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                         tripType === t
-                          ? "bg-white text-primary shadow-sm"
+                          ? "bg-white text-primary shadow-sm font-bold"
                           : "text-slate-500 hover:text-slate-700"
                       }`}
                     >
@@ -613,7 +613,7 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
                           t === "round-trip" ? "rotate-180" : ""
                         }`}
                       />
-                      {t === "one-way" ? "One Way" : "Round Trip"}
+                      {t === "one-way" ? "One Way" : t === "round-trip" ? "Round Trip" : "Multi-city"}
                     </button>
                   ))}
                 </div>
