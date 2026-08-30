@@ -485,8 +485,8 @@ function SingleDatePicker({
   useEffect(() => {
     function onDown(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        const portal = document.getElementById("single-date-picker-portal");
-        if (portal && portal.contains(e.target as Node)) return;
+        const target = e.target as HTMLElement;
+        if (target.closest("#single-date-picker-portal") || target.closest(".rdp")) return;
         setOpen(false);
       }
     }
@@ -516,6 +516,7 @@ function SingleDatePicker({
       {open && dropCoords && createPortal(
         <div
           id="single-date-picker-portal"
+          onMouseDown={(e) => e.stopPropagation()}
           className="fixed z-[99999] bg-white rounded-2xl border border-slate-200 shadow-2xl p-3 animate-in fade-in-0 zoom-in-95 duration-150"
           style={{ top: dropCoords.top, left: dropCoords.left }}
         >
@@ -687,8 +688,16 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
       // Don't close if click is inside the expand panel itself
       if (expandRef.current && expandRef.current.contains(e.target as Node)) return;
       // Don't close if click is inside any portal dropdown (calendar, airport, pax)
-      const portals = ["date-picker-portal", "pax-portal"];
-      if (portals.some(id => document.getElementById(id)?.contains(e.target as Node))) return;
+      const target = e.target as HTMLElement;
+      if (
+        target.closest("#single-date-picker-portal") ||
+        target.closest("#date-picker-portal") ||
+        target.closest("#pax-portal") ||
+        target.closest(".rdp") ||
+        target.closest("[data-radix-popper-content-wrapper]")
+      ) {
+        return;
+      }
       setExpanded(false);
     }
     document.addEventListener("mousedown", onDown);
