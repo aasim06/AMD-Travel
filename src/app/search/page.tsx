@@ -464,10 +464,20 @@ function SingleDatePicker({
   const selectedDate = value ? parseISO(value) : undefined;
   const minParsed = minDate ? parseISO(minDate) : new Date(new Date().setHours(0, 0, 0, 0));
 
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   const reposition = useCallback(() => {
     if (!containerRef.current) return;
     const r = containerRef.current.getBoundingClientRect();
-    setDropCoords({ top: r.bottom + 6, left: Math.min(r.left, Math.max(10, window.innerWidth - 320)) });
+    const neededWidth = window.innerWidth < 640 ? 300 : 590;
+    const left = Math.max(12, Math.min(r.left, window.innerWidth - neededWidth - 16));
+    setDropCoords({ top: r.bottom + 6, left });
   }, []);
 
   useEffect(() => {
@@ -516,25 +526,55 @@ function SingleDatePicker({
       </button>
 
       {open && dropCoords && createPortal(
-        <div
-          id="single-date-picker-portal"
-          onMouseDown={(e) => e.stopPropagation()}
-          className="fixed z-[99999] bg-white rounded-2xl border border-slate-200 shadow-2xl p-3 animate-in fade-in-0 zoom-in-95 duration-150"
-          style={{ top: dropCoords.top, left: dropCoords.left }}
-        >
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={(day) => {
-              if (day) {
-                onChange(format(day, "yyyy-MM-dd"));
-                setOpen(false);
-              }
-            }}
-            disabled={(d) => d < minParsed}
-            initialFocus
-          />
-        </div>,
+        <>
+          {isMobile && (
+            <div
+              className="fixed inset-0 z-[99998] bg-black/40 backdrop-blur-xs sm:hidden"
+              onClick={() => setOpen(false)}
+            />
+          )}
+          <div
+            id="single-date-picker-portal"
+            onMouseDown={(e) => e.stopPropagation()}
+            className={
+              isMobile
+                ? "fixed left-3 right-3 top-20 z-[99999] max-w-md mx-auto bg-white rounded-2xl border border-slate-200 shadow-2xl p-3 animate-in fade-in-0 zoom-in-95 duration-150"
+                : "fixed z-[99999] bg-white rounded-2xl border border-slate-200 shadow-2xl p-3 animate-in fade-in-0 zoom-in-95 duration-150"
+            }
+            style={
+              isMobile
+                ? {}
+                : {
+                    top: dropCoords.top,
+                    left: dropCoords.left,
+                    minWidth: 580,
+                  }
+            }
+          >
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={(day) => {
+                if (day) {
+                  onChange(format(day, "yyyy-MM-dd"));
+                  setOpen(false);
+                }
+              }}
+              numberOfMonths={isMobile ? 1 : 2}
+              disabled={(d) => d < minParsed}
+              initialFocus
+            />
+            {isMobile && (
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="mt-3 w-full py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200 transition-colors"
+              >
+                Done
+              </button>
+            )}
+          </div>
+        </>,
         document.body
       )}
     </div>
