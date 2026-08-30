@@ -444,6 +444,100 @@ function DateRangePicker({
   );
 }
 
+function SingleDatePicker({
+  value,
+  onChange,
+  label = "Date",
+  minDate,
+}: {
+  value: string;
+  onChange: (iso: string) => void;
+  label?: string;
+  minDate?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dropCoords, setDropCoords] = useState<{ top: number; left: number } | null>(null);
+
+  const selectedDate = value ? parseISO(value) : undefined;
+  const minParsed = minDate ? parseISO(minDate) : new Date(new Date().setHours(0, 0, 0, 0));
+
+  const reposition = useCallback(() => {
+    if (!containerRef.current) return;
+    const r = containerRef.current.getBoundingClientRect();
+    setDropCoords({ top: r.bottom + 6, left: Math.min(r.left, Math.max(10, window.innerWidth - 320)) });
+  }, []);
+
+  useEffect(() => {
+    if (!open) {
+      setDropCoords(null);
+      return;
+    }
+    reposition();
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [open, reposition]);
+
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        const portal = document.getElementById("single-date-picker-portal");
+        if (portal && portal.contains(e.target as Node)) return;
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
+  const displayLabel = selectedDate ? format(selectedDate, "EEE, MMM d") : "Select date";
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">{label}</p>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`w-full flex items-center justify-between gap-2 h-11 px-3.5 rounded-xl border bg-white text-xs font-semibold transition-all cursor-pointer ${
+          open ? "border-primary ring-2 ring-primary/15 shadow-sm text-slate-900" : "border-slate-200 text-slate-700 hover:border-slate-300"
+        }`}
+      >
+        <div className="flex items-center gap-2 min-w-0 truncate">
+          <CalendarDays className={`h-4 w-4 shrink-0 transition-colors ${open ? "text-primary" : "text-slate-400"}`} />
+          <span className="truncate font-semibold">{displayLabel}</span>
+        </div>
+        <ChevronDown className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && dropCoords && createPortal(
+        <div
+          id="single-date-picker-portal"
+          className="fixed z-[99999] bg-white rounded-2xl border border-slate-200 shadow-2xl p-3 animate-in fade-in-0 zoom-in-95 duration-150"
+          style={{ top: dropCoords.top, left: dropCoords.left }}
+        >
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={(day) => {
+              if (day) {
+                onChange(format(day, "yyyy-MM-dd"));
+                setOpen(false);
+              }
+            }}
+            disabled={(d) => d < minParsed}
+            initialFocus
+          />
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
 function ModifySearchBar({ compact = false }: { compact?: boolean }) {
   const searchParams = useSearchParams();
   const router       = useRouter();
@@ -718,13 +812,10 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
                         </div>
 
                         <div className="w-full sm:w-44 shrink-0">
-                          <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Date</p>
-                          <input
-                            type="date"
+                          <SingleDatePicker
                             value={leg.date}
-                            min={new Date().toISOString().split("T")[0]}
-                            onChange={(e) => updateMultiLeg(leg.id, { date: e.target.value })}
-                            className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            label="Date"
+                            onChange={(d) => updateMultiLeg(leg.id, { date: d })}
                           />
                         </div>
 
@@ -957,13 +1048,10 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
                   </div>
 
                   <div className="w-full sm:w-48 shrink-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1.5">Date</p>
-                    <input
-                      type="date"
+                    <SingleDatePicker
                       value={leg.date}
-                      min={new Date().toISOString().split("T")[0]}
-                      onChange={(e) => updateMultiLeg(leg.id, { date: e.target.value })}
-                      className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      label="Date"
+                      onChange={(d) => updateMultiLeg(leg.id, { date: d })}
                     />
                   </div>
 
