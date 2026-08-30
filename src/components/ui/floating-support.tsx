@@ -71,6 +71,24 @@ export function FloatingSupport() {
             </button>
           </div>
 
+          {/* Ask AMD AI Assistant */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsExpanded(false);
+              window.dispatchEvent(new CustomEvent("open-ask-ai-drawer"));
+            }}
+            className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-orange-50 hover:text-orange-700 dark:text-slate-200 dark:hover:bg-orange-500/10 dark:hover:text-orange-400 transition-colors w-full text-left cursor-pointer"
+          >
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-[#FF5722] to-[#FF8A3D] text-white shadow-xs">
+              <Sparkles className="w-4 h-4 animate-pulse" />
+            </div>
+            <div className="flex flex-col text-left">
+              <span>Ask AMD AI Assistant</span>
+              <span className="text-[10px] text-slate-400 font-normal">Instant Smart Guide</span>
+            </div>
+          </button>
+
           {/* WhatsApp Direct Chat */}
           <a
             href="https://wa.me/4917972968560?text=Hello%20AMD%20Global%20Travel!%20I%20need%20assistance%20with%20flight%20booking."

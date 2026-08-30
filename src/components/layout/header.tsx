@@ -326,8 +326,18 @@ export function Header() {
             <LogoMark />
           </div>
 
-          {/* Right: currency + user account */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Right: currency + Ask AI + user account */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Ask AI Trigger Button */}
+            <button
+              type="button"
+              onClick={() => setAiDrawerOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#FF5722] via-[#FF8A3D] to-[#FFA000] text-white text-xs font-black shadow-md shadow-[#FF8A3D]/25 hover:shadow-lg hover:shadow-[#FF8A3D]/35 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+              <span className="tracking-tight font-outfit">Ask AI</span>
+            </button>
+
             {/* Currency selector */}
             <CurrencyDropdown />
 
@@ -377,6 +387,31 @@ export function Header() {
 
         {/* Drawer body — scrollable */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+          {/* Featured AMD AI Assistant Card */}
+          <div className="mb-3 p-3 rounded-2xl bg-gradient-to-br from-orange-500/10 via-amber-500/5 to-transparent border border-orange-500/20 shadow-xs">
+            <button
+              type="button"
+              onClick={() => {
+                setDrawerOpen(false);
+                setAiDrawerOpen(true);
+              }}
+              className="w-full flex items-center justify-between gap-2.5 text-left group cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform">
+                  <Sparkles className="w-4 h-4 animate-pulse" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-900 dark:text-slate-100 font-outfit">AMD AI Travel Guide</p>
+                  <p className="text-[10px] text-slate-400">Ask flights, visa & packages</p>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-full bg-[#FF8A3D] text-white tracking-wider">
+                AI
+              </span>
+            </button>
+          </div>
+
           {/* Primary nav */}
           {PRIMARY_NAV.map(({ label, href, icon: Icon, soon }) => {
             const active = pathname === href;
