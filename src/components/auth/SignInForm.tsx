@@ -15,29 +15,38 @@ export default function SignInForm() {
     setMounted(true);
   }, []);
 
-  const handleSubmit = (e?: React.FormEvent | React.MouseEvent) => {
+  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
     if (e) {
       e.preventDefault();
     }
+    setError("");
     setLoading(true);
 
-    // ⚡ INSTANT SYNCHRONOUS SESSION SET: Set session immediately in 0ms
-    if (typeof window !== "undefined") {
-      localStorage.setItem("admin_session", "true");
-      document.cookie = "admin_session=true; path=/; max-age=604800";
-    }
-
-    // Async login POST (non-blocking)
     try {
-      fetch("/api/admin/auth/login", {
+      const res = await fetch("/api/admin/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email || "admin@amdglobaltravel.com", password: password || "admin123" }),
-      }).catch(() => {});
-    } catch {}
+        body: JSON.stringify({ email: email.trim(), password: password.trim() }),
+      });
 
-    // 🚀 INSTANT REDIRECT TO ADMIN DASHBOARD
-    window.location.href = "/admin";
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setError(data.message || "Invalid email or password!");
+        setLoading(false);
+        return;
+      }
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("admin_session", "true");
+        document.cookie = "admin_session=true; path=/; max-age=604800";
+      }
+
+      window.location.href = "/admin";
+    } catch (err: any) {
+      setError(err?.message || "Something went wrong. Please try again.");
+      setLoading(false);
+    }
   };
 
   return (
