@@ -17,7 +17,7 @@ export function MainLayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Header />
-      <div className="min-h-[calc(100vh-4rem)] pb-12 md:pb-0">{children}</div>
+      <div className="min-h-[calc(100vh-4rem)] pb-24 md:pb-0">{children}</div>
       <Footer />
       <MobileBottomNav />
       <FloatingSupport />

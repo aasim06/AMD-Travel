@@ -52,11 +52,11 @@ export function FloatingSupport() {
   const strokeDashoffset = circumference - (scrollProgress / 100) * circumference;
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3 pointer-events-auto">
+    <div className="fixed bottom-20 right-3.5 sm:bottom-22 sm:right-5 md:bottom-6 md:right-6 z-40 flex flex-col items-end gap-2.5 pointer-events-auto">
       
       {/* Expanded Quick Action Popover Menu */}
       {isExpanded && (
-        <div className="flex flex-col gap-2 rounded-2xl bg-white/95 p-3 shadow-2xl backdrop-blur-md border border-slate-200/90 dark:bg-slate-900/95 dark:border-slate-800 animate-in fade-in slide-in-from-bottom-4 duration-200 min-w-[220px]">
+        <div className="flex flex-col gap-2 rounded-2xl bg-white/95 p-3 shadow-2xl backdrop-blur-md border border-slate-200/90 dark:bg-slate-900/95 dark:border-slate-800 animate-in fade-in slide-in-from-bottom-4 duration-200 min-w-[220px] max-w-[90vw]">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800">
             <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200">
               <Headset className="w-4 h-4 text-primary" />
