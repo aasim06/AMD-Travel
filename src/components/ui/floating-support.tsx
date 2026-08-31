@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { MessageCircle, PhoneCall, ArrowUp, X, Headset } from "lucide-react";
+import { MessageCircle, PhoneCall, ArrowUp, X, Headset, Sparkles } from "lucide-react";
 
 export function FloatingSupport() {
   const [showBackToTop, setShowBackToTop] = useState(false);

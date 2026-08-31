@@ -2,7 +2,7 @@ import dns from "node:dns";
 try { dns.setDefaultResultOrder("ipv4first"); } catch { /* ignore */ }
 
 import { NextRequest, NextResponse } from "next/server";
-import { getAmadeusToken, amadeusFetch, amadeusPostFetch } from "@/lib/amadeus";
+import { getAmadeusToken, amadeusFetch, amadeusPost } from "@/lib/amadeus";
 import type { FlightOffer, FlightSegment, Itinerary, TravelClass, Currency } from "@/types/flight";
 import { prisma } from "@/lib/prisma";
 
@@ -487,7 +487,7 @@ export async function POST(req: NextRequest) {
         },
       };
 
-      amadeusData = await amadeusPostFetch("/v2/shopping/flight-offers", token, postBody);
+      amadeusData = (await amadeusPost("/v2/shopping/flight-offers", token, postBody)) as AmadeusResponse;
 
     } else {
       // ── One-way / Round-trip: GET v2/shopping/flight-offers ────────────────
@@ -506,7 +506,7 @@ export async function POST(req: NextRequest) {
         params.set("returnDate", returnDate);
       }
 
-      amadeusData = await amadeusFetch("/v2/shopping/flight-offers", token, params);
+      amadeusData = (await amadeusFetch("/v2/shopping/flight-offers", { token, params })) as AmadeusResponse;
     }
 
     const rawOffers = amadeusData.data ?? [];

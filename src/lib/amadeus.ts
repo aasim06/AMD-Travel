@@ -147,6 +147,10 @@ export async function amadeusPost(path: string, token: string, payload: unknown)
   return amadeusFetch(path, { method: "POST", token, body: payload });
 }
 
+export async function amadeusPostFetch(endpointPath: string, payload: unknown, token?: string): Promise<unknown> {
+  return amadeusFetch(endpointPath, { method: "POST", token, body: payload });
+}
+
 export interface AmadeusTravelerInput {
   id: string;
   dateOfBirth: string;
