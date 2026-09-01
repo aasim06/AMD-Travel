@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     origin, destination, centerDate,
     returnDate = null,
     passengers = 1,
-    currency = "EUR", range = 3,
+    currency = "EUR", range = 10,
   } = body;
 
   const travelClass = normalizeTravelClass(body.travelClass);

@@ -29,7 +29,7 @@ function dayLabel(iso: string) {
   return format(parseISO(iso), "EEE d MMM"); // "Sat 1 Aug"
 }
 
-const PAGE = 4;
+const PAGE = 5;
 
 // ─── Skeleton cell ────────────────────────────────────────────────────────────
 
@@ -74,7 +74,7 @@ export function DatePriceStrip({
         centerDate: selectedDate,
         returnDate: returnDate ?? null,
         passengers, travelClass, currency,
-        range: 3,
+        range: 10, // 21 Days / 3 Weeks Range (-10 to +10 days)
       }),
     })
       .then(r => r.json())
