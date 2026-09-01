@@ -2180,39 +2180,7 @@ const fetchFlights = useCallback(async () => {
             {/* Loading */}
             {loading && (
               <div className="space-y-4">
-                {/* Live GDS Searching Status Banner */}
-                <div className="bg-card border border-primary/20 rounded-2xl p-4 shadow-sm relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-blue-500/10 to-transparent animate-pulse pointer-events-none" />
-                  <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="relative flex items-center justify-center h-10 w-10 rounded-xl bg-primary/10 text-primary shrink-0 border border-primary/20">
-                        <Plane className="h-5 w-5 animate-pulse" />
-                        <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                        </span>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-bold text-foreground">Searching Live Amadeus GDS</h3>
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                            LIVE
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {from && to ? `${from} ➔ ${to} · ` : ""}Querying 500+ global airlines, real-time seat availability, and live tariffs...
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 self-start sm:self-auto text-xs text-muted-foreground bg-muted/60 px-3 py-1.5 rounded-lg border border-border/50">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                      <span>Fetching best fares...</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Shimmering Flight Card Skeletons */}
-                {Array.from({ length: 4 }).map((_, i) => (
+                {Array.from({ length: 5 }).map((_, i) => (
                   <FlightSkeleton key={i} />
                 ))}
               </div>
@@ -2256,7 +2224,7 @@ const fetchFlights = useCallback(async () => {
                   {isSyncing ? (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 animate-pulse">
                       <Loader2 className="h-3 w-3 animate-spin shrink-0 text-amber-600" />
-                      <span>Syncing 100+ Live GDS Airlines...</span>
+                      <span>Searching live flights...</span>
                     </span>
                   ) : fromCache ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-secondary/15 px-2.5 py-0.5 text-[11px] font-semibold text-secondary">
@@ -2264,7 +2232,7 @@ const fetchFlights = useCallback(async () => {
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">
-                      ✓ Live GDS Connected
+                      ✓ Live Verified Flights
                     </span>
                   )}
                 </div>
