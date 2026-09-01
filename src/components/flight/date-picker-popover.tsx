@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import type { DateRange as DayPickerRange } from "react-day-picker";
 import { CalendarDays, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -272,14 +273,27 @@ export function DatePickerPopover({
     return (
       <>
         <TriggerButton onClick={() => setOpen(v => !v)} />
-        {open && (
-          <>
-            <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setOpen(false)} />
-            <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl shadow-2xl overflow-y-auto max-h-[90vh]">
-              <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-3 mb-1" />
+        {open && typeof document !== "undefined" && createPortal(
+          <div className="fixed inset-0 z-[999999] flex flex-col justify-end">
+            <div
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in-0 duration-200"
+              onClick={() => setOpen(false)}
+            />
+            <div className="relative z-10 w-full bg-white rounded-t-3xl shadow-2xl overflow-y-auto max-h-[88vh] animate-in slide-in-from-bottom duration-250 pb-6">
+              <div className="flex items-center justify-between px-5 pt-3 pb-1 border-b border-slate-100">
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Select Dates</span>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="h-8 w-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
               <CalendarPanel onClose={() => setOpen(false)} />
             </div>
-          </>
+          </div>,
+          document.body
         )}
       </>
     );
@@ -296,7 +310,7 @@ export function DatePickerPopover({
       <PopoverContent
         align="start"
         sideOffset={6}
-        className="w-auto p-0 rounded-2xl border border-slate-200 shadow-[0_8px_40px_rgba(0,0,0,0.12)]"
+        className="w-auto p-0 rounded-2xl border border-slate-200 shadow-[0_8px_40px_rgba(0,0,0,0.12)] z-[99999]"
         onInteractOutside={() => setOpen(false)}
       >
         <CalendarPanel onClose={() => setOpen(false)} />
