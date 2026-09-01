@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import type { DateRange as DayPickerRange } from "react-day-picker";
-import { CalendarDays, X } from "lucide-react";
+import { CalendarDays, X, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCurrency } from "@/context/currency-context";
 import { RATES, SYMBOLS } from "@/lib/currency";
-
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -37,7 +36,12 @@ function formatDisplay(d: Date | null) {
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
-// ─── Mock price helper (same seed logic as before) ───────────────────────────
+function formatShort(d: Date | null) {
+  if (!d) return null;
+  return d.toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short" });
+}
+
+// ─── Mock price helper ────────────────────────────────────────────────────────
 
 function getMockPrice(date: Date): number | null {
   const seed = (date.getDate() * 37 + date.getMonth() * 13) % 100;
@@ -72,23 +76,29 @@ function PricedDay({
   symbol: string;
   rate: number;
 }) {
-  const price    = getMockPrice(date);
-  const cheapest = Math.min(cheapestLeft, cheapestRight);
-  const isCheap  = price !== null && price === cheapest;
+  const price     = getMockPrice(date);
+  const cheapest  = Math.min(cheapestLeft, cheapestRight);
+  const isCheap   = price !== null && price === cheapest;
   const converted = price !== null ? Math.round(price * rate) : null;
 
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full gap-px">
-      <span className="text-[15px] font-semibold leading-none">{date.getDate()}</span>
-      {converted !== null && (
+    <div className="flex flex-col items-center justify-center w-full h-full select-none py-0.5">
+      <span className="text-xs sm:text-sm font-semibold leading-none">{date.getDate()}</span>
+      {converted !== null ? (
         <span
           className={cn(
-            "text-[10px] font-medium leading-none mt-0.5",
-            isSelected ? "text-white/80" : isCheap ? "text-emerald-500 font-bold" : "text-slate-400"
+            "text-[9px] sm:text-[10px] leading-none mt-1 transition-colors",
+            isSelected
+              ? "text-white/90 font-medium"
+              : isCheap
+              ? "text-emerald-600 font-bold"
+              : "text-slate-400"
           )}
         >
           {symbol}{converted}
         </span>
+      ) : (
+        <span className="h-[9px] sm:h-[10px] mt-1" />
       )}
     </div>
   );
@@ -105,10 +115,17 @@ export function DatePickerPopover({
   const symbol = SYMBOLS[currency];
   const rate   = RATES[currency];
 
-  const [open, setOpen]           = useState(false);
-  const [month, setMonth]         = useState<Date>(
-    value.departure ?? today
-  );
+  const [open, setOpen] = useState(false);
+  const [month, setMonth] = useState<Date>(value.departure ?? today);
+
+  // Responsive state
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   // Derive cheapest prices for the two visible months
   const rightMonthDate = new Date(month.getFullYear(), month.getMonth() + 1, 1);
@@ -131,11 +148,30 @@ export function DatePickerPopover({
     onChange({ departure: dep, returnDate: isRoundTrip ? ret : null });
     // Auto-close when both dates picked (round-trip) or any date (one-way)
     if (!isRoundTrip && dep) { setOpen(false); return; }
-    if (isRoundTrip && dep && ret) { setOpen(false); }
+    if (isRoundTrip && dep && ret) {
+      // Small timeout for visual confirmation
+      setTimeout(() => setOpen(false), 200);
+    }
   }
 
   function clearDates() {
     onChange({ departure: null, returnDate: null });
+  }
+
+  // Quick shortcuts
+  function applyShortcut(daysFromNow: number, tripDays?: number) {
+    const dep = new Date();
+    dep.setDate(dep.getDate() + daysFromNow);
+    let ret: Date | null = null;
+    if (isRoundTrip && tripDays) {
+      ret = new Date(dep);
+      ret.setDate(ret.getDate() + tripDays);
+    }
+    onChange({ departure: dep, returnDate: ret });
+    setMonth(dep);
+    if (!isRoundTrip || (isRoundTrip && ret)) {
+      setOpen(false);
+    }
   }
 
   // Trigger label
@@ -149,82 +185,171 @@ export function DatePickerPopover({
 
   // Guide header text
   const guideText = !value.departure
-    ? "Select departure date"
+    ? "Select Departure Date"
     : isRoundTrip && !value.returnDate
-    ? "Now select return date"
-    : null;
+    ? "Select Return Date"
+    : "Dates Selected";
 
   // ── Shared calendar panel ─────────────────────────────────────────────────
-  function CalendarPanel({ onClose: _onClose }: { onClose: () => void }) {
+  function CalendarPanel({ onClose }: { onClose: () => void }) {
     return (
-      <div className="flex flex-col max-h-[80vh] overflow-y-auto">
-        {/* Guide header */}
-        {guideText && (
-          <div className="px-4 sm:px-6 pt-4 pb-0 flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
-            <span className="text-xs font-bold text-primary uppercase tracking-widest">{guideText}</span>
-            {isRoundTrip && (
-              <span className="text-[11px] font-semibold text-slate-400">Showing 2 Months</span>
+      <div className="flex flex-col w-full bg-white rounded-2xl overflow-hidden max-h-[85vh]">
+        {/* Top Header */}
+        <div className="px-4 sm:px-6 pt-4 pb-3 border-b border-slate-100 bg-slate-50/50">
+          <div className="flex items-center justify-between gap-3 mb-2.5">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center justify-center h-5 px-2 rounded-full bg-primary/10 text-primary text-[11px] font-bold">
+                {guideText}
+              </span>
+              {isRoundTrip && !isMobile && (
+                <span className="text-[11px] font-medium text-slate-400">· 2-Month View</span>
+              )}
+            </div>
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="h-7 w-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
             )}
           </div>
-        )}
-        {/* Calendar */}
-        <Calendar
-          mode="range"
-          numberOfMonths={isRoundTrip ? 2 : 1}
-          selected={selected}
-          onSelect={handleSelect}
-          month={month}
-          onMonthChange={setMonth}
-          disabled={{ before: today }}
-          showOutsideDays={false}
-          className="p-3 sm:p-6"
-          classNames={{
-            months:              "flex flex-col sm:flex-row gap-6 sm:gap-10",
-            month:               "flex flex-col gap-4 min-w-[260px]",
-            caption:             "relative flex items-center justify-center h-10",
-            caption_label:       "text-base font-bold text-slate-800 pointer-events-none",
-            nav:                 "flex items-center gap-1",
-            nav_button:          cn(
-              "absolute h-8 w-8 rounded-lg border border-slate-200 bg-white",
-              "flex items-center justify-center transition-colors",
-              "hover:bg-slate-50 text-slate-500 hover:text-primary hover:border-primary/40"
-            ),
-            nav_button_previous: "left-0",
-            nav_button_next:     "right-0",
-            table:               "w-full border-collapse mt-2",
-            head_row:            "flex",
-            head_cell:           "w-[52px] text-center text-[11px] font-semibold text-slate-400 uppercase tracking-wide",
-            row:                 "flex w-full mt-1",
-            cell:                "relative w-[52px] h-[60px] p-0 text-center focus-within:z-20",
-            day:                 cn(
-              "w-[52px] h-[60px] p-0 font-normal rounded-xl text-slate-700 transition-colors",
-              "hover:bg-slate-100 hover:text-slate-900",
-              "focus:outline-none focus:ring-2 focus:ring-primary/30"
-            ),
-            day_selected:        "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground rounded-xl",
-            day_range_start:     "bg-primary text-primary-foreground rounded-xl",
-            day_range_end:       "bg-primary text-primary-foreground rounded-xl",
-            day_range_middle:    "!bg-transparent !text-slate-700 rounded-none hover:!bg-slate-100",
-            day_today:           "font-bold underline underline-offset-2 decoration-primary",
-            day_outside:         "opacity-0 pointer-events-none",
-            day_disabled:        "text-slate-300 opacity-40 cursor-not-allowed hover:bg-transparent",
-            day_hidden:          "invisible",
-          }}
-          components={{
-            DayContent: ({ date, activeModifiers }) => (
-              <PricedDay
-                date={date}
-                cheapestLeft={cheapestLeft}
-                cheapestRight={cheapestRight}
-                isSelected={!activeModifiers.range_middle && (activeModifiers.range_start || activeModifiers.range_end || (activeModifiers.selected && !activeModifiers.range_start && !activeModifiers.range_end))}
-                symbol={symbol}
-                rate={rate}
-              />
-            ),
-          }}
-        />
 
+          {/* Departure vs Return Badges */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className={cn(
+              "px-3 py-1.5 rounded-xl border transition-all",
+              value.departure ? "border-primary/40 bg-white shadow-xs" : "border-slate-200 bg-white/60"
+            )}>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Departure</span>
+              <span className="text-xs font-bold text-slate-800 truncate block">
+                {value.departure ? formatShort(value.departure) : "Select date"}
+              </span>
+            </div>
 
+            {isRoundTrip ? (
+              <div className={cn(
+                "px-3 py-1.5 rounded-xl border transition-all",
+                value.returnDate ? "border-primary/40 bg-white shadow-xs" : "border-slate-200 bg-white/60"
+              )}>
+                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Return</span>
+                <span className="text-xs font-bold text-slate-800 truncate block">
+                  {value.returnDate ? formatShort(value.returnDate) : "Select date"}
+                </span>
+              </div>
+            ) : (
+              <div className="px-3 py-1.5 rounded-xl border border-slate-100 bg-slate-50 flex items-center">
+                <span className="text-[11px] text-slate-400 font-medium">One-way trip</span>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Shortcuts Bar */}
+          <div className="flex items-center gap-1.5 mt-2.5 overflow-x-auto no-scrollbar py-0.5">
+            <button
+              type="button"
+              onClick={() => applyShortcut(1, isRoundTrip ? 7 : undefined)}
+              className="px-2.5 py-1 rounded-lg border border-slate-200 hover:border-primary/40 hover:bg-white text-[10px] font-semibold text-slate-600 hover:text-primary transition-all whitespace-nowrap"
+            >
+              Tomorrow {isRoundTrip ? "(1 wk)" : ""}
+            </button>
+            <button
+              type="button"
+              onClick={() => applyShortcut(7, isRoundTrip ? 7 : undefined)}
+              className="px-2.5 py-1 rounded-lg border border-slate-200 hover:border-primary/40 hover:bg-white text-[10px] font-semibold text-slate-600 hover:text-primary transition-all whitespace-nowrap"
+            >
+              Next Week
+            </button>
+            <button
+              type="button"
+              onClick={() => applyShortcut(14, isRoundTrip ? 10 : undefined)}
+              className="px-2.5 py-1 rounded-lg border border-slate-200 hover:border-primary/40 hover:bg-white text-[10px] font-semibold text-slate-600 hover:text-primary transition-all whitespace-nowrap"
+            >
+              In 2 Weeks
+            </button>
+          </div>
+        </div>
+
+        {/* Calendar Body */}
+        <div className="p-3 sm:p-5 overflow-y-auto max-h-[58vh]">
+          <Calendar
+            mode="range"
+            numberOfMonths={isMobile ? 1 : isRoundTrip ? 2 : 1}
+            selected={selected}
+            onSelect={handleSelect}
+            month={month}
+            onMonthChange={setMonth}
+            disabled={{ before: today }}
+            showOutsideDays={false}
+            className="p-0 select-none"
+            classNames={{
+              months:              "flex flex-col sm:flex-row gap-6 sm:gap-8 justify-center items-start",
+              month:               "w-full sm:w-[280px] flex flex-col gap-3",
+              caption:             "relative flex items-center justify-center h-9 px-1 mb-1",
+              caption_label:       "text-sm sm:text-base font-bold text-slate-800",
+              nav:                 "flex items-center gap-1",
+              nav_button:          cn(
+                "h-8 w-8 rounded-lg border border-slate-200 bg-white",
+                "flex items-center justify-center transition-colors shadow-xs",
+                "hover:bg-slate-50 text-slate-600 hover:text-primary hover:border-primary/40"
+              ),
+              nav_button_previous: "absolute left-0",
+              nav_button_next:     "absolute right-0",
+              table:               "w-full border-collapse",
+              head_row:            "grid grid-cols-7 mb-1",
+              head_cell:           "text-center text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider py-1",
+              row:                 "grid grid-cols-7 w-full mt-1",
+              cell:                "relative h-11 sm:h-12 p-0 text-center flex items-center justify-center focus-within:z-20",
+              day:                 cn(
+                "w-full h-full p-0 font-medium rounded-xl text-slate-700 transition-all",
+                "hover:bg-slate-100 hover:text-slate-900",
+                "focus:outline-none focus:ring-2 focus:ring-primary/30"
+              ),
+              day_selected:        "!bg-primary !text-white !rounded-xl font-bold shadow-xs",
+              day_range_start:     "!bg-primary !text-white !rounded-l-xl !rounded-r-none font-bold shadow-xs",
+              day_range_end:       "!bg-primary !text-white !rounded-r-xl !rounded-l-none font-bold shadow-xs",
+              day_range_middle:    "!bg-primary/10 !text-primary !font-semibold !rounded-none hover:!bg-primary/15",
+              day_today:           "border border-primary/40 font-bold text-primary",
+              day_outside:         "opacity-0 pointer-events-none",
+              day_disabled:        "text-slate-300 opacity-30 cursor-not-allowed hover:bg-transparent",
+              day_hidden:          "invisible",
+            }}
+            components={{
+              IconLeft:  () => <ChevronLeft className="h-4 w-4" />,
+              IconRight: () => <ChevronRight className="h-4 w-4" />,
+              DayContent: ({ date, activeModifiers }) => (
+                <PricedDay
+                  date={date}
+                  cheapestLeft={cheapestLeft}
+                  cheapestRight={cheapestRight}
+                  isSelected={!activeModifiers.range_middle && (activeModifiers.range_start || activeModifiers.range_end || (activeModifiers.selected && !activeModifiers.range_start && !activeModifiers.range_end))}
+                  symbol={symbol}
+                  rate={rate}
+                />
+              ),
+            }}
+          />
+        </div>
+
+        {/* Footer Actions */}
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-t border-slate-100 bg-slate-50/70">
+          <button
+            type="button"
+            onClick={clearDates}
+            className="text-xs font-semibold text-slate-400 hover:text-red-500 transition-colors"
+          >
+            Clear Dates
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer"
+          >
+            <Check className="h-3.5 w-3.5" />
+            <span>Apply Dates</span>
+          </button>
+        </div>
       </div>
     );
   }
@@ -279,17 +404,8 @@ export function DatePickerPopover({
               className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in-0 duration-200"
               onClick={() => setOpen(false)}
             />
-            <div className="relative z-10 w-full bg-white rounded-t-3xl shadow-2xl overflow-y-auto max-h-[88vh] animate-in slide-in-from-bottom duration-250 pb-6">
-              <div className="flex items-center justify-between px-5 pt-3 pb-1 border-b border-slate-100">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Select Dates</span>
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="h-8 w-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+            <div className="relative z-10 w-full bg-white rounded-t-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-250">
+              <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 mb-1" />
               <CalendarPanel onClose={() => setOpen(false)} />
             </div>
           </div>,
@@ -310,7 +426,7 @@ export function DatePickerPopover({
       <PopoverContent
         align="start"
         sideOffset={6}
-        className="w-auto p-0 rounded-2xl border border-slate-200 shadow-[0_8px_40px_rgba(0,0,0,0.12)] z-[99999]"
+        className="w-auto p-0 rounded-2xl border border-slate-200 shadow-[0_12px_48px_rgba(0,0,0,0.14)] z-[99999] overflow-hidden"
         onInteractOutside={() => setOpen(false)}
       >
         <CalendarPanel onClose={() => setOpen(false)} />
