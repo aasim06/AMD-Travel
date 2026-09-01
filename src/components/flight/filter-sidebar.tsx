@@ -211,8 +211,8 @@ function CustomRadio({
         {checked && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
       </div>
       <span
-        className={`text-sm transition-colors ${
-          checked ? "font-semibold text-slate-900" : "text-slate-600 group-hover:text-slate-900"
+        className={`text-xs sm:text-sm font-normal transition-colors ${
+          checked ? "text-slate-900" : "text-slate-600 group-hover:text-slate-900"
         }`}
       >
         {label}
@@ -266,8 +266,8 @@ function CustomCheckbox({
           )}
         </div>
         <span
-          className={`text-sm truncate transition-colors ${
-            checked ? "font-semibold text-slate-900" : "text-slate-600 group-hover:text-slate-900"
+          className={`text-xs sm:text-sm font-normal truncate transition-colors ${
+            checked ? "text-slate-900" : "text-slate-600 group-hover:text-slate-900"
           }`}
         >
           {label}
@@ -530,7 +530,7 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
                   Clear
                 </button>
               </div>
-              <div className="max-h-48 overflow-y-auto space-y-1 pr-1 no-scrollbar">
+              <div className="max-h-56 overflow-y-auto space-y-1 pr-1.5 custom-scrollbar overscroll-contain">
                 {availableAirlines.map(airline => (
                   <CustomCheckbox
                     key={airline.code}
