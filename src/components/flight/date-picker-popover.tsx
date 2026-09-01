@@ -66,6 +66,7 @@ function PricedDay({
   cheapestLeft,
   cheapestRight,
   isSelected,
+  isMiddle,
   symbol,
   rate,
 }: {
@@ -73,6 +74,7 @@ function PricedDay({
   cheapestLeft: number;
   cheapestRight: number;
   isSelected?: boolean;
+  isMiddle?: boolean;
   symbol: string;
   rate: number;
 }) {
@@ -82,14 +84,21 @@ function PricedDay({
   const converted = price !== null ? Math.round(price * rate) : null;
 
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full select-none py-0.5">
-      <span className="text-xs sm:text-sm font-semibold leading-none">{date.getDate()}</span>
+    <div className="flex flex-col items-center justify-center w-full h-full select-none py-1">
+      <span className={cn(
+        "text-xs sm:text-sm font-semibold leading-none",
+        isSelected ? "text-white font-bold" : isMiddle ? "text-slate-900 font-bold" : "text-slate-700"
+      )}>
+        {date.getDate()}
+      </span>
       {converted !== null ? (
         <span
           className={cn(
             "text-[9px] sm:text-[10px] leading-none mt-1 transition-colors",
             isSelected
-              ? "text-white/90 font-medium"
+              ? "text-white/95 font-medium"
+              : isMiddle
+              ? "text-primary font-bold"
               : isCheap
               ? "text-emerald-600 font-bold"
               : "text-slate-400"
@@ -286,33 +295,33 @@ export function DatePickerPopover({
             classNames={{
               months:              "flex flex-col sm:flex-row gap-6 sm:gap-8 justify-center items-start",
               month:               "w-full sm:w-[280px] flex flex-col gap-3",
-              caption:             "relative flex items-center justify-center h-9 px-1 mb-1",
+              caption:             "relative flex items-center justify-center h-10 px-1 mb-1",
               caption_label:       "text-sm sm:text-base font-bold text-slate-800",
               nav:                 "flex items-center gap-1",
               nav_button:          cn(
-                "h-8 w-8 rounded-lg border border-slate-200 bg-white",
+                "h-8 w-8 rounded-xl border border-slate-200 bg-white",
                 "flex items-center justify-center transition-colors shadow-xs",
                 "hover:bg-slate-50 text-slate-600 hover:text-primary hover:border-primary/40"
               ),
               nav_button_previous: "absolute left-0",
               nav_button_next:     "absolute right-0",
               table:               "w-full border-collapse",
-              head_row:            "grid grid-cols-7 mb-1",
+              head_row:            "grid grid-cols-7 mb-2",
               head_cell:           "text-center text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider py-1",
-              row:                 "grid grid-cols-7 w-full mt-1",
+              row:                 "grid grid-cols-7 w-full mt-1.5",
               cell:                "relative h-11 sm:h-12 p-0 text-center flex items-center justify-center focus-within:z-20",
               day:                 cn(
                 "w-full h-full p-0 font-medium rounded-xl text-slate-700 transition-all",
                 "hover:bg-slate-100 hover:text-slate-900",
                 "focus:outline-none focus:ring-2 focus:ring-primary/30"
               ),
-              day_selected:        "!bg-primary !text-white !rounded-xl font-bold shadow-xs",
-              day_range_start:     "!bg-primary !text-white !rounded-l-xl !rounded-r-none font-bold shadow-xs",
-              day_range_end:       "!bg-primary !text-white !rounded-r-xl !rounded-l-none font-bold shadow-xs",
-              day_range_middle:    "!bg-primary/10 !text-primary !font-semibold !rounded-none hover:!bg-primary/15",
+              day_selected:        "!bg-primary !text-white !rounded-xl font-bold shadow-md shadow-primary/20",
+              day_range_start:     "!bg-primary !text-white !rounded-l-2xl !rounded-r-none font-bold shadow-md shadow-primary/20",
+              day_range_end:       "!bg-primary !text-white !rounded-r-2xl !rounded-l-none font-bold shadow-md shadow-primary/20",
+              day_range_middle:    "!bg-primary/15 !text-slate-900 !font-bold !rounded-none hover:!bg-primary/20",
               day_today:           "border border-primary/40 font-bold text-primary",
               day_outside:         "opacity-0 pointer-events-none",
-              day_disabled:        "text-slate-300 opacity-30 cursor-not-allowed hover:bg-transparent",
+              day_disabled:        "text-slate-300 opacity-25 cursor-not-allowed hover:bg-transparent",
               day_hidden:          "invisible",
             }}
             components={{
@@ -324,6 +333,7 @@ export function DatePickerPopover({
                   cheapestLeft={cheapestLeft}
                   cheapestRight={cheapestRight}
                   isSelected={!activeModifiers.range_middle && (activeModifiers.range_start || activeModifiers.range_end || (activeModifiers.selected && !activeModifiers.range_start && !activeModifiers.range_end))}
+                  isMiddle={Boolean(activeModifiers.range_middle)}
                   symbol={symbol}
                   rate={rate}
                 />
@@ -333,7 +343,7 @@ export function DatePickerPopover({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-t border-slate-100 bg-slate-50/70">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-t border-slate-100 bg-slate-50/80">
           <button
             type="button"
             onClick={clearDates}
@@ -344,7 +354,7 @@ export function DatePickerPopover({
           <button
             type="button"
             onClick={onClose}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer"
           >
             <Check className="h-3.5 w-3.5" />
             <span>Apply Dates</span>
@@ -399,13 +409,13 @@ export function DatePickerPopover({
       <>
         <TriggerButton onClick={() => setOpen(v => !v)} />
         {open && typeof document !== "undefined" && createPortal(
-          <div className="fixed inset-0 z-[999999] flex flex-col justify-end">
+          <div className="fixed inset-0 z-[999999] flex flex-col justify-end sm:justify-center items-center p-3 pb-4 sm:p-6">
             <div
               className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in-0 duration-200"
               onClick={() => setOpen(false)}
             />
-            <div className="relative z-10 w-full bg-white rounded-t-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-250">
-              <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 mb-1" />
+            <div className="relative z-10 w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200/80 animate-in slide-in-from-bottom-4 duration-250">
+              <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 mb-1 sm:hidden" />
               <CalendarPanel onClose={() => setOpen(false)} />
             </div>
           </div>,
