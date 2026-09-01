@@ -8,9 +8,71 @@ import path from "path";
 import { generateDynamicCarVoucherBase64, generateCarBookingCard, generateUmrahBookingCard } from "./dynamicVoucherGenerator";
 
 // Declare global type augmentation to maintain singleton across Next.js HMR
+export type WhatsAppConnectionStatus = "connecting" | "qr_pending" | "connected" | "disconnected";
+
 declare global {
   var baileysSocketPromise: Promise<WASocket> | null;
   var baileysSocket: WASocket | null;
+  var whatsappQR: string | null;
+  var whatsappStatus: WhatsAppConnectionStatus;
+  var whatsappUser: { id?: string; name?: string } | null;
+  var whatsappLastDisconnectReason: string | null;
+}
+
+if (!globalThis.whatsappStatus) {
+  globalThis.whatsappStatus = "disconnected";
+}
+if (globalThis.whatsappQR === undefined) {
+  globalThis.whatsappQR = null;
+}
+if (globalThis.whatsappUser === undefined) {
+  globalThis.whatsappUser = null;
+}
+
+/**
+ * Get current in-memory WhatsApp Gateway status and raw QR code
+ */
+export function getWhatsAppGatewayState() {
+  return {
+    status: globalThis.whatsappStatus || "disconnected",
+    rawQr: globalThis.whatsappQR || null,
+    user: globalThis.whatsappUser || null,
+    error: globalThis.whatsappLastDisconnectReason || null,
+  };
+}
+
+/**
+ * Reset and restart the Baileys WhatsApp Gateway socket (optionally clearing auth session)
+ */
+export async function restartWhatsAppGateway(clearSession = false) {
+  try {
+    if (globalThis.baileysSocket) {
+      try {
+        globalThis.baileysSocket.end(undefined);
+      } catch {}
+    }
+  } catch {}
+
+  globalThis.baileysSocket = null;
+  globalThis.baileysSocketPromise = null;
+  globalThis.whatsappQR = null;
+  globalThis.whatsappStatus = "connecting";
+  globalThis.whatsappUser = null;
+
+  if (clearSession) {
+    try {
+      const fs = eval("require")("fs");
+      const authFolder = path.join(process.cwd(), "auth_info_baileys");
+      if (fs.existsSync(authFolder)) {
+        fs.rmSync(authFolder, { recursive: true, force: true });
+        console.log("[WhatsApp Baileys] Auth session directory cleared:", authFolder);
+      }
+    } catch (err) {
+      console.warn("[WhatsApp Baileys] Could not remove auth folder:", err);
+    }
+  }
+
+  return getWhatsAppSocket();
 }
 
 /**
@@ -63,6 +125,8 @@ export async function getWhatsAppSocket(): Promise<WASocket> {
     return globalThis.baileysSocketPromise;
   }
 
+  globalThis.whatsappStatus = "connecting";
+
   globalThis.baileysSocketPromise = (async () => {
     try {
       const baileys = eval("require")("@whiskeysockets/baileys");
@@ -75,7 +139,6 @@ export async function getWhatsAppSocket(): Promise<WASocket> {
 
       console.log(`[WhatsApp Baileys] Initializing socket from [${authFolder}] version [${version.join(".")}]...`);
 
-      const qrcodeTerminal = eval("require")("qrcode-terminal");
       const pino = eval("require")("pino");
 
       const sock = makeWASocket({
@@ -83,7 +146,7 @@ export async function getWhatsAppSocket(): Promise<WASocket> {
         auth: state,
         logger: pino({ level: "silent" }),
         printQRInTerminal: false,
-        browser: ["AMD Global Travel Gateway", "Chrome", "1.0.0"],
+        browser: ["AMD Global Travel Admin Gateway", "Chrome", "1.0.0"],
       });
 
       sock.ev.on("creds.update", saveCreds);
@@ -92,16 +155,21 @@ export async function getWhatsAppSocket(): Promise<WASocket> {
         const { connection, lastDisconnect, qr } = update;
 
         if (qr) {
-          console.log("\n==================================================");
-          console.log("📲 [WhatsApp Baileys] SCAN THIS QR CODE TO CONNECT:");
-          console.log("==================================================");
-          qrcodeTerminal.generate(qr, { small: true });
-          console.log("==================================================\n");
+          globalThis.whatsappQR = qr;
+          globalThis.whatsappStatus = "qr_pending";
+          console.log("📲 [WhatsApp Baileys] New QR Code generated for Admin UI display.");
         }
 
         if (connection === "open") {
           console.log("🟢 [WhatsApp Baileys] Gateway Connected Successfully!");
+          globalThis.whatsappQR = null;
+          globalThis.whatsappStatus = "connected";
           globalThis.baileysSocket = sock;
+          try {
+            globalThis.whatsappUser = (sock as any).user || null;
+          } catch {
+            globalThis.whatsappUser = null;
+          }
         }
 
         if (connection === "close") {
@@ -109,13 +177,17 @@ export async function getWhatsAppSocket(): Promise<WASocket> {
           const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
 
           console.warn(
-            `[WhatsApp Baileys] Connection closed due to:`,
-            lastDisconnect?.error || "Unknown error",
+            `[WhatsApp Baileys] Connection closed:`,
+            lastDisconnect?.error?.message || lastDisconnect?.error || "Unknown error",
             `| Reconnecting: ${shouldReconnect}`
           );
 
+          globalThis.whatsappQR = null;
+          globalThis.whatsappStatus = shouldReconnect ? "connecting" : "disconnected";
+          globalThis.whatsappLastDisconnectReason = lastDisconnect?.error?.message || "Connection closed";
           globalThis.baileysSocket = null;
           globalThis.baileysSocketPromise = null;
+          globalThis.whatsappUser = null;
 
           if (shouldReconnect) {
             setTimeout(() => {
@@ -132,6 +204,7 @@ export async function getWhatsAppSocket(): Promise<WASocket> {
     } catch (error) {
       console.error("[WhatsApp Baileys] Socket initialization error:", error);
       globalThis.baileysSocketPromise = null;
+      globalThis.whatsappStatus = "disconnected";
       throw error;
     }
   })();
