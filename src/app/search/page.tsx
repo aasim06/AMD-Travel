@@ -1858,6 +1858,7 @@ function SearchContent() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [failedLegs, setFailedLegs] = useState<string[]>([]);
   const [sortKey, setSortKey]     = useState<SortKey | OtherSort>("best");
+  const [displayCount, setDisplayCount] = useState(15);
   const initialBags = parseInt(searchParams.get("bags") ?? searchParams.get("checkedBags") ?? "0", 10);
   const [filters, setFilters]           = useState<FilterState>(() => ({
     ...getDefaultFilters(9999),
@@ -1865,6 +1866,11 @@ function SearchContent() {
   }));
   const [selectedFlight, setSelectedFlight] = useState<FlightOffer | null>(null);
   const [fareTierOffer, setFareTierOffer]   = useState<FlightOffer | null>(null);
+
+  // Reset display count when results or filters change
+  useEffect(() => {
+    setDisplayCount(15);
+  }, [filters, sortKey, results.length]);
 
   function handleSelectFlight(offer: FlightOffer) {
     setFareTierOffer(offer);
@@ -2283,16 +2289,34 @@ const fetchFlights = useCallback(async () => {
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {filteredResults.map((offer) => (
-                      <FlightCard
-                        key={offer.id}
-                        offer={offer}
-                        carriers={carriers}
-                        onSelect={handleSelectFlight}
-                      />
-                    ))}
-                  </div>
+                  <>
+                    <div className="space-y-3">
+                      {filteredResults.slice(0, displayCount).map((offer) => (
+                        <FlightCard
+                          key={offer.id}
+                          offer={offer}
+                          carriers={carriers}
+                          onSelect={handleSelectFlight}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Show More Flights Button */}
+                    {displayCount < filteredResults.length && (
+                      <div className="pt-6 pb-2 flex flex-col items-center gap-2">
+                        <button
+                          onClick={() => setDisplayCount((prev) => Math.min(prev + 20, filteredResults.length))}
+                          className="px-6 py-2.5 rounded-xl bg-card border border-border shadow-sm text-sm font-semibold text-foreground hover:bg-muted/80 transition-all flex items-center gap-2 group"
+                        >
+                          <span>Show More Flights (+{Math.min(20, filteredResults.length - displayCount)} more)</span>
+                          <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:translate-y-0.5 transition-transform" />
+                        </button>
+                        <p className="text-xs text-muted-foreground">
+                          Showing {Math.min(displayCount, filteredResults.length)} of {filteredResults.length} available flights
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}
