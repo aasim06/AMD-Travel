@@ -34,19 +34,19 @@ import type { CurrencyCode } from "@/lib/currency";
 // ─── Drawer nav items ─────────────────────────────────────────────────────────
 
 const PRIMARY_NAV = [
-  { label: "Flights",         href: "/flights",          icon: Plane,    soon: true  },
-  { label: "Stays / Hotels",  href: "/stays",            icon: Hotel,    soon: true  },
-  { label: "Cars",            href: "/cars",             icon: Car,      soon: true  },
+  { label: "Flights",         href: "/",                 icon: Plane,    soon: false },
+  { label: "Stays / Hotels",  href: "/stays",            icon: Hotel,    soon: false },
+  { label: "Cars",            href: "/cars",             icon: Car,      soon: false },
   { label: "Tour Packages",   href: "/tour-deals",       icon: Package,  soon: false },
   { label: "Umrah",           href: "/umrah-packages",   icon: Moon,     soon: false },
   { label: "Visa",            href: "/visa",             icon: FileText, soon: false },
 ];
 
 const SECONDARY_NAV = [
-  { label: "Explore Destinations", href: "/destinations", icon: MapPin,       soon: true  },
-  { label: "My Bookings / Trips",  href: "/bookings",     icon: BookOpen,     soon: true  },
+  { label: "Explore Destinations", href: "/tour-deals",   icon: MapPin,        soon: false },
+  { label: "My Bookings / Trips",  href: "/bookings",     icon: BookOpen,      soon: false },
   { label: "Contact Us",           href: "/contact",      icon: MessageCircle, soon: false },
-  { label: "Language & Currency",  href: "/settings",     icon: Globe,        soon: true  },
+  { label: "Language & Currency",  href: "/settings",     icon: Globe,         soon: false },
 ];
 
 // ─── Logo mark (shared) ───────────────────────────────────────────────────────
