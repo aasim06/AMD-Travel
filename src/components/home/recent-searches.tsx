@@ -53,8 +53,12 @@ function cityOf(code: string) {
   return AIRPORTS[code]?.city ?? code;
 }
 
-function timeAgo(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
+function timeAgo(iso?: string) {
+  if (!iso) return "recently";
+  const date = new Date(iso);
+  if (isNaN(date.getTime())) return "recently";
+  const diff = Date.now() - date.getTime();
+  if (isNaN(diff) || diff < 0) return "just now";
   const mins = Math.floor(diff / 60000);
   if (mins < 1)  return "just now";
   if (mins < 60) return `${mins}m ago`;
@@ -72,8 +76,6 @@ const POPULAR_ROUTES = [
   { origin: "LHE", destination: "IST", price: 410, label: "Lahore → Istanbul"    },
 ];
 
-
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function RecentSearches() {
@@ -82,29 +84,53 @@ export function RecentSearches() {
   const [mounted, setMounted] = useState(false);
   const { formatPrice } = useCurrency();
 
-  useEffect(() => {
-    setMounted(true);
+  const loadAndSanitizeSearches = () => {
     try {
       const raw = localStorage.getItem(RECENT_SEARCHES_KEY);
-      if (raw) setSearches(JSON.parse(raw));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          const clean: RecentSearch[] = parsed.map((item: any, idx: number) => ({
+            id: item.id || `search-${idx}-${Date.now()}`,
+            origin: item.origin || "LHE",
+            destination: item.destination || "LHR",
+            departureDate: item.departureDate || new Date().toISOString().split("T")[0],
+            returnDate: item.returnDate,
+            passengers: Number(item.passengers) || 1,
+            travelClass: item.travelClass || "ECONOMY",
+            tripType: item.tripType || "one-way",
+            estimatedPrice: typeof item.estimatedPrice === "number" && !isNaN(item.estimatedPrice) && item.estimatedPrice > 0
+              ? item.estimatedPrice
+              : 480,
+            searchedAt: item.searchedAt && !isNaN(new Date(item.searchedAt).getTime())
+              ? item.searchedAt
+              : new Date().toISOString(),
+          }));
+          setSearches(clean);
+          localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(clean));
+          return;
+        }
+      }
+      setSearches([]);
     } catch {
       setSearches([]);
     }
+  };
+
+  useEffect(() => {
+    setMounted(true);
+    loadAndSanitizeSearches();
   }, []);
 
   // Listen for storage updates from search-form
   useEffect(() => {
     function onStorage(e: StorageEvent) {
       if (e.key === RECENT_SEARCHES_KEY && e.newValue) {
-        try { setSearches(JSON.parse(e.newValue)); } catch { /* noop */ }
+        loadAndSanitizeSearches();
       }
     }
-    // Also listen for custom event (same-tab updates)
     function onCustom() {
-      try {
-        const raw = localStorage.getItem(RECENT_SEARCHES_KEY);
-        if (raw) setSearches(JSON.parse(raw));
-      } catch { /* noop */ }
+      loadAndSanitizeSearches();
     }
     window.addEventListener("storage", onStorage);
     window.addEventListener("amd_search_saved", onCustom);
@@ -239,7 +265,7 @@ export function RecentSearches() {
                   <div>
                     <p className="text-[10px] text-muted-foreground">Estimated</p>
                     <p className="font-heading font-bold text-base leading-tight text-primary">
-                      from {formatPrice(s.estimatedPrice)}
+                      from {formatPrice(typeof s.estimatedPrice === "number" && !isNaN(s.estimatedPrice) && s.estimatedPrice > 0 ? s.estimatedPrice : 480)}
                     </p>
                   </div>
                   <button

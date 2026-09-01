@@ -63,22 +63,48 @@ interface RecentSearchItem {
   passengers: number;
   travelClass: TravelClass;
   tripType: TripType;
+  estimatedPrice?: number;
+}
+
+function estimatePrice(origin: string, destination: string, isRound: boolean, pax: number): number {
+  const isDomesticPk = ["LHE","ISB","KHI","PEW","MUX","SKT","UET"].includes(origin.toUpperCase()) &&
+                       ["LHE","ISB","KHI","PEW","MUX","SKT","UET"].includes(destination.toUpperCase());
+  let base = isDomesticPk ? 85 : 380;
+  if (isRound) base = Math.round(base * 1.85);
+  return base * Math.max(1, pax);
 }
 
 function saveRecentSearch(item: RecentSearchItem) {
   try {
     const raw = localStorage.getItem(RECENT_SEARCHES_KEY);
-    const prev: RecentSearchItem[] = raw ? JSON.parse(raw) : [];
+    const prev: any[] = raw ? JSON.parse(raw) : [];
+    const isRound = item.tripType === "round-trip";
+    const fullItem = {
+      id: `search-${item.origin}-${item.destination}-${Date.now()}`,
+      origin: item.origin,
+      destination: item.destination,
+      departureDate: item.departureDate,
+      returnDate: item.returnDate,
+      passengers: item.passengers || 1,
+      travelClass: item.travelClass || "ECONOMY",
+      tripType: item.tripType || "one-way",
+      estimatedPrice: item.estimatedPrice || estimatePrice(item.origin, item.destination, isRound, item.passengers || 1),
+      searchedAt: new Date().toISOString(),
+    };
+
     const filtered = prev.filter(
       (s) =>
         !(
-          s.origin === item.origin &&
-          s.destination === item.destination &&
-          s.departureDate === item.departureDate
+          s.origin === fullItem.origin &&
+          s.destination === fullItem.destination &&
+          s.departureDate === fullItem.departureDate
         )
     );
-    const updated = [item, ...filtered].slice(0, MAX_RECENT_SEARCHES);
+    const updated = [fullItem, ...filtered].slice(0, MAX_RECENT_SEARCHES);
     localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("amd_search_saved"));
+    }
   } catch {}
 }
 
