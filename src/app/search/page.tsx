@@ -2060,6 +2060,8 @@ const fetchFlights = useCallback(async () => {
     }
 
     setLoading(true);
+    setResults([]);
+    setSortedResults([]);
     setError(null);
     setIsSyncing(true);
 
