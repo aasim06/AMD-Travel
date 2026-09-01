@@ -1337,13 +1337,15 @@ function SortTabBar({
                 : "border-transparent hover:bg-muted/50"
             } ${i > 0 ? "border-l border-l-border" : ""}`}
           >
-            <span className={`text-xs font-bold ${active ? "text-primary" : "text-foreground"}`}>
+            <span className={`text-sm font-bold ${active ? "text-primary" : "text-foreground"}`}>
               {tab.label}
             </span>
-            {tab.stats && (
-              <span className="text-[10px] text-muted-foreground mt-0.5 whitespace-nowrap">
-                {tab.stats.price} · {tab.stats.dur}
+            {tab.stats ? (
+              <span className={`text-xs font-semibold mt-0.5 whitespace-nowrap ${active ? "text-primary/90" : "text-muted-foreground"}`}>
+                <span className="font-bold">{tab.stats.price}</span> · {tab.stats.dur}
               </span>
+            ) : (
+              <span className="text-xs text-muted-foreground mt-0.5">—</span>
             )}
           </button>
         );
@@ -1354,19 +1356,19 @@ function SortTabBar({
         <button
           type="button"
           onClick={() => setDropOpen(v => !v)}
-          className={`h-full flex flex-col items-center justify-center gap-0 px-3 min-w-[72px] transition-colors border-b-2 ${
+          className={`h-full flex flex-col items-center justify-center gap-0.5 py-3 px-4 min-w-[100px] transition-colors border-b-2 ${
             isOther
               ? "border-primary bg-primary/5 text-primary"
               : "border-transparent text-muted-foreground hover:bg-muted/50"
           }`}
         >
-          <span className="flex items-center gap-1 text-xs font-bold whitespace-nowrap">
+          <span className="flex items-center gap-1 text-sm font-bold whitespace-nowrap text-foreground">
             {isOther ? "Sorted" : "Other sort"}
-            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${dropOpen ? "rotate-180" : ""}`} />
+            <ChevronDown className={`h-4 w-4 transition-transform ${dropOpen ? "rotate-180" : ""}`} />
           </span>
-          {isOther && otherLabel && (
-            <span className="text-[10px] text-primary mt-0.5 whitespace-nowrap max-w-[80px] truncate">{otherLabel}</span>
-          )}
+          <span className={`text-xs font-medium whitespace-nowrap max-w-[100px] truncate ${isOther ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+            {isOther && otherLabel ? otherLabel : "Times & Price"}
+          </span>
         </button>
 
         {dropOpen && (
