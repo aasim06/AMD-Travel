@@ -130,6 +130,28 @@ export async function GET(request: NextRequest) {
       type:    (loc.subType as "AIRPORT" | "CITY") || "AIRPORT",
     }));
 
-  const finalResults = suggestions.length ? suggestions : localFallback(keyword);
-  return NextResponse.json(finalResults.slice(0, 6));
+  const merged = [...suggestions];
+  // Add local fallback hits if not already present
+  for (const fb of localFallback(keyword)) {
+    if (!merged.some((m) => m.code === fb.code)) {
+      merged.push(fb);
+    }
+  }
+
+  const cleanQ = keyword.trim().toUpperCase();
+
+  // Smart Sorting: Exact IATA Code Match -> City StartsWith -> Name StartsWith
+  const sorted = merged.sort((a, b) => {
+    const aExactIata = a.code.toUpperCase() === cleanQ ? 1 : 0;
+    const bExactIata = b.code.toUpperCase() === cleanQ ? 1 : 0;
+    if (aExactIata !== bExactIata) return bExactIata - aExactIata;
+
+    const aCityMatch = a.city.toUpperCase().startsWith(cleanQ) ? 1 : 0;
+    const bCityMatch = b.city.toUpperCase().startsWith(cleanQ) ? 1 : 0;
+    if (aCityMatch !== bCityMatch) return bCityMatch - aCityMatch;
+
+    return 0;
+  });
+
+  return NextResponse.json(sorted.slice(0, 6));
 }

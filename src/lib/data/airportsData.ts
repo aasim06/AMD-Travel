@@ -83,13 +83,18 @@ export function searchAirports(keyword: string): AirportOption[] {
   const q = keyword.trim().toLowerCase();
   if (q.length < 2) return POPULAR_AIRPORTS;
 
-  // Country-group match
-  const countryHits = indexed.filter(
-    (a) => a.aliases.includes(q) || a.country.toLowerCase() === q
-  );
-  if (countryHits.length > 0) {
-    const groupLabel = `Airports in ${countryHits[0].country}`;
-    return countryHits.slice(0, 10).map((a) => toOption(a, true, groupLabel));
+  // 1. Direct Exact IATA match priority (e.g. "FRA" -> Frankfurt Airport)
+  const exactIata = indexed.find((a) => a.iata.toLowerCase() === q);
+
+  // 2. Country-group match (only if not an exact IATA code match)
+  if (!exactIata) {
+    const countryHits = indexed.filter(
+      (a) => (a.country.toLowerCase() === q || (a.aliases.includes(q) && q.length > 3))
+    );
+    if (countryHits.length > 0) {
+      const groupLabel = `Airports in ${countryHits[0].country}`;
+      return countryHits.slice(0, 10).map((a) => toOption(a, true, groupLabel));
+    }
   }
 
   // Prefix-index lookup — collect all candidates that contain the query

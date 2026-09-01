@@ -60,7 +60,6 @@ const COUNTRY_ALIASES: Record<string, CountryEntry> = {
 
   // ── France ────────────────────────────────────────────────────────────────
   FR:     france(),
-  FRA:    france(),
   FRANCE: france(),
 
   // ── Italy ─────────────────────────────────────────────────────────────────
@@ -75,12 +74,10 @@ const COUNTRY_ALIASES: Record<string, CountryEntry> = {
 
   // ── Canada ────────────────────────────────────────────────────────────────
   CA:     canada(),
-  CAN:    canada(),
   CANADA: canada(),
 
   // ── Australia ─────────────────────────────────────────────────────────────
   AU:        australia(),
-  AUS:       australia(),
   AUSTRALIA: australia(),
 
   // ── China ─────────────────────────────────────────────────────────────────
