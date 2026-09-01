@@ -1323,7 +1323,7 @@ function SortTabBar({
   const otherLabel = OTHER_SORT_OPTIONS.find(o => o.value === sortKey)?.label;
 
   return (
-    <div className="flex items-stretch bg-card rounded-2xl border border-border shadow-card mb-4 overflow-hidden">
+    <div className="relative flex items-stretch bg-card rounded-2xl border border-border shadow-card mb-4 z-20">
       {TABS.map((tab, i) => {
         const active = sortKey === tab.key;
         return (
@@ -1332,6 +1332,8 @@ function SortTabBar({
             type="button"
             onClick={() => onSort(tab.key)}
             className={`relative flex-1 flex flex-col items-center justify-center py-3 px-2 text-center transition-colors border-b-2 ${
+              i === 0 ? "rounded-l-2xl" : ""
+            } ${
               active
                 ? "border-primary bg-primary/5"
                 : "border-transparent hover:bg-muted/50"
@@ -1352,11 +1354,11 @@ function SortTabBar({
       })}
 
       {/* Other sort dropdown */}
-      <div className="relative border-l border-border">
+      <div className="relative border-l border-border rounded-r-2xl">
         <button
           type="button"
-          onClick={() => setDropOpen(v => !v)}
-          className={`h-full flex flex-col items-center justify-center gap-0.5 py-3 px-4 min-w-[100px] transition-colors border-b-2 ${
+          onClick={() => setDropOpen((v) => !v)}
+          className={`h-full flex flex-col items-center justify-center gap-0.5 py-3 px-4 min-w-[100px] transition-colors border-b-2 rounded-r-2xl ${
             isOther
               ? "border-primary bg-primary/5 text-primary"
               : "border-transparent text-muted-foreground hover:bg-muted/50"
@@ -1364,7 +1366,7 @@ function SortTabBar({
         >
           <span className="flex items-center gap-1 text-sm font-bold whitespace-nowrap text-foreground">
             {isOther ? "Sorted" : "Other sort"}
-            <ChevronDown className={`h-4 w-4 transition-transform ${dropOpen ? "rotate-180" : ""}`} />
+            <ChevronDown className={`h-4 w-4 transition-transform ${dropOpen ? "rotate-180 text-primary" : "text-muted-foreground"}`} />
           </span>
           <span className={`text-xs font-medium whitespace-nowrap max-w-[100px] truncate ${isOther ? "text-primary font-semibold" : "text-muted-foreground"}`}>
             {isOther && otherLabel ? otherLabel : "Times & Price"}
@@ -1374,55 +1376,84 @@ function SortTabBar({
         {dropOpen && (
           <>
             {/* Backdrop */}
-            <div className="fixed inset-0 z-30" onClick={() => setDropOpen(false)} />
+            <div className="fixed inset-0 z-40 bg-black/5" onClick={() => setDropOpen(false)} />
 
-            {/* Dropdown */}
-            <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-100 z-40 text-xs divide-y divide-slate-100 overflow-hidden">
-              {/* Take-off group */}
-              <div className="py-1">
-                {(["dep_asc", "dep_desc"] as OtherSort[]).map(val => {
-                  const opt = OTHER_SORT_OPTIONS.find(o => o.value === val)!;
-                  return (
-                    <button
-                      key={val}
-                      type="button"
-                      onClick={() => { onSort(val); setDropOpen(false); }}
-                      className="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-slate-700 flex items-center justify-between transition-colors"
-                    >
-                      <span>{opt.label}</span>
-                      {sortKey === val && <span className="text-primary font-bold">✓</span>}
-                    </button>
-                  );
-                })}
+            {/* Dropdown Menu */}
+            <div className="absolute right-0 top-full mt-2 w-60 bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border z-50 p-1.5 animate-in fade-in zoom-in-95 duration-150">
+              <div className="px-3 py-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Departure Time
               </div>
-              {/* Landing group */}
-              <div className="py-1">
-                {(["arr_asc", "arr_desc"] as OtherSort[]).map(val => {
-                  const opt = OTHER_SORT_OPTIONS.find(o => o.value === val)!;
-                  return (
-                    <button
-                      key={val}
-                      type="button"
-                      onClick={() => { onSort(val); setDropOpen(false); }}
-                      className="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-slate-700 flex items-center justify-between transition-colors"
-                    >
-                      <span>{opt.label}</span>
-                      {sortKey === val && <span className="text-primary font-bold">✓</span>}
-                    </button>
-                  );
-                })}
+              {(["dep_asc", "dep_desc"] as OtherSort[]).map((val) => {
+                const opt = OTHER_SORT_OPTIONS.find((o) => o.value === val)!;
+                const isSelected = sortKey === val;
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => {
+                      onSort(val);
+                      setDropOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${
+                      isSelected
+                        ? "bg-primary/10 text-primary font-bold"
+                        : "hover:bg-muted text-foreground"
+                    }`}
+                  >
+                    <span>{opt.label}</span>
+                    {isSelected && <span className="text-primary font-bold">✓</span>}
+                  </button>
+                );
+              })}
+
+              <div className="h-px bg-border my-1" />
+
+              <div className="px-3 py-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Arrival Time
               </div>
-              {/* Price group */}
-              <div className="py-1">
-                <button
-                  type="button"
-                  onClick={() => { onSort("price_desc"); setDropOpen(false); }}
-                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-slate-700 flex items-center justify-between transition-colors"
-                >
-                  <span>Highest price</span>
-                  {sortKey === "price_desc" && <span className="text-primary font-bold">✓</span>}
-                </button>
+              {(["arr_asc", "arr_desc"] as OtherSort[]).map((val) => {
+                const opt = OTHER_SORT_OPTIONS.find((o) => o.value === val)!;
+                const isSelected = sortKey === val;
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => {
+                      onSort(val);
+                      setDropOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${
+                      isSelected
+                        ? "bg-primary/10 text-primary font-bold"
+                        : "hover:bg-muted text-foreground"
+                    }`}
+                  >
+                    <span>{opt.label}</span>
+                    {isSelected && <span className="text-primary font-bold">✓</span>}
+                  </button>
+                );
+              })}
+
+              <div className="h-px bg-border my-1" />
+
+              <div className="px-3 py-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Price Sorting
               </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onSort("price_desc");
+                  setDropOpen(false);
+                }}
+                className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${
+                  sortKey === "price_desc"
+                    ? "bg-primary/10 text-primary font-bold"
+                    : "hover:bg-muted text-foreground"
+                }`}
+              >
+                <span>Highest price</span>
+                {sortKey === "price_desc" && <span className="text-primary font-bold">✓</span>}
+              </button>
             </div>
           </>
         )}
