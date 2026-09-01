@@ -478,7 +478,7 @@ export async function POST(req: NextRequest) {
         })),
         sources: ["GDS"],
         searchCriteria: {
-          maxFlightOffers: 20,
+          maxFlightOffers: 100,
           cabinRestrictions: [{
             cabin: travelClass,
             coverage: "MOST_SEGMENTS",
@@ -498,7 +498,7 @@ export async function POST(req: NextRequest) {
         adults:                  String(passengers),
         travelClass:             travelClass,
         currencyCode:            currency,
-        max:                     "20",
+        max:                     "100",
         nonStop:                 "false",
       });
 
