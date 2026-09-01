@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { POPULAR_AIRPORTS, type AirportOption } from "@/lib/data/airportsData";
+import { POPULAR_AIRPORTS, searchAirports, type AirportOption } from "@/lib/data/airportsData";
 
 export interface UseAirportSearchResult {
   results: AirportOption[];
@@ -9,7 +9,7 @@ export interface UseAirportSearchResult {
   error: string | null;
 }
 
-export function useAirportSearch(query: string, delay = 300): UseAirportSearchResult {
+export function useAirportSearch(query: string, delay = 180): UseAirportSearchResult {
   const [results, setResults] = useState<AirportOption[]>(() => POPULAR_AIRPORTS.slice(0, 6));
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +23,12 @@ export function useAirportSearch(query: string, delay = 300): UseAirportSearchRe
       setIsLoading(false);
       setError(null);
       return;
+    }
+
+    // Instant local preview for 0ms typing responsiveness
+    const instantMatches = searchAirports(trimmed);
+    if (instantMatches.length > 0) {
+      setResults(instantMatches.slice(0, 6));
     }
 
     setIsLoading(true);
@@ -41,7 +47,9 @@ export function useAirportSearch(query: string, delay = 300): UseAirportSearchRe
         }
 
         const data: AirportOption[] = await res.json();
-        setResults(data.slice(0, 6));
+        if (data && data.length > 0) {
+          setResults(data.slice(0, 8));
+        }
         setIsLoading(false);
       } catch (err: unknown) {
         if ((err as Error)?.name === "AbortError") {

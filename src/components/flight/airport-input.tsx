@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Plane, MapPin, X, Loader2, Building2 } from "lucide-react";
+import { Plane, MapPin, X, Loader2, Building2, Search } from "lucide-react";
 import { searchAirports, POPULAR_AIRPORTS } from "@/lib/data/airportsData";
 import type { AirportOption } from "@/lib/data/airportsData";
 import { useAirportSearch } from "@/hooks/useAirportSearch";
@@ -148,33 +148,32 @@ export function AirportInput({
               </li>
             )}
 
-            {results.slice(0, 6).map((a, i) => (
+            {results.slice(0, 8).map((a, i) => (
               <li key={`${a.code}-${i}`} role="option" aria-selected={i === activeIdx}>
                 <button
                   type="button"
                   onMouseDown={(e) => { e.preventDefault(); select(a); }}
                   onTouchEnd={(e) => { e.preventDefault(); select(a); }}
                   onMouseEnter={() => setActiveIdx(i)}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left ${
-                    i === activeIdx ? "bg-accent" : "hover:bg-accent"
+                  className={`w-full flex items-center gap-3 px-4 py-3 transition-colors text-left active:bg-primary/10 ${
+                    i === activeIdx ? "bg-accent" : "hover:bg-slate-50"
                   }`}
                 >
-                  <span className="shrink-0 text-muted-foreground">
+                  <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
                     {a.type === "CITY"
-                      ? <Building2 className="h-3.5 w-3.5 text-indigo-500" />
-                      : <Plane className="h-3.5 w-3.5 text-primary" />}
-                  </span>
-                  <span className="text-xs font-bold text-primary w-9 shrink-0">{a.code}</span>
-                  <span className="flex flex-col min-w-0 flex-1">
-                    <span className="text-sm font-medium text-foreground truncate">{a.city}</span>
-                    <span className="text-[11px] text-muted-foreground truncate">{a.name}</span>
-                  </span>
+                      ? <Building2 className="h-4 w-4 text-indigo-500" />
+                      : <Plane className="h-4 w-4 text-primary" />}
+                  </div>
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="text-sm font-bold text-foreground truncate">{a.city}</span>
+                    <span className="text-xs text-muted-foreground truncate">{a.name}</span>
+                  </div>
                   <div className="flex flex-col items-end shrink-0 pl-2">
-                    <span className="text-[11px] text-muted-foreground truncate max-w-[80px]">
-                      {a.country}
+                    <span className="text-xs font-black text-primary bg-primary/10 px-2 py-0.5 rounded-md font-mono">
+                      {a.code}
                     </span>
-                    <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400">
-                      {a.type}
+                    <span className="text-[10px] text-slate-400 truncate max-w-[90px] mt-0.5">
+                      {a.country}
                     </span>
                   </div>
                 </button>
@@ -207,38 +206,55 @@ export function AirportInput({
           <>
             {/* Backdrop */}
             <div
-              className="fixed inset-0 z-40 bg-black/40"
+              className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
               onClick={() => setOpen(false)}
             />
 
             {/* Sheet */}
-            <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl shadow-2xl flex flex-col"
-              style={{ maxHeight: "80vh" }}
+            <div
+              className="fixed inset-x-0 bottom-0 z-[80] bg-white rounded-t-3xl shadow-2xl flex flex-col border-t border-slate-100 animate-in slide-in-from-bottom duration-250"
+              style={{ maxHeight: "85vh" }}
             >
+              {/* Drag Handle */}
+              <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto my-2.5 shrink-0" />
+
               {/* Sheet header with its own input */}
-              <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-slate-100">
-                <input
-                  ref={sheetInputRef}
-                  type="text"
-                  autoComplete="off"
-                  spellCheck={false}
-                  value={query}
-                  placeholder={placeholder}
-                  onChange={handleChange}
-                  onKeyDown={handleKeyDown}
-                  className="flex-1 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none bg-slate-100 rounded-lg px-3 py-2.5"
-                />
+              <div className="flex items-center gap-2.5 px-4 pb-3 border-b border-slate-100">
+                <div className="flex-1 flex items-center gap-2 bg-slate-100/90 rounded-2xl px-3.5 py-2 border border-slate-200/80 focus-within:border-primary focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                  <Search className="h-4 w-4 text-primary shrink-0" />
+                  <input
+                    ref={sheetInputRef}
+                    type="text"
+                    autoComplete="off"
+                    spellCheck={false}
+                    value={query}
+                    placeholder={placeholder}
+                    onChange={handleChange}
+                    onKeyDown={handleKeyDown}
+                    className="flex-1 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none bg-transparent"
+                  />
+                  {query && (
+                    <button
+                      type="button"
+                      onClick={() => { setQuery(""); setActiveIdx(-1); }}
+                      className="h-5 w-5 rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300 flex items-center justify-center transition-colors shrink-0"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100"
+                  className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                  aria-label="Close"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-4.5 w-4.5" />
                 </button>
               </div>
 
               {/* Results */}
-              <ul role="listbox" className="overflow-y-auto flex-1 pb-safe">
+              <ul role="listbox" className="overflow-y-auto flex-1 pb-28 divide-y divide-slate-100">
                 <ResultList />
               </ul>
             </div>
