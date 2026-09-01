@@ -186,15 +186,32 @@ export function FlightSearchForm() {
   const newLegRef                            = useRef<HTMLDivElement>(null);
 
   function updateLeg(id: string, patch: Partial<FlightLeg>) {
-    setLegs((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+    setLegs((prev) => {
+      const idx = prev.findIndex((l) => l.id === id);
+      if (idx === -1) return prev;
+      const updated = prev.map((l, i) => (i === idx ? { ...l, ...patch } : l));
+
+      // Auto-chain next leg origin if current leg destination is updated and next leg has no origin
+      if (patch.destination && idx < updated.length - 1) {
+        const nextLeg = updated[idx + 1];
+        if (!nextLeg.origin || nextLeg.origin === prev[idx].destination) {
+          updated[idx + 1] = { ...nextLeg, origin: patch.destination };
+        }
+      }
+
+      return updated;
+    });
   }
 
   const addLeg = useCallback(() => {
     if (legs.length >= 5) return;
-    setLegs((prev) => [
-      ...prev,
-      { id: `leg-${Date.now()}`, origin: "", destination: "", departureDate: null },
-    ]);
+    setLegs((prev) => {
+      const lastDest = prev[prev.length - 1]?.destination || "";
+      return [
+        ...prev,
+        { id: `leg-${Date.now()}`, origin: lastDest, destination: "", departureDate: null },
+      ];
+    });
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         newLegRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -203,6 +220,7 @@ export function FlightSearchForm() {
   }, [legs.length]);
 
   function removeLeg(id: string) {
+    if (legs.length <= 2) return;
     setLegs((prev) => prev.filter((l) => l.id !== id));
   }
 
@@ -368,48 +386,101 @@ export function FlightSearchForm() {
 
           {/* Inputs section */}
           {tripType === "multi-city" ? (
-            <>
+            <div className="space-y-4">
               {legs.map((leg, idx) => (
-                <div key={leg.id} className="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono">
-                    Flight {idx + 1}
-                  </span>
-                  <AirportInput
-                    id={`m-leg-orig-${leg.id}`}
-                    value={leg.origin}
-                    onChange={(v) => updateLeg(leg.id, { origin: v })}
-                    placeholder="Where from?"
-                    icon={<PlaneTakeoff className="h-4 w-4 text-primary" />}
-                    label="From"
-                    mobileSheet
-                  />
-                  <AirportInput
-                    id={`m-leg-dest-${leg.id}`}
-                    value={leg.destination}
-                    onChange={(v) => updateLeg(leg.id, { destination: v })}
-                    placeholder="Where to?"
-                    icon={<PlaneLanding className="h-4 w-4 text-emerald-600" />}
-                    label="To"
-                    mobileSheet
-                  />
-                  <DatePickerPopover
-                    value={{ departure: leg.departureDate, returnDate: null }}
-                    onChange={(r) => updateLeg(leg.id, { departureDate: r.departure })}
-                    isRoundTrip={false}
-                    mobileSheet
-                  />
+                <div
+                  key={leg.id}
+                  className="p-3.5 rounded-2xl border border-slate-200 bg-white shadow-xs space-y-2.5 relative"
+                >
+                  <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center justify-center h-6 w-6 rounded-lg bg-primary/10 text-primary text-xs font-bold font-mono">
+                        {idx + 1}
+                      </span>
+                      <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        Flight {idx + 1}
+                      </span>
+                    </div>
+
+                    {/* Delete button for 3rd, 4th, 5th leg */}
+                    {idx >= 2 && (
+                      <button
+                        type="button"
+                        onClick={() => removeLeg(leg.id)}
+                        className="h-7 w-7 rounded-lg text-rose-500 hover:bg-rose-50 flex items-center justify-center transition-colors active:scale-95"
+                        aria-label="Remove flight"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* From */}
+                  <div className="w-full rounded-xl border border-slate-200 bg-slate-50/60 flex items-center px-3.5 py-2.5 gap-3 shadow-2xs focus-within:border-primary focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                    <div className="h-8 w-8 rounded-lg bg-white shadow-xs border border-slate-100 flex items-center justify-center text-primary shrink-0">
+                      <PlaneTakeoff className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                        Departure
+                      </label>
+                      <AirportInput
+                        id={`m-leg-orig-${leg.id}`}
+                        value={leg.origin}
+                        onChange={(v) => updateLeg(leg.id, { origin: v })}
+                        placeholder="Where from?"
+                        icon={<></>}
+                        label="From"
+                        mobileSheet
+                      />
+                    </div>
+                  </div>
+
+                  {/* To */}
+                  <div className="w-full rounded-xl border border-slate-200 bg-slate-50/60 flex items-center px-3.5 py-2.5 gap-3 shadow-2xs focus-within:border-primary focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                    <div className="h-8 w-8 rounded-lg bg-white shadow-xs border border-slate-100 flex items-center justify-center text-emerald-600 shrink-0">
+                      <PlaneLanding className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                        Arrival
+                      </label>
+                      <AirportInput
+                        id={`m-leg-dest-${leg.id}`}
+                        value={leg.destination}
+                        onChange={(v) => updateLeg(leg.id, { destination: v })}
+                        placeholder="Where to?"
+                        icon={<></>}
+                        label="To"
+                        mobileSheet
+                      />
+                    </div>
+                  </div>
+
+                  {/* Departure Date */}
+                  <div className="rounded-xl border border-slate-200 bg-white shadow-2xs overflow-hidden">
+                    <DatePickerPopover
+                      value={{ departure: leg.departureDate, returnDate: null }}
+                      onChange={(r) => updateLeg(leg.id, { departureDate: r.departure })}
+                      isRoundTrip={false}
+                      mobileSheet
+                    />
+                  </div>
                 </div>
               ))}
+
+              {/* Add flight button */}
               {legs.length < 5 && (
                 <button
                   type="button"
                   onClick={addLeg}
-                  className="w-full py-2.5 border border-dashed border-primary/40 rounded-xl text-primary text-xs font-semibold hover:bg-primary/5 transition-colors"
+                  className="w-full py-3.5 border-2 border-dashed border-primary/40 bg-primary/5 rounded-2xl text-primary text-xs font-bold hover:bg-primary/10 transition-colors flex items-center justify-center gap-2 active:scale-98"
                 >
-                  + Add another flight
+                  <Plus className="h-4 w-4" />
+                  <span>Add another flight ({legs.length}/5)</span>
                 </button>
               )}
-            </>
+            </div>
           ) : (
             <>
               {/* From & To inputs with Swap Button */}

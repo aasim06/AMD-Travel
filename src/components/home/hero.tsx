@@ -24,7 +24,7 @@ export function Hero({ initialCategory = "flights" }: { initialCategory?: Catego
       {/* ── Stars Background ── */}
       <StarsBackground className="absolute inset-0 z-0 opacity-70" starColor="#ffffff" speed={60} pointerEvents={false} />
 
-      <div className="container relative z-10 py-10 lg:py-14">
+      <div className="container relative z-10 pt-8 pb-28 lg:py-14">
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px] gap-6 lg:gap-10 items-center">
 
           {/* ── Left: Headline + Search ── */}
