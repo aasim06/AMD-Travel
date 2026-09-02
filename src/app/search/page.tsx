@@ -1339,15 +1339,15 @@ function SortTabBar({
                 : "border-transparent hover:bg-muted/50"
             } ${i > 0 ? "border-l border-l-border" : ""}`}
           >
-            <span className={`text-sm font-bold ${active ? "text-primary" : "text-foreground"}`}>
+            <span className={`text-sm font-bold whitespace-nowrap leading-tight ${active ? "text-primary font-bold" : "text-foreground font-bold"}`}>
               {tab.label}
             </span>
             {tab.stats ? (
-              <span className={`text-xs font-semibold mt-0.5 whitespace-nowrap ${active ? "text-primary/90" : "text-muted-foreground"}`}>
+              <span className={`text-xs font-semibold mt-0.5 whitespace-nowrap leading-tight ${active ? "text-primary font-bold" : "text-muted-foreground font-semibold"}`}>
                 <span className="font-bold">{tab.stats.price}</span> · {tab.stats.dur}
               </span>
             ) : (
-              <span className="text-xs text-muted-foreground mt-0.5">—</span>
+              <span className="text-xs text-muted-foreground mt-0.5 font-semibold leading-tight">—</span>
             )}
           </button>
         );
@@ -1358,17 +1358,17 @@ function SortTabBar({
         <button
           type="button"
           onClick={() => setDropOpen((v) => !v)}
-          className={`h-full flex flex-col items-center justify-center gap-0.5 py-3 px-4 min-w-[100px] transition-colors border-b-2 rounded-r-2xl ${
+          className={`h-full flex flex-col items-center justify-center py-2.5 sm:py-3 px-4 min-w-[100px] transition-colors border-b-2 rounded-r-2xl ${
             isOther
               ? "border-primary bg-primary/5 text-primary"
               : "border-transparent text-muted-foreground hover:bg-muted/50"
           }`}
         >
-          <span className="flex items-center gap-1 text-sm font-bold whitespace-nowrap text-foreground">
+          <span className={`flex items-center gap-1 text-sm font-bold whitespace-nowrap leading-tight ${isOther ? "text-primary font-bold" : "text-foreground font-bold"}`}>
             {isOther ? "Sorted" : "Other sort"}
             <ChevronDown className={`h-4 w-4 transition-transform ${dropOpen ? "rotate-180 text-primary" : "text-muted-foreground"}`} />
           </span>
-          <span className={`text-xs font-medium whitespace-nowrap max-w-[100px] truncate ${isOther ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+          <span className={`text-xs font-semibold mt-0.5 whitespace-nowrap max-w-[100px] truncate leading-tight ${isOther ? "text-primary font-bold" : "text-muted-foreground font-semibold"}`}>
             {isOther && otherLabel ? otherLabel : "Times & Price"}
           </span>
         </button>

@@ -101,12 +101,23 @@ function minsToLabel(m: number): string {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
+function formatAirlineName(name: string): string {
+  if (!name) return "";
+  if (name !== name.toUpperCase()) return name;
+  if (name.length <= 3) return name;
+  return name
+    .toLowerCase()
+    .split(" ")
+    .map((w) => (w.length <= 2 && ["of", "in", "to"].includes(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)))
+    .join(" ");
+}
+
 function SectionHeader({ label, open, onToggle }: { label: string; open: boolean; onToggle: () => void }) {
   return (
     <button
       type="button"
       onClick={onToggle}
-      className="flex w-full items-center justify-between text-sm font-semibold text-slate-800 py-0.5"
+      className="flex w-full items-center justify-between text-sm font-bold text-slate-900 dark:text-slate-100 py-0.5 cursor-pointer select-none"
     >
       {label}
       <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
@@ -116,7 +127,7 @@ function SectionHeader({ label, open, onToggle }: { label: string; open: boolean
 
 function CheckedBagIcon() {
   return (
-    <svg className="h-3.5 w-3.5 text-slate-600 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-label="Checked bag">
+    <svg className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-label="Checked bag">
       <path d="M15.91 5.333c-1.417 0-1.417-.166-1.417-.416v-.75c0-.25.167-.417.417-.417.583 0 .833-.417.833-.917S15.494 2 14.91 2H9.077c-.584 0-.834.417-.834.833 0 .417.25.834.75.834q.5.125.5.5v.666c0 .25-.166.417-.416.417H6.243c-1.166.083-2.083 1-2.083 2.083v11.75c0 1 .667 1.834 1.667 2 .083 0 .166.167.166.25 0 .5.334.667.834.667s.833-.167.833-.667a.18.18 0 0 1 .167-.166h8.166a.18.18 0 0 1 .167.166c0 .5.334.667.834.667s.833-.167.833-.667c0-.083.25-.25.333-.25 1-.166 1.667-1.083 1.667-2V7.333c0-1.083-.75-2-1.917-2zM15.6 8.75a.75.75 0 0 1 1.5 0v8.5a.75.75 0 0 1-1.5 0zm-4.3 0a.75.75 0 0 1 1.5 0v8.5a.75.75 0 0 1-1.5 0zM7.75 8a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-1.5 0v-8.5A.75.75 0 0 1 7.75 8m3.41-3.917c0-.25.167-.416.417-.416h.833c.25 0 .417.166.417.416v.747c0 .25-.167.417-.417.417h-.833c-.25 0-.417-.167-.417-.417z" />
     </svg>
   );
@@ -125,18 +136,18 @@ function CheckedBagIcon() {
 function BagCounter({ label, value, onChange, checked = false }: { label: string; value: number; onChange: (v: number) => void; checked?: boolean }) {
   return (
     <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2 text-sm text-slate-600">
-        {checked ? <CheckedBagIcon /> : <Luggage className="h-3.5 w-3.5 text-slate-600 shrink-0" />}
+      <div className="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200">
+        {checked ? <CheckedBagIcon /> : <Luggage className="h-3.5 w-3.5 text-slate-500 shrink-0" />}
         {label}
       </div>
       <div className="flex items-center gap-2">
         <button type="button" onClick={() => onChange(Math.max(0, value - 1))}
           disabled={value === 0}
-          className="h-7 w-7 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40">−</button>
-        <span className="w-4 text-center text-sm font-semibold text-slate-800">{value}</span>
+          className="h-7 w-7 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-40">−</button>
+        <span className="w-4 text-center text-sm font-bold text-slate-900 dark:text-white">{value}</span>
         <button type="button" onClick={() => onChange(Math.min(3, value + 1))}
           disabled={value === 3}
-          className="h-7 w-7 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40">+</button>
+          className="h-7 w-7 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-40">+</button>
       </div>
     </div>
   );
@@ -155,10 +166,10 @@ function RangeSlider({
   const pct = (v: number) => ((v - min) / (max - min)) * 100;
   return (
     <div className="space-y-2">
-      {label && <p className="text-xs text-slate-500">{label}</p>}
+      {label && <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{label}</p>}
       <div className="relative h-5 flex items-center">
         {/* Track */}
-        <div className="absolute w-full h-1.5 rounded-full bg-slate-200" />
+        <div className="absolute w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-700" />
         {/* Active range */}
         <div
           className="absolute h-1.5 rounded-full bg-primary"
@@ -177,9 +188,9 @@ function RangeSlider({
           style={{ zIndex: 4 }}
         />
       </div>
-      <div className="flex justify-between text-[11px] text-slate-500">
-        <span className="font-semibold text-slate-700">{formatValue(valueMin)}</span>
-        <span className="font-semibold text-slate-700">{formatValue(valueMax)}</span>
+      <div className="flex justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
+        <span>{formatValue(valueMin)}</span>
+        <span>{formatValue(valueMax)}</span>
       </div>
     </div>
   );
@@ -199,22 +210,18 @@ function CustomRadio({
   return (
     <div
       onClick={onChange}
-      className="flex items-center gap-3 cursor-pointer group py-1.5 select-none"
+      className="flex items-center gap-2.5 cursor-pointer group py-1.5 select-none"
     >
       <div
         className={`h-4 w-4 rounded-full border flex items-center justify-center transition-all duration-200 shrink-0 ${
           checked
             ? "border-primary bg-primary shadow-xs ring-2 ring-primary/20"
-            : "border-slate-300 bg-white group-hover:border-slate-400 group-hover:bg-slate-50"
+            : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 group-hover:border-slate-400"
         }`}
       >
         {checked && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
       </div>
-      <span
-        className={`text-xs sm:text-sm font-normal transition-colors ${
-          checked ? "text-slate-900" : "text-slate-600 group-hover:text-slate-900"
-        }`}
-      >
+      <span className="text-sm font-medium text-slate-800 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white transition-colors leading-tight">
         {label}
       </span>
     </div>
@@ -239,16 +246,16 @@ function CustomCheckbox({
   return (
     <div
       onClick={onChange}
-      className="flex items-center justify-between gap-3 cursor-pointer group py-1.5 select-none"
+      className="flex items-center justify-between gap-2.5 cursor-pointer group py-1.5 select-none"
     >
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center gap-2.5 min-w-0">
         <div
           className={`h-4 w-4 rounded-md border flex items-center justify-center transition-all duration-200 shrink-0 ${
             checked
               ? isDanger
                 ? "border-red-500 bg-red-500 text-white shadow-xs ring-2 ring-red-500/20"
                 : "border-primary bg-primary text-white shadow-xs ring-2 ring-primary/20"
-              : "border-slate-300 bg-white group-hover:border-slate-400 group-hover:bg-slate-50"
+              : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 group-hover:border-slate-400"
           }`}
         >
           {checked && (
@@ -265,11 +272,7 @@ function CustomCheckbox({
             </svg>
           )}
         </div>
-        <span
-          className={`text-xs sm:text-sm font-normal truncate transition-colors ${
-            checked ? "text-slate-900" : "text-slate-600 group-hover:text-slate-900"
-          }`}
-        >
+        <span className="text-sm font-medium text-slate-800 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white truncate transition-colors leading-tight">
           {label}
         </span>
       </div>
@@ -337,11 +340,11 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
 
       {/* ── Price Alert ── */}
       <div className="flex items-center justify-between border-t border-slate-100 pt-4">
-        <div className="flex items-center gap-2">
-          <Bell className="h-4 w-4 text-amber-500" />
+        <div className="flex items-center gap-2.5">
+          <Bell className="h-4 w-4 text-amber-500 shrink-0" />
           <div>
-            <p className="text-sm font-medium text-slate-800">Price alerts</p>
-            <p className="text-[11px] text-slate-400">Get notified on drops</p>
+            <p className="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight">Price alerts</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 leading-tight mt-0.5">Get notified on drops</p>
           </div>
         </div>
         <button type="button" role="switch" aria-checked={filters.priceAlert}
@@ -518,15 +521,15 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
           <SectionHeader label="Airlines" open={airlinesOpen} onToggle={() => setAirlinesOpen(v => !v)} />
           <div className={`accordion-body ${airlinesOpen ? "open" : ""}`}>
             <div className="pt-1 space-y-2">
-              <div className="flex gap-3 text-[11px] font-medium">
+              <div className="flex gap-3 text-xs font-semibold">
                 <button type="button" onClick={() => set({ selectedAirlines: new Set() })}
-                  className={`transition-colors ${allAirlinesSelected ? "text-primary font-semibold" : "text-slate-400 hover:text-primary"}`}>
+                  className={`transition-colors cursor-pointer ${allAirlinesSelected ? "text-primary font-bold" : "text-slate-400 hover:text-primary"}`}>
                   Select all
                 </button>
                 <span className="text-slate-200">|</span>
                 <button type="button"
                   onClick={() => set({ selectedAirlines: new Set() })}
-                  className="text-slate-400 hover:text-red-500 transition-colors">
+                  className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer font-medium">
                   Clear
                 </button>
               </div>
@@ -534,7 +537,7 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
                 {availableAirlines.map(airline => (
                   <CustomCheckbox
                     key={airline.code}
-                    label={airline.name}
+                    label={formatAirlineName(airline.name)}
                     checked={allAirlinesSelected || filters.selectedAirlines.has(airline.code)}
                     onChange={() => toggleAirline(airline.code)}
                   />
@@ -550,7 +553,7 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
         <SectionHeader label="Exclude countries" open={countriesOpen} onToggle={() => setCountriesOpen(v => !v)} />
         <div className={`accordion-body ${countriesOpen ? "open" : ""}`}>
           <div className="pt-1 space-y-2">
-            <p className="text-[11px] text-slate-400">Exclude layover/transit countries</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">Exclude layover/transit countries</p>
             <div className="space-y-1">
               {LAYOVER_COUNTRIES.map(c => (
                 <CustomCheckbox
@@ -561,7 +564,7 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
                   onChange={() => toggleCountry(c.code)}
                   badge={
                     filters.excludedCountries.has(c.code) ? (
-                      <span className="text-[10px] text-red-500 font-semibold bg-red-50 px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] text-red-500 font-bold bg-red-50 dark:bg-red-950/40 px-1.5 py-0.5 rounded">
                         Excluded
                       </span>
                     ) : undefined

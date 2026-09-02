@@ -121,8 +121,7 @@ export function DatePriceStrip({
 
   return (
     <div
-      className="bg-white border border-slate-200 rounded-xl flex items-stretch mb-4"
-      style={{ boxShadow: "0 1px 8px rgba(0,0,0,0.07)" }}
+      className="bg-card border border-border rounded-2xl flex items-stretch mb-4 shadow-card"
     >
       {/* ── Prev button ── */}
       <div className="flex items-center pl-2 pr-1 shrink-0">
@@ -162,28 +161,28 @@ export function DatePriceStrip({
                       type="button"
                       onClick={() => onDateSelect(date)}
                       className={cn(
-                        "flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 px-2 transition-colors duration-150 relative",
+                        "flex-1 flex flex-col items-center justify-center py-2.5 sm:py-3 px-2 text-center transition-colors duration-150 relative border-b-2",
                         isSelected
-                          ? "ring-2 ring-inset ring-primary bg-white z-10"
-                          : "hover:bg-slate-50"
+                          ? "border-primary bg-primary/5 z-10"
+                          : "border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50"
                       )}
                     >
                       <span className={cn(
-                        "text-xs font-semibold whitespace-nowrap",
-                        isSelected ? "text-primary" : "text-slate-800"
+                        "text-sm font-bold whitespace-nowrap leading-tight",
+                        isSelected ? "text-primary font-bold" : "text-foreground font-bold"
                       )}>
                         {dayLabel(date)}
                       </span>
 
                       {price !== null ? (
                         <span className={cn(
-                          "text-xs font-medium",
-                          isSelected ? "text-primary" : "text-slate-700"
+                          "text-xs font-semibold mt-0.5 whitespace-nowrap leading-tight",
+                          isSelected ? "text-primary font-bold" : "text-muted-foreground font-semibold"
                         )}>
                           {formatPrice(price)}
                         </span>
                       ) : (
-                        <span className="text-xs text-slate-300">—</span>
+                        <span className="text-xs text-muted-foreground mt-0.5 font-semibold leading-tight">—</span>
                       )}
                     </button>
                   );
