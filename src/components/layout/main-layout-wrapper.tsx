@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/footer";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { FloatingSupport } from "@/components/ui/floating-support";
 import { FloatingAiTypewriterPill } from "@/components/ai/FloatingAiTypewriterPill";
+import { CookieConsent } from "@/components/ui/cookie-consent";
 
 export function MainLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -22,6 +23,7 @@ export function MainLayoutWrapper({ children }: { children: React.ReactNode }) {
       <MobileBottomNav />
       <FloatingSupport />
       <FloatingAiTypewriterPill />
+      <CookieConsent />
     </>
   );
 }
