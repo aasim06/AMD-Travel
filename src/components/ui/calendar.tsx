@@ -220,14 +220,14 @@ export function Calendar({ className, classNames, showOutsideDays = true, fromYe
             ...classNames,
           }}
           components={{
-            IconLeft:  () => <ChevronLeft  className="h-4 w-4" />,
-            IconRight: () => <ChevronRight className="h-4 w-4" />,
+            IconLeft:  () => <ChevronLeft  className="h-4 w-4 text-slate-600" />,
+            IconRight: () => <ChevronRight className="h-4 w-4 text-slate-600" />,
             Caption:   ({ displayMonth }) => (
-              <div className="flex items-center justify-between w-full">
+              <div className="flex items-center justify-between w-full px-1">
                 <button
                   type="button"
                   onClick={openYearsView}
-                  className="flex items-center gap-1 text-xs font-bold text-slate-800 hover:text-primary transition-colors px-2 py-1 rounded-md hover:bg-slate-100 border border-transparent hover:border-slate-200"
+                  className="flex items-center gap-1.5 text-xs font-bold text-slate-800 hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-slate-100 border border-slate-200/60"
                 >
                   <span>{MONTH_NAMES[displayMonth.getMonth()]} {displayMonth.getFullYear()}</span>
                   <span className="text-[10px] text-slate-400">▾</span>

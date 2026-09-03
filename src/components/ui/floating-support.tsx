@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { MessageCircle, PhoneCall, ArrowUp, X, Headset, Sparkles } from "lucide-react";
 
 export function FloatingSupport() {
+  const pathname = usePathname();
+  const isSearchPage = pathname?.startsWith("/search") || pathname?.startsWith("/checkout");
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -52,7 +55,7 @@ export function FloatingSupport() {
   const strokeDashoffset = circumference - (scrollProgress / 100) * circumference;
 
   return (
-    <div className="fixed bottom-24 right-4 sm:bottom-28 sm:right-6 md:bottom-6 md:right-6 z-40 flex flex-col items-end gap-2.5 pointer-events-auto">
+    <div className={`fixed ${isSearchPage ? "bottom-5 right-4 md:bottom-6 md:right-6" : "bottom-24 right-4 sm:bottom-28 sm:right-6 md:bottom-6 md:right-6"} z-40 flex flex-col items-end gap-2.5 pointer-events-auto`}>
       
       {/* Expanded Quick Action Popover Menu */}
       {isExpanded && (

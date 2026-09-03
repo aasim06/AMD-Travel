@@ -15,10 +15,12 @@ export function MainLayoutWrapper({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
+  const isSearchPage = pathname?.startsWith("/search") || pathname?.startsWith("/checkout");
+
   return (
     <>
       <Header />
-      <div className="min-h-[calc(100vh-4rem)] pb-24 md:pb-0">{children}</div>
+      <div className={`min-h-[calc(100vh-4rem)] ${isSearchPage ? "pb-6" : "pb-24 md:pb-0"}`}>{children}</div>
       <Footer />
       <MobileBottomNav />
       <FloatingSupport />

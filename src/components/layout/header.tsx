@@ -308,10 +308,12 @@ export function Header() {
 
   const whatsappHref = `https://wa.me/${siteConfig.contact.whatsapp.replace(/\+/g, "")}`;
 
+  const isSearchPage = pathname?.startsWith("/search");
+
   return (
     <>
       {/* ── Top navbar ── */}
-      <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white shadow-sm transition-all duration-300">
+      <header className={`sticky top-0 z-50 w-full border-b border-slate-200 bg-white shadow-sm transition-all duration-300 ${isSearchPage ? "hidden md:block" : ""}`}>
         <div className="w-full px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between gap-4">
 
           {/* Left: hamburger + logo */}

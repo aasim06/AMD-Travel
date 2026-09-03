@@ -30,6 +30,11 @@ export function MobileBottomNav() {
 
   const isHome = pathname === "/";
   const isBookings = pathname === "/bookings" || pathname.startsWith("/bookings/");
+  const isSearchPage = pathname?.startsWith("/search") || pathname?.startsWith("/checkout");
+
+  if (isSearchPage) {
+    return null;
+  }
 
   return (
     <div className="md:hidden fixed bottom-3 left-3 right-3 z-50 pointer-events-none">
