@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
   Plane,
@@ -575,87 +576,90 @@ export function FlightSearchForm() {
           </button>
         </form>
 
-        {/* ── Mobile bottom sheets ── */}
-        {mobileSheet && (
-          <div
-            className="fixed inset-0 z-40 bg-black/40"
-            onClick={() => setMobileSheet(null)}
-          />
-        )}
+        {/* ── Mobile bottom sheets (portalled to body with high z-index) ── */}
+        {mobileSheet && typeof document !== "undefined" && createPortal(
+          <div className="fixed inset-0 z-[999999] flex flex-col justify-end">
+            <div
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+              onClick={() => setMobileSheet(null)}
+            />
 
-        {/* Pax sheet */}
-        {mobileSheet === "pax" && (
-          <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl p-4 shadow-2xl">
-            <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-4" />
-            <p className="text-sm font-bold text-slate-800 mb-3">Passengers &amp; Class</p>
-            {/* Adults */}
-            <div className="flex items-center justify-between py-2 px-3 mb-2">
-              <span className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                <User className="h-4 w-4 text-slate-400" /> Adults
-              </span>
-              <div className="flex items-center gap-3">
-                <button type="button" onClick={() => setPassengers((p) => Math.max(1, p - 1))}
-                  className="h-8 w-8 rounded-full border border-slate-300 flex items-center justify-center">
-                  <Minus className="h-3 w-3" />
-                </button>
-                <span className="w-5 text-center text-sm font-semibold">{passengers}</span>
-                <button type="button" onClick={() => setPassengers((p) => Math.min(9, p + 1))}
-                  className="h-8 w-8 rounded-full border border-slate-300 flex items-center justify-center">
-                  <Plus className="h-3 w-3" />
-                </button>
-              </div>
-            </div>
-            {/* Class */}
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              {TRAVEL_CLASSES.map((c) => (
-                <button key={c.value} type="button" onClick={() => setTravelClass(c.value)}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
-                    travelClass === c.value
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-slate-200 text-slate-700"
-                  }`}>
-                  {c.icon} {c.label}
-                </button>
-              ))}
-            </div>
-            <button type="button" onClick={() => setMobileSheet("bags")}
-              className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-lg text-sm">
-              Next: Baggage
-            </button>
-          </div>
-        )}
-
-        {/* Bags sheet */}
-        {mobileSheet === "bags" && (
-          <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl p-4 shadow-2xl">
-            <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-4" />
-            <p className="text-sm font-bold text-slate-800 mb-3">Baggage</p>
-            {[
-              { label: "Carry-on bag", icon: <Briefcase className="h-4 w-4 text-slate-400" />, val: carryOn, set: setCarryOn, max: 2 },
-              { label: "Checked bag",  icon: <Luggage    className="h-4 w-4 text-slate-400" />, val: checked, set: setChecked, max: 4 },
-            ].map((row) => (
-              <div key={row.label} className="flex items-center justify-between py-3 px-3 border-b border-slate-100">
-                <span className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                  {row.icon} {row.label}
-                </span>
-                <div className="flex items-center gap-3">
-                  <button type="button" onClick={() => row.set((b: number) => Math.max(0, b - 1))}
-                    className="h-8 w-8 rounded-full border border-slate-300 flex items-center justify-center">
-                    <Minus className="h-3 w-3" />
-                  </button>
-                  <span className="w-5 text-center text-sm font-semibold">{row.val}</span>
-                  <button type="button" onClick={() => row.set((b: number) => Math.min(row.max, b + 1))}
-                    className="h-8 w-8 rounded-full border border-slate-300 flex items-center justify-center">
-                    <Plus className="h-3 w-3" />
-                  </button>
+            {/* Pax sheet */}
+            {mobileSheet === "pax" && (
+              <div className="relative z-10 bg-white dark:bg-slate-900 rounded-t-3xl p-5 shadow-2xl border-t border-slate-100 dark:border-slate-800 animate-in slide-in-from-bottom duration-250">
+                <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-4" />
+                <p className="text-sm font-bold text-slate-800 dark:text-white mb-3">Passengers &amp; Class</p>
+                {/* Adults */}
+                <div className="flex items-center justify-between py-2 px-3 mb-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                  <span className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                    <User className="h-4 w-4 text-slate-400" /> Adults
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <button type="button" onClick={() => setPassengers((p) => Math.max(1, p - 1))}
+                      className="h-8 w-8 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center">
+                      <Minus className="h-3 w-3" />
+                    </button>
+                    <span className="w-5 text-center text-sm font-semibold">{passengers}</span>
+                    <button type="button" onClick={() => setPassengers((p) => Math.min(9, p + 1))}
+                      className="h-8 w-8 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center">
+                      <Plus className="h-3 w-3" />
+                    </button>
+                  </div>
                 </div>
+                {/* Class */}
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  {TRAVEL_CLASSES.map((c) => (
+                    <button key={c.value} type="button" onClick={() => setTravelClass(c.value)}
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
+                        travelClass === c.value
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+                      }`}>
+                      {c.icon} {c.label}
+                    </button>
+                  ))}
+                </div>
+                <button type="button" onClick={() => setMobileSheet("bags")}
+                  className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-xl text-sm active:scale-[0.98]">
+                  Next: Baggage
+                </button>
               </div>
-            ))}
-            <button type="button" onClick={() => setMobileSheet(null)}
-              className="w-full mt-4 py-3 bg-primary text-primary-foreground font-semibold rounded-lg text-sm">
-              Done
-            </button>
-          </div>
+            )}
+
+            {/* Bags sheet */}
+            {mobileSheet === "bags" && (
+              <div className="relative z-10 bg-white dark:bg-slate-900 rounded-t-3xl p-5 shadow-2xl border-t border-slate-100 dark:border-slate-800 animate-in slide-in-from-bottom duration-250">
+                <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-4" />
+                <p className="text-sm font-bold text-slate-800 dark:text-white mb-3">Baggage</p>
+                {[
+                  { label: "Carry-on bag", icon: <Briefcase className="h-4 w-4 text-slate-400" />, val: carryOn, set: setCarryOn, max: 2 },
+                  { label: "Checked bag",  icon: <Luggage    className="h-4 w-4 text-slate-400" />, val: checked, set: setChecked, max: 4 },
+                ].map((row) => (
+                  <div key={row.label} className="flex items-center justify-between py-3 px-3 border-b border-slate-100 dark:border-slate-800">
+                    <span className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                      {row.icon} {row.label}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <button type="button" onClick={() => row.set((b: number) => Math.max(0, b - 1))}
+                        className="h-8 w-8 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center">
+                        <Minus className="h-3 w-3" />
+                      </button>
+                      <span className="w-5 text-center text-sm font-semibold">{row.val}</span>
+                      <button type="button" onClick={() => row.set((b: number) => Math.min(row.max, b + 1))}
+                        className="h-8 w-8 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center">
+                        <Plus className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <button type="button" onClick={() => setMobileSheet(null)}
+                  className="w-full mt-4 py-3 bg-primary text-primary-foreground font-semibold rounded-xl text-sm active:scale-[0.98]">
+                  Done
+                </button>
+              </div>
+            )}
+          </div>,
+          document.body
         )}
       </div>
 

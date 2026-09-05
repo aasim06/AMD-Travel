@@ -201,26 +201,26 @@ export function AirportInput({
           }
         </button>
 
-        {/* Full-screen sheet — rendered in a portal-like fixed overlay */}
-        {open && (
-          <>
+        {/* Full-screen sheet — rendered via createPortal directly into document.body to avoid any stacking context / overflow issues */}
+        {open && typeof document !== "undefined" && createPortal(
+          <div className="fixed inset-0 z-[999999] flex flex-col justify-end">
             {/* Backdrop */}
             <div
-              className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
               onClick={() => setOpen(false)}
             />
 
             {/* Sheet */}
             <div
-              className="fixed inset-x-0 bottom-0 z-[80] bg-white rounded-t-3xl shadow-2xl flex flex-col border-t border-slate-100 animate-in slide-in-from-bottom duration-250"
-              style={{ maxHeight: "85vh" }}
+              className="relative z-10 bg-white dark:bg-slate-900 rounded-t-3xl shadow-2xl flex flex-col border-t border-slate-100 dark:border-slate-800 animate-in slide-in-from-bottom duration-250 overflow-hidden"
+              style={{ maxHeight: "88vh", height: "88vh" }}
             >
               {/* Drag Handle */}
-              <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto my-2.5 shrink-0" />
+              <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto my-3 shrink-0" />
 
-              {/* Sheet header with its own input */}
-              <div className="flex items-center gap-2.5 px-4 pb-3 border-b border-slate-100">
-                <div className="flex-1 flex items-center gap-2 bg-slate-100/90 rounded-2xl px-3.5 py-2 border border-slate-200/80 focus-within:border-primary focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+              {/* Sheet header with search input */}
+              <div className="flex items-center gap-2.5 px-4 pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
+                <div className="flex-1 flex items-center gap-2 bg-slate-100/90 dark:bg-slate-800 rounded-2xl px-3.5 py-2.5 border border-slate-200/80 dark:border-slate-700 focus-within:border-primary focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                   <Search className="h-4 w-4 text-primary shrink-0" />
                   <input
                     ref={sheetInputRef}
@@ -237,7 +237,7 @@ export function AirportInput({
                     <button
                       type="button"
                       onClick={() => { setQuery(""); setActiveIdx(-1); }}
-                      className="h-5 w-5 rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300 flex items-center justify-center transition-colors shrink-0"
+                      className="h-5 w-5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 hover:bg-slate-300 dark:hover:bg-slate-600 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -246,19 +246,31 @@ export function AirportInput({
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                  className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
                   aria-label="Close"
                 >
                   <X className="h-4.5 w-4.5" />
                 </button>
               </div>
 
+              {/* Sub-label banner */}
+              <div className="px-4 py-2 bg-slate-50 dark:bg-slate-950/50 border-b border-slate-100 dark:border-slate-800 shrink-0 flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                  {label ? `Select ${label}` : "Select Airport or City"}
+                </span>
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
+                  Amadeus Live
+                </span>
+              </div>
+
               {/* Results */}
-              <ul role="listbox" className="overflow-y-auto flex-1 pb-28 divide-y divide-slate-100">
+              <ul role="listbox" className="overflow-y-auto flex-1 pb-16 divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900">
                 <ResultList />
               </ul>
             </div>
-          </>
+          </div>,
+          document.body
         )}
       </div>
     );
