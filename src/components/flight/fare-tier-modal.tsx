@@ -23,7 +23,10 @@ export interface FareTier {
   badge: string;
   tagline: string;
   priceAdd: number;
+  totalPrice?: number;
   recommended: boolean;
+  isLiveAmadeus?: boolean;
+  upgradedOffer?: FlightOffer;
   accentBg: string;
   accentBorder: string;
   accentText: string;
@@ -276,7 +279,7 @@ interface FareTierModalProps {
   offer: FlightOffer;
   carriers: Record<string, string>;
   onClose: () => void;
-  onConfirm: (tier: FareTier, finalPrice: number) => void;
+  onConfirm: (tier: FareTier, finalPrice: number, upgradedOffer?: FlightOffer) => void;
 }
 
 // ─── Modal Component ──────────────────────────────────────────────────────────
@@ -289,10 +292,40 @@ export function FareTierModal({ offer, carriers, onClose, onConfirm }: FareTierM
   const basePrice = parseFloat(offer.price.total);
   const checkedBagQty =
     offer.baggageAllowance?.quantity ?? (offer.baggageAllowance?.weight ? 1 : 0);
-  const tiers = buildTiers(basePrice, checkedBagQty);
+  const [tiers, setTiers] = useState<FareTier[]>(() => buildTiers(basePrice, checkedBagQty));
+  const [isLiveGds, setIsLiveGds] = useState(false);
+  const [isLiveLoading, setIsLiveLoading] = useState(true);
 
   // Active selected tier state (defaults to "standard")
   const [selectedTierId, setSelectedTierId] = useState<"light" | "standard" | "flex">("standard");
+
+  // Fetch live Amadeus Branded Fare tiers in the background
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchLiveTiers() {
+      try {
+        setIsLiveLoading(true);
+        const res = await fetch("/api/flights/upselling", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ flightOffer: offer }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && data.success && Array.isArray(data.tiers) && data.tiers.length > 0) {
+          setTiers(data.tiers);
+          setIsLiveGds(true);
+        }
+      } catch (err) {
+        console.warn("[FareTierModal] Live upselling fetch error:", err);
+      } finally {
+        if (!cancelled) setIsLiveLoading(false);
+      }
+    }
+
+    fetchLiveTiers();
+    return () => { cancelled = true; };
+  }, [offer]);
 
   const cardRefLight = useRef<HTMLDivElement>(null);
   const cardRefStandard = useRef<HTMLDivElement>(null);
@@ -304,8 +337,8 @@ export function FareTierModal({ offer, carriers, onClose, onConfirm }: FareTierM
     return cardRefFlex;
   }, []);
 
-  const activeTier = tiers.find((t) => t.id === selectedTierId) || tiers[1];
-  const activeFinalPrice = basePrice + activeTier.priceAdd;
+  const activeTier = tiers.find((t) => t.id === selectedTierId) || tiers[0];
+  const activeFinalPrice = activeTier.totalPrice ?? (basePrice + activeTier.priceAdd);
 
   const firstSeg = offer.itineraries[0].segments[0];
   const lastSeg =
@@ -479,7 +512,7 @@ export function FareTierModal({ offer, carriers, onClose, onConfirm }: FareTierM
           <div className="grid grid-cols-3 gap-0.5 p-0.5 bg-slate-200/60 dark:bg-slate-800 rounded-[10px]">
             {tiers.map((tier) => {
               const isSelected = selectedTierId === tier.id;
-              const finalPrice = basePrice + tier.priceAdd;
+              const finalPrice = tier.totalPrice ?? (basePrice + tier.priceAdd);
               return (
                 <button
                   key={tier.id}
@@ -492,7 +525,7 @@ export function FareTierModal({ offer, carriers, onClose, onConfirm }: FareTierM
                   }`}
                 >
                   <span className={`text-[10px] leading-tight ${isSelected ? 'font-semibold text-slate-900 dark:text-white' : 'font-medium'}`}>
-                    {tier.label.replace("Economy ", "")}
+                    {tier.label.replace(/^(Economy\s*|Business\s*)/i, "")}
                   </span>
                   <span className={`text-[11px] mt-px ${isSelected ? 'font-bold text-primary' : 'font-medium'}`}>
                     {formatPrice(finalPrice)}
@@ -524,7 +557,7 @@ export function FareTierModal({ offer, carriers, onClose, onConfirm }: FareTierM
           }}
         >
           {tiers.map((tier) => {
-            const finalPrice = basePrice + tier.priceAdd;
+            const finalPrice = tier.totalPrice ?? (basePrice + tier.priceAdd);
             const isSelected = selectedTierId === tier.id;
             const cardRef = getCardRef(tier.id);
 
@@ -633,7 +666,7 @@ export function FareTierModal({ offer, carriers, onClose, onConfirm }: FareTierM
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onConfirm(tier, finalPrice);
+                      onConfirm(tier, finalPrice, tier.upgradedOffer);
                     }}
                     className={`w-full py-2.5 px-3 rounded-lg text-[12px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98] ${
                       isSelected || tier.recommended
@@ -641,7 +674,7 @@ export function FareTierModal({ offer, carriers, onClose, onConfirm }: FareTierM
                         : "bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                     }`}
                   >
-                    Select {tier.label.replace("Economy ", "")}
+                    Select {tier.label.replace(/^(Economy\s*|Business\s*)/i, "")}
                     <ArrowRight className="h-3 w-3" />
                   </button>
                 </div>
@@ -654,9 +687,12 @@ export function FareTierModal({ offer, carriers, onClose, onConfirm }: FareTierM
         <div className="px-4 sm:px-6 py-2 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between shrink-0">
           {/* Trust */}
           <div className="hidden sm:flex items-center gap-3 text-[10px] text-slate-400">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
+              <span className={`inline-block h-2 w-2 rounded-full ${isLiveGds ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" : "bg-blue-400 animate-pulse"}`} />
               <ShieldCheck className="h-3 w-3 text-emerald-500" />
-              <span>Amadeus GDS</span>
+              <span className={isLiveGds ? "text-emerald-700 dark:text-emerald-400 font-medium" : ""}>
+                {isLiveGds ? "Live Amadeus GDS Rates" : isLiveLoading ? "Verifying live GDS fares..." : "Amadeus GDS Verified"}
+              </span>
             </div>
             <span>·</span>
             <div className="flex items-center gap-1">
@@ -673,7 +709,7 @@ export function FareTierModal({ offer, carriers, onClose, onConfirm }: FareTierM
             </div>
             <button
               type="button"
-              onClick={() => onConfirm(activeTier, activeFinalPrice)}
+              onClick={() => onConfirm(activeTier, activeFinalPrice, activeTier.upgradedOffer)}
               className="py-2.5 px-5 rounded-lg bg-primary text-primary-foreground font-semibold text-[12px] flex items-center gap-1.5 active:scale-[0.97] cursor-pointer"
             >
               Continue
@@ -684,10 +720,10 @@ export function FareTierModal({ offer, carriers, onClose, onConfirm }: FareTierM
           {/* Desktop CTA */}
           <button
             type="button"
-            onClick={() => onConfirm(activeTier, activeFinalPrice)}
+            onClick={() => onConfirm(activeTier, activeFinalPrice, activeTier.upgradedOffer)}
             className="hidden sm:flex items-center gap-2 py-2 px-5 rounded-lg bg-primary text-primary-foreground font-semibold text-[12px] active:scale-[0.98] cursor-pointer hover:bg-primary/90 transition-colors"
           >
-            Continue with {activeTier.label.replace("Economy ", "")} · {formatPrice(activeFinalPrice)}
+            Continue with {activeTier.label.replace(/^(Economy\s*|Business\s*)/i, "")} · {formatPrice(activeFinalPrice)}
             <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>

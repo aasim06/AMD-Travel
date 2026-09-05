@@ -2288,11 +2288,12 @@ function SearchContent() {
     setFareTierOffer(offer);
   }
 
-  function handleFareTierConfirm(tier: FareTier, finalPrice: number) {
+  function handleFareTierConfirm(tier: FareTier, finalPrice: number, upgradedOffer?: FlightOffer) {
     if (!fareTierOffer) return;
     const paxCount = parseInt(new URLSearchParams(window.location.search).get("passengers") ?? "1", 10);
+    const chosenOffer = upgradedOffer || fareTierOffer;
     sessionStorage.setItem("amd_checkout_offer", JSON.stringify({
-      offer:         fareTierOffer,
+      offer:         chosenOffer,
       carriers,
       fareClass:     tier.label,
       selectedPrice: finalPrice,
