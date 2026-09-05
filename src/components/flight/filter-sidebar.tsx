@@ -6,6 +6,7 @@ import {
   Bell, RotateCcw, ChevronDown, Luggage, X, SlidersHorizontal,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useCurrency } from "@/context/currency-context";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -285,6 +286,7 @@ function CustomCheckbox({
 // ─── Main Sidebar Panel ───────────────────────────────────────────────────────
 
 function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, filters, onChange }: FilterSidebarProps) {
+  const { formatPrice } = useCurrency();
   const [baggageOpen,   setBaggageOpen]   = useState(true);
   const [stopsOpen,     setStopsOpen]     = useState(true);
   const [airlinesOpen,  setAirlinesOpen]  = useState(true);
@@ -390,8 +392,8 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
           </div>
           {/* Min/Max labels */}
           <div className="flex justify-between text-[11px]">
-            <span className="font-semibold text-slate-700">${filters.minPrice}</span>
-            <span className="font-semibold text-slate-700">${filters.maxPrice}</span>
+            <span className="font-semibold text-slate-700">{formatPrice(filters.minPrice)}</span>
+            <span className="font-semibold text-slate-700">{formatPrice(filters.maxPrice)}</span>
           </div>
         </div></div>
       </div>
