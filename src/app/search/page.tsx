@@ -1710,15 +1710,15 @@ function SortTabBar({
                 : "border-transparent hover:bg-muted/50"
             } ${i > 0 ? "border-l border-l-border" : ""}`}
           >
-            <span className={`text-sm font-bold whitespace-nowrap leading-tight ${active ? "text-primary font-bold" : "text-foreground font-bold"}`}>
+            <span className={`text-xs sm:text-[13px] font-semibold whitespace-nowrap leading-tight ${active ? "text-primary" : "text-foreground"}`}>
               {tab.label}
             </span>
             {tab.stats ? (
-              <span className={`text-xs font-semibold mt-0.5 whitespace-nowrap leading-tight ${active ? "text-primary font-bold" : "text-muted-foreground font-semibold"}`}>
-                <span className="font-bold">{tab.stats.price}</span> · {tab.stats.dur}
+              <span className={`text-[11px] sm:text-xs font-medium mt-0.5 whitespace-nowrap leading-tight ${active ? "text-primary" : "text-muted-foreground"}`}>
+                <span className="font-semibold">{tab.stats.price}</span> · {tab.stats.dur}
               </span>
             ) : (
-              <span className="text-xs text-muted-foreground mt-0.5 font-semibold leading-tight">—</span>
+              <span className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 font-medium leading-tight">—</span>
             )}
           </button>
         );
@@ -1735,11 +1735,11 @@ function SortTabBar({
               : "border-transparent text-muted-foreground hover:bg-muted/50"
           }`}
         >
-          <span className={`flex items-center gap-1 text-sm font-bold whitespace-nowrap leading-tight ${isOther ? "text-primary font-bold" : "text-foreground font-bold"}`}>
+          <span className={`flex items-center gap-1 text-xs sm:text-[13px] font-semibold whitespace-nowrap leading-tight ${isOther ? "text-primary" : "text-foreground"}`}>
             {isOther ? "Sorted" : "Other sort"}
-            <ChevronDown className={`h-4 w-4 transition-transform ${dropOpen ? "rotate-180 text-primary" : "text-muted-foreground"}`} />
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${dropOpen ? "rotate-180 text-primary" : "text-muted-foreground"}`} />
           </span>
-          <span className={`text-xs font-semibold mt-0.5 whitespace-nowrap max-w-[100px] truncate leading-tight ${isOther ? "text-primary font-bold" : "text-muted-foreground font-semibold"}`}>
+          <span className={`text-[11px] sm:text-xs font-medium mt-0.5 whitespace-nowrap max-w-[100px] truncate leading-tight ${isOther ? "text-primary font-semibold" : "text-muted-foreground"}`}>
             {isOther && otherLabel ? otherLabel : "Times & Price"}
           </span>
         </button>
@@ -1930,10 +1930,10 @@ function LegRow({
 
         {/* Departure block */}
         <div className="shrink-0 text-left min-w-[55px] sm:min-w-[70px]">
-          <p className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none font-heading tabular-nums">
+          <p className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight leading-none tabular-nums">
             {formatTime(dep.departure.at)}
           </p>
-          <p className="text-xs font-bold text-slate-500 tracking-wider mt-1">
+          <p className="text-xs font-semibold text-slate-500 tracking-wider mt-1">
             {dep.departure.iataCode}
           </p>
         </div>
@@ -1943,7 +1943,7 @@ function LegRow({
 
           {/* Duration & Logo Row */}
           <div className="flex items-center gap-1.5 mb-2">
-            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] sm:text-xs font-bold whitespace-nowrap tabular-nums">
+            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] sm:text-xs font-semibold whitespace-nowrap tabular-nums">
               {parseDuration(leg.duration)}
             </span>
             <div className="h-5 w-7 sm:w-9 flex items-center justify-center shrink-0">
@@ -1981,7 +1981,7 @@ function LegRow({
         {/* Arrival block */}
         <div className="shrink-0 text-right min-w-[55px] sm:min-w-[70px]">
           <div className="flex items-start justify-end gap-0.5">
-            <p className={`text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none font-heading tabular-nums ${isOvernight ? "border-b border-dashed border-slate-300 pb-0.5" : ""}`}>
+            <p className={`text-lg sm:text-xl font-bold text-slate-900 tracking-tight leading-none tabular-nums ${isOvernight ? "border-b border-dashed border-slate-300 pb-0.5" : ""}`}>
               {formatTime(arr.arrival.at)}
             </p>
             {isOvernight && (
@@ -1990,7 +1990,7 @@ function LegRow({
               </span>
             )}
           </div>
-          <p className="text-xs font-bold text-slate-500 tracking-wider mt-1">
+          <p className="text-xs font-semibold text-slate-500 tracking-wider mt-1">
             {arr.arrival.iataCode}
           </p>
         </div>
@@ -2020,7 +2020,7 @@ function NightsBadge({ nights, city }: { nights: number; city: string }) {
       <div className="absolute inset-0 flex items-center">
         <div className="w-full border-t border-dashed border-slate-200" />
       </div>
-      <span className="relative z-10 inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200/80 text-slate-600 text-[11px] font-semibold px-3 py-1 rounded-full shadow-2xs">
+      <span className="relative z-10 inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200/80 text-slate-600 text-[11px] font-normal px-3 py-1 rounded-full shadow-2xs">
         {nights} nights in {city}
       </span>
     </div>
@@ -2136,7 +2136,7 @@ function FlightCard({
                 >
                   {/* Personal / Cabin item */}
                   <span className="flex items-center gap-0.5">
-                    <span className="font-bold">1</span>
+                    <span className="font-semibold">1</span>
                     <svg className="h-3.5 w-3.5 text-slate-500" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M20.583 2.25a.806.806 0 0 1 1.167 0 .806.806 0 0 1 0 1.167l-4.907 4.906h.008l-1.149 1.141L3.417 21.75c-.25.333-.834.333-1.167 0a.806.806 0 0 1 0-1.167l1.809-1.808c-.177-.327-.259-.692-.259-1.129 0-.692.353-7.091.42-7.448.093-.468.285-.828.641-1.18.28-.285.656-.517 1-.62.089-.029.521-.06.97-.077l.056-.002c.56-.017.75-.022.849-.12a.4.4 0 0 0 .085-.147c.053-.39.31-1.078.59-1.487.187-.268.576-.673.856-.88.408-.309.856-.509 1.429-.637.18-.04.432-.056.856-.044 1.113.031 1.72.108 2.225.36.7.356 1.309.977 1.649 1.685q.059.121.108.25zm-8.753 8.754H7c-.417 0-.667.25-.667.667 0 .416.334.666.667.666h.137c.167 0 .334.167.334.417v.833c0 .417.124.667.666.667.582 0 .667-.254.667-.667.006-.587 0-.833 0-.833 0-.25.167-.417.417-.417h1.275z" />
                     </svg>
@@ -2144,7 +2144,7 @@ function FlightCard({
 
                   {/* Checked bag */}
                   <span className="flex items-center gap-0.5">
-                    <span className="font-bold">{checkedBagQty}</span>
+                    <span className="font-semibold">{checkedBagQty}</span>
                     <svg className="h-3.5 w-3.5 text-slate-500" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M15.91 5.333c-1.417 0-1.417-.166-1.417-.416v-.75c0-.25.167-.417.417-.417.583 0 .833-.417.833-.917S15.494 2 14.91 2H9.077c-.584 0-.834.417-.834.833 0 .417.25.834.75.834q.5.125.5.5v.666c0 .25-.166.417-.416.417H6.243c-1.166.083-2.083 1-2.083 2.083v11.75c0 1 .667 1.834 1.667 2 .083 0 .166.167.166.25 0 .5.334.667.834.667s.833-.167.833-.667a.18.18 0 0 1 .167-.166h8.166a.18.18 0 0 1 .167.166c0 .5.334.667.834.667s.833-.167.833-.667c0-.083.25-.25.333-.25 1-.166 1.667-1.083 1.667-2V7.333c0-1.083-.75-2-1.917-2z" />
                     </svg>
@@ -2161,45 +2161,54 @@ function FlightCard({
         </div>
 
         {/* ══ RIGHT COLUMN: Share/Heart, Price, Select ══ */}
-        <div className="flex md:flex-col items-center md:items-end justify-between md:justify-between p-4 sm:p-5 md:w-[180px] lg:w-[200px] md:shrink-0 border-t md:border-t-0 border-slate-100">
+        <div className="flex flex-col items-stretch justify-between p-4 sm:p-5 md:w-[180px] lg:w-[200px] md:shrink-0 border-t md:border-t-0 border-slate-100 gap-3 md:gap-0">
 
           {/* Share + Heart (top-right on desktop, left on mobile) */}
-          <div className="flex items-center gap-1 md:mb-auto">
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setShareOpen(true); }}
-              className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
-              title="Share flight"
-            >
-              <Share2 className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setSaved((v) => !v); }}
-              className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors"
-              title="Save flight"
-            >
-              <Heart
-                className={`h-4 w-4 transition-colors ${
-                  saved ? "fill-rose-500 text-rose-500" : "text-slate-400 hover:text-slate-600"
-                }`}
-              />
-            </button>
+          <div className="flex items-center justify-between md:justify-end w-full md:mb-auto">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setShareOpen(true); }}
+                className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                title="Share flight"
+              >
+                <Share2 className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setSaved((v) => !v); }}
+                className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors"
+                title="Save flight"
+              >
+                <Heart
+                  className={`h-4 w-4 transition-colors ${
+                    saved ? "fill-rose-500 text-rose-500" : "text-slate-400 hover:text-slate-600"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Mobile price */}
+            <div className="md:hidden text-right">
+              <p className="text-xl font-bold text-slate-900 tracking-tight leading-none tabular-nums">
+                {formatPrice(price)}
+              </p>
+            </div>
           </div>
 
           {/* Price (center on desktop) */}
-          <div className="text-right md:text-right md:my-auto">
-            <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-none font-heading">
+          <div className="hidden md:block text-center md:my-auto w-full">
+            <p className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-none tabular-nums text-center">
               {formatPrice(price)}
             </p>
           </div>
 
-          {/* Select Button (bottom on desktop, right on mobile) */}
-          <div className="md:mt-auto">
+          {/* Select Button (100% width on desktop and mobile) */}
+          <div className="w-full md:mt-auto">
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onSelect(offer); }}
-              className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold tracking-wide transition-all shadow-sm shadow-primary/20 active:scale-[0.97] cursor-pointer"
+              className="w-full flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold tracking-wide transition-all shadow-sm shadow-primary/20 active:scale-[0.97] cursor-pointer"
             >
               <span>Select</span>
               <ArrowRight className="h-3.5 w-3.5" />

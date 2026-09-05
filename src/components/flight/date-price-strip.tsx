@@ -168,21 +168,21 @@ export function DatePriceStrip({
                       )}
                     >
                       <span className={cn(
-                        "text-sm font-bold whitespace-nowrap leading-tight",
-                        isSelected ? "text-primary font-bold" : "text-foreground font-bold"
+                        "text-xs sm:text-[13px] font-semibold whitespace-nowrap leading-tight",
+                        isSelected ? "text-primary" : "text-foreground"
                       )}>
                         {dayLabel(date)}
                       </span>
 
                       {price !== null ? (
                         <span className={cn(
-                          "text-xs font-semibold mt-0.5 whitespace-nowrap leading-tight",
-                          isSelected ? "text-primary font-bold" : "text-muted-foreground font-semibold"
+                          "text-[11px] sm:text-xs font-medium mt-0.5 whitespace-nowrap leading-tight",
+                          isSelected ? "text-primary font-semibold" : "text-muted-foreground"
                         )}>
                           {formatPrice(price)}
                         </span>
                       ) : (
-                        <span className="text-xs text-muted-foreground mt-0.5 font-semibold leading-tight">—</span>
+                        <span className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 font-medium leading-tight">—</span>
                       )}
                     </button>
                   );
