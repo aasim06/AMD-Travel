@@ -478,7 +478,7 @@ export async function POST(req: NextRequest) {
         })),
         sources: ["GDS"],
         searchCriteria: {
-          maxFlightOffers: 100,
+          maxFlightOffers: 250,
           cabinRestrictions: [{
             cabin: travelClass,
             coverage: "MOST_SEGMENTS",
@@ -490,7 +490,7 @@ export async function POST(req: NextRequest) {
       amadeusData = (await amadeusPost("/v2/shopping/flight-offers", token, postBody)) as AmadeusResponse;
 
     } else {
-      // ── One-way / Round-trip: GET v2/shopping/flight-offers ────────────────
+      // ── One-way / Round-trip: Fetch high-volume live results (up to 250-300+ flights) ──
       const params = new URLSearchParams({
         originLocationCode:      origin.toUpperCase(),
         destinationLocationCode: destination.toUpperCase(),
@@ -498,7 +498,7 @@ export async function POST(req: NextRequest) {
         adults:                  String(passengers),
         travelClass:             travelClass,
         currencyCode:            currency,
-        max:                     "100",
+        max:                     "250",
         nonStop:                 "false",
       });
 
@@ -506,7 +506,72 @@ export async function POST(req: NextRequest) {
         params.set("returnDate", returnDate);
       }
 
-      amadeusData = (await amadeusFetch("/v2/shopping/flight-offers", { token, params })) as AmadeusResponse;
+      // Parallel companion query with published & negotiated fares for max inventory (up to 300+ flights)
+      const originDestinations = [
+        {
+          id: "1",
+          originLocationCode: origin.toUpperCase(),
+          destinationLocationCode: destination.toUpperCase(),
+          departureDateTimeRange: { date: departureDate },
+        },
+      ];
+      if (isRoundTrip && returnDate) {
+        originDestinations.push({
+          id: "2",
+          originLocationCode: destination.toUpperCase(),
+          destinationLocationCode: origin.toUpperCase(),
+          departureDateTimeRange: { date: returnDate },
+        });
+      }
+
+      const postBody = {
+        currencyCode: currency,
+        originDestinations,
+        travelers: Array.from({ length: passengers }, (_, i) => ({
+          id: String(i + 1),
+          travelerType: "ADULT",
+        })),
+        sources: ["GDS"],
+        pricingOptions: {
+          fareType: ["PUBLISHED"],
+        },
+        searchCriteria: {
+          maxFlightOffers: 250,
+        },
+      };
+
+      const [getRes, postRes] = await Promise.allSettled([
+        amadeusFetch("/v2/shopping/flight-offers", { token, params }) as Promise<AmadeusResponse>,
+        amadeusPost("/v2/shopping/flight-offers", token, postBody) as Promise<AmadeusResponse>,
+      ]);
+
+      const offersGet = getRes.status === "fulfilled" ? getRes.value?.data ?? [] : [];
+      const offersPost = postRes.status === "fulfilled" ? postRes.value?.data ?? [] : [];
+
+      // Deduplicate offers by segments and price
+      const uniqueMap = new Map<string, AmadeusOffer>();
+      for (const off of [...offersGet, ...offersPost]) {
+        const segFingerprint = off.itineraries
+          ?.map((it) => it.segments?.map((s) => `${s.carrierCode}${s.number}@${s.departure?.at}`).join("->"))
+          .join("|");
+        const key = `${segFingerprint}_${off.price?.total}`;
+        if (!uniqueMap.has(key)) {
+          uniqueMap.set(key, off);
+        }
+      }
+
+      const mergedOffers = Array.from(uniqueMap.values());
+      const dictsGet = getRes.status === "fulfilled" ? getRes.value?.dictionaries ?? {} : {};
+      const dictsPost = postRes.status === "fulfilled" ? postRes.value?.dictionaries ?? {} : {};
+
+      amadeusData = {
+        data: mergedOffers.length > 0 ? mergedOffers : offersGet,
+        dictionaries: {
+          carriers: { ...dictsGet.carriers, ...dictsPost.carriers },
+          aircraft: { ...dictsGet.aircraft, ...dictsPost.aircraft },
+          locations: { ...dictsGet.locations, ...dictsPost.locations },
+        },
+      };
     }
 
     const rawOffers = amadeusData.data ?? [];

@@ -74,6 +74,18 @@ for (const airport of indexed) {
   }
 }
 
+// Map airport IATA -> country name for transit/layover filtering
+const iataToCountryMap = new Map<string, string>();
+for (const a of airports) {
+  if (a.iata && a.country) {
+    iataToCountryMap.set(a.iata.toUpperCase(), a.country);
+  }
+}
+
+export function getAirportCountry(iata: string): string | undefined {
+  return iataToCountryMap.get(iata.toUpperCase());
+}
+
 // ─── Popular airport IATA set — used to boost relevance score ────────────────
 const POPULAR_CODES = new Set(POPULAR_AIRPORTS.map((a) => a.code));
 

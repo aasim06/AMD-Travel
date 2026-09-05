@@ -222,6 +222,10 @@
   }
 
   /* Dual-range slider thumb styling */
+  .range-thumb {
+    pointer-events: none;
+  }
+
   .range-thumb::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;

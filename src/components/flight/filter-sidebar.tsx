@@ -72,7 +72,7 @@ export function getDefaultFilters(
     cabinBags:           0,
     checkedBags:         0,
     stops:               "any",
-    allowOvernightStop:  false,
+    allowOvernightStop:  true,
     selectedAirlines:    new Set(),
     minPrice,
     maxPrice,
@@ -302,8 +302,26 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
   );
 
   const toggleAirline = (code: string) => {
-    const next = new Set(filters.selectedAirlines);
-    next.has(code) ? next.delete(code) : next.add(code);
+    let next: Set<string>;
+    if (filters.selectedAirlines.size === 0) {
+      // User is unchecking one airline from all available
+      next = new Set(availableAirlines.map((a) => a.code));
+      next.delete(code);
+    } else if (filters.selectedAirlines.has("__NONE__")) {
+      next = new Set([code]);
+    } else {
+      next = new Set(filters.selectedAirlines);
+      if (next.has(code)) {
+        next.delete(code);
+      } else {
+        next.add(code);
+      }
+      if (next.size === availableAirlines.length) {
+        next.clear();
+      } else if (next.size === 0) {
+        next.add("__NONE__");
+      }
+    }
     set({ selectedAirlines: next });
   };
 
@@ -320,6 +338,7 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
   };
 
   const allAirlinesSelected = filters.selectedAirlines.size === 0;
+  const noneAirlinesSelected = filters.selectedAirlines.has("__NONE__");
 
   const STOP_OPTIONS: { value: StopOption; label: string }[] = [
     { value: "any",    label: "Any stops"     },
@@ -362,6 +381,7 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
         <SectionHeader label="Price" open={priceOpen} onToggle={() => setPriceOpen(v => !v)} />
         <div className={`accordion-body ${priceOpen ? "open" : ""}`}><div className="pt-1 space-y-3">
           {/* Progress bar + sliders overlay */}
+          {/* Progress bar + sliders overlay */}
           <div className="relative flex items-center h-5">
             {/* Track */}
             <Progress value={100} className="absolute w-full h-2 bg-slate-200 pointer-events-none" />
@@ -369,23 +389,23 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
             <div
               className="absolute h-2 rounded-full bg-primary pointer-events-none"
               style={{
-                left: `${((filters.minPrice - absoluteMinPrice) / (absoluteMaxPrice - absoluteMinPrice)) * 100}%`,
-                right: `${100 - ((filters.maxPrice - absoluteMinPrice) / (absoluteMaxPrice - absoluteMinPrice)) * 100}%`,
+                left: `${Math.min(100, Math.max(0, ((filters.minPrice - absoluteMinPrice) / (absoluteMaxPrice - absoluteMinPrice || 1)) * 100))}%`,
+                right: `${Math.min(100, Math.max(0, 100 - ((filters.maxPrice - absoluteMinPrice) / (absoluteMaxPrice - absoluteMinPrice || 1)) * 100))}%`,
               }}
             />
             {/* Min thumb */}
             <input type="range"
-              min={absoluteMinPrice} max={absoluteMaxPrice} step={5}
+              min={absoluteMinPrice} max={absoluteMaxPrice} step={1}
               value={filters.minPrice}
-              onChange={e => set({ minPrice: Math.min(Number(e.target.value), filters.maxPrice - 5) })}
+              onChange={e => set({ minPrice: Math.min(Number(e.target.value), filters.maxPrice - 1) })}
               className="absolute w-full appearance-none bg-transparent cursor-pointer range-thumb"
-              style={{ zIndex: filters.minPrice > absoluteMaxPrice - (absoluteMaxPrice - absoluteMinPrice) * 0.1 ? 5 : 3 }}
+              style={{ zIndex: filters.minPrice > absoluteMaxPrice - (absoluteMaxPrice - absoluteMinPrice || 1) * 0.1 ? 5 : 3 }}
             />
             {/* Max thumb */}
             <input type="range"
-              min={absoluteMinPrice} max={absoluteMaxPrice} step={5}
+              min={absoluteMinPrice} max={absoluteMaxPrice} step={1}
               value={filters.maxPrice}
-              onChange={e => set({ maxPrice: Math.max(Number(e.target.value), filters.minPrice + 5) })}
+              onChange={e => set({ maxPrice: Math.max(Number(e.target.value), filters.minPrice + 1) })}
               className="absolute w-full appearance-none bg-transparent cursor-pointer range-thumb"
               style={{ zIndex: 4 }}
             />
@@ -531,8 +551,8 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
                 </button>
                 <span className="text-slate-200">|</span>
                 <button type="button"
-                  onClick={() => set({ selectedAirlines: new Set() })}
-                  className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer font-medium">
+                  onClick={() => set({ selectedAirlines: new Set(["__NONE__"]) })}
+                  className={`transition-colors cursor-pointer font-medium ${noneAirlinesSelected ? "text-red-500 font-bold" : "text-slate-400 hover:text-red-500"}`}>
                   Clear
                 </button>
               </div>
@@ -541,7 +561,7 @@ function SidebarPanel({ availableAirlines, absoluteMaxPrice, absoluteMinPrice, f
                   <CustomCheckbox
                     key={airline.code}
                     label={formatAirlineName(airline.name)}
-                    checked={allAirlinesSelected || filters.selectedAirlines.has(airline.code)}
+                    checked={allAirlinesSelected ? true : noneAirlinesSelected ? false : filters.selectedAirlines.has(airline.code)}
                     onChange={() => toggleAirline(airline.code)}
                   />
                 ))}

@@ -47,7 +47,7 @@ import { FlightSkeleton } from "@/components/flight/flight-skeleton";
 import { DatePriceStrip } from "@/components/flight/date-price-strip";
 import { FareTierModal } from "@/components/flight/fare-tier-modal";
 import type { FareTier } from "@/components/flight/fare-tier-modal";
-import { searchAirports } from "@/lib/data/airportsData";
+import { searchAirports, getAirportCountry } from "@/lib/data/airportsData";
 import { useAirportSearch } from "@/hooks/useAirportSearch";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1654,6 +1654,17 @@ const OTHER_SORT_OPTIONS: { label: string; value: OtherSort }[] = [
   { label: "Highest price",     value: "price_desc" },
 ];
 
+const COUNTRY_CODE_TO_NAMES: Record<string, string[]> = {
+  IN: ["India"],
+  AE: ["United Arab Emirates", "UAE"],
+  QA: ["Qatar"],
+  TR: ["Turkey", "Türkiye"],
+  SA: ["Saudi Arabia"],
+  PK: ["Pakistan"],
+  EG: ["Egypt"],
+  OM: ["Oman"],
+};
+
 function SortTabBar({
   offers, carriers, sortKey, onSort,
 }: {
@@ -1694,7 +1705,7 @@ function SortTabBar({
   const otherLabel = OTHER_SORT_OPTIONS.find(o => o.value === sortKey)?.label;
 
   return (
-    <div className="relative flex items-stretch bg-card rounded-2xl border border-border shadow-card mb-4 z-20">
+    <div className="relative flex items-stretch bg-card rounded-2xl border border-border shadow-card mb-4 z-20 overflow-visible">
       {TABS.map((tab, i) => {
         const active = sortKey === tab.key;
         return (
@@ -1702,7 +1713,7 @@ function SortTabBar({
             key={tab.key}
             type="button"
             onClick={() => onSort(tab.key)}
-            className={`relative flex-1 flex flex-col items-center justify-center py-3 px-2 text-center transition-colors border-b-2 ${
+            className={`relative flex-1 flex flex-col items-center justify-center py-2 sm:py-3 px-1 sm:px-2 text-center transition-colors border-b-2 ${
               i === 0 ? "rounded-l-2xl" : ""
             } ${
               active
@@ -1710,15 +1721,15 @@ function SortTabBar({
                 : "border-transparent hover:bg-muted/50"
             } ${i > 0 ? "border-l border-l-border" : ""}`}
           >
-            <span className={`text-xs sm:text-[13px] font-semibold whitespace-nowrap leading-tight ${active ? "text-primary" : "text-foreground"}`}>
+            <span className={`text-[11px] sm:text-[13px] font-semibold whitespace-nowrap leading-tight ${active ? "text-primary" : "text-foreground"}`}>
               {tab.label}
             </span>
             {tab.stats ? (
-              <span className={`text-[11px] sm:text-xs font-medium mt-0.5 whitespace-nowrap leading-tight ${active ? "text-primary" : "text-muted-foreground"}`}>
+              <span className={`text-[10px] sm:text-xs font-medium mt-0.5 whitespace-nowrap leading-tight ${active ? "text-primary" : "text-muted-foreground"}`}>
                 <span className="font-semibold">{tab.stats.price}</span> · {tab.stats.dur}
               </span>
             ) : (
-              <span className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 font-medium leading-tight">—</span>
+              <span className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 font-medium leading-tight">—</span>
             )}
           </button>
         );
@@ -1729,17 +1740,17 @@ function SortTabBar({
         <button
           type="button"
           onClick={() => setDropOpen((v) => !v)}
-          className={`h-full flex flex-col items-center justify-center py-2.5 sm:py-3 px-4 min-w-[100px] transition-colors border-b-2 rounded-r-2xl ${
+          className={`h-full flex flex-col items-center justify-center py-2 sm:py-3 px-2 sm:px-4 min-w-[70px] sm:min-w-[100px] transition-colors border-b-2 rounded-r-2xl ${
             isOther
               ? "border-primary bg-primary/5 text-primary"
               : "border-transparent text-muted-foreground hover:bg-muted/50"
           }`}
         >
-          <span className={`flex items-center gap-1 text-xs sm:text-[13px] font-semibold whitespace-nowrap leading-tight ${isOther ? "text-primary" : "text-foreground"}`}>
+          <span className={`flex items-center gap-1 text-[11px] sm:text-[13px] font-semibold whitespace-nowrap leading-tight ${isOther ? "text-primary" : "text-foreground"}`}>
             {isOther ? "Sorted" : "Other sort"}
-            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${dropOpen ? "rotate-180 text-primary" : "text-muted-foreground"}`} />
+            <ChevronDown className={`h-3 w-3 sm:h-3.5 sm:w-3.5 transition-transform ${dropOpen ? "rotate-180 text-primary" : "text-muted-foreground"}`} />
           </span>
-          <span className={`text-[11px] sm:text-xs font-medium mt-0.5 whitespace-nowrap max-w-[100px] truncate leading-tight ${isOther ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+          <span className={`text-[10px] sm:text-xs font-medium mt-0.5 whitespace-nowrap max-w-[70px] sm:max-w-[100px] truncate leading-tight ${isOther ? "text-primary font-semibold" : "text-muted-foreground"}`}>
             {isOther && otherLabel ? otherLabel : "Times & Price"}
           </span>
         </button>
@@ -1750,7 +1761,7 @@ function SortTabBar({
             <div className="fixed inset-0 z-40 bg-black/5" onClick={() => setDropOpen(false)} />
 
             {/* Dropdown Menu */}
-            <div className="absolute right-0 top-full mt-2 w-60 bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border z-50 p-1.5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="absolute right-0 top-full mt-2 w-56 sm:w-60 bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border z-50 p-1.5 animate-in fade-in zoom-in-95 duration-150">
               <div className="px-3 py-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                 Departure Time
               </div>
@@ -2270,7 +2281,7 @@ function SearchContent() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [failedLegs, setFailedLegs] = useState<string[]>([]);
   const [sortKey, setSortKey]     = useState<SortKey | OtherSort>("best");
-  const [displayCount, setDisplayCount] = useState(15);
+  const [displayCount, setDisplayCount] = useState(30);
   const initialBags = parseInt(searchParams.get("bags") ?? searchParams.get("checkedBags") ?? "0", 10);
   const [filters, setFilters]           = useState<FilterState>(() => ({
     ...getDefaultFilters(9999),
@@ -2281,7 +2292,7 @@ function SearchContent() {
 
   // Reset display count when results or filters change
   useEffect(() => {
-    setDisplayCount(15);
+    setDisplayCount(30);
   }, [filters, sortKey, results.length]);
 
   function handleSelectFlight(offer: FlightOffer) {
@@ -2365,9 +2376,23 @@ function SearchContent() {
 
       // Airlines
       if (filters.selectedAirlines.size > 0) {
+        if (filters.selectedAirlines.has("__NONE__")) return false;
         const offerCarriers = offer.validatingAirlineCodes ?? [outbound.segments[0].carrierCode];
         const hasMatch = offerCarriers.some((c) => filters.selectedAirlines.has(c));
         if (!hasMatch) return false;
+      }
+
+      // Overnight stopovers (prohibit if user unchecks allowOvernightStop)
+      if (!filters.allowOvernightStop) {
+        const hasOvernightStop = offer.itineraries.some((itin) => {
+          return itin.segments.slice(0, -1).some((seg, idx) => {
+            const nextSeg = itin.segments[idx + 1];
+            const arrDate = new Date(seg.arrival.at).toDateString();
+            const nextDepDate = new Date(nextSeg.departure.at).toDateString();
+            return arrDate !== nextDepDate;
+          });
+        });
+        if (hasOvernightStop) return false;
       }
 
       // Outbound departure time
@@ -2400,6 +2425,39 @@ function SearchContent() {
           return sum + (parseInt(m?.[1] ?? "0") * 60) + parseInt(m?.[2] ?? "0");
         }, 0);
         if (totalFlightMins > filters.maxFlightDuration) return false;
+      }
+
+      // Max layover duration (between connecting segments)
+      if (filters.maxLayoverDuration < 24 * 60) {
+        const exceedsLayover = offer.itineraries.some((itin) => {
+          return itin.segments.slice(0, -1).some((seg, idx) => {
+            const nextSeg = itin.segments[idx + 1];
+            const seg1Arr = new Date(seg.arrival.at).getTime();
+            const seg2Dep = new Date(nextSeg.departure.at).getTime();
+            const layoverMins = Math.round((seg2Dep - seg1Arr) / 60000);
+            return layoverMins > filters.maxLayoverDuration;
+          });
+        });
+        if (exceedsLayover) return false;
+      }
+
+      // Excluded transit / layover countries
+      if (filters.excludedCountries.size > 0) {
+        const hasExcludedCountry = offer.itineraries.some((itin) => {
+          return itin.segments.slice(0, -1).some((seg) => {
+            const layoverIata = seg.arrival.iataCode;
+            const country = getAirportCountry(layoverIata);
+            if (!country) return false;
+            for (const code of filters.excludedCountries) {
+              const names = COUNTRY_CODE_TO_NAMES[code] ?? [];
+              if (names.some((n) => country.toLowerCase().includes(n.toLowerCase()))) {
+                return true;
+              }
+            }
+            return false;
+          });
+        });
+        if (hasExcludedCountry) return false;
       }
 
       // Days of week (outbound departure day)
@@ -2688,9 +2746,9 @@ const fetchFlights = useCallback(async () => {
                   </div>
                 )}
 
-                {/* Sort tab bar — hidden on mobile */}
-                <div className="hidden sm:block">
-                  <SortTabBar offers={results} carriers={carriers} sortKey={sortKey} onSort={handleSort} />
+                {/* Sort tab bar — responsive on all screens */}
+                <div className="block mb-3">
+                  <SortTabBar offers={filteredResults.length > 0 ? filteredResults : results} carriers={carriers} sortKey={sortKey} onSort={handleSort} />
                 </div>
 
                 {/* No results after filtering */}
@@ -2723,10 +2781,10 @@ const fetchFlights = useCallback(async () => {
                     {displayCount < filteredResults.length && (
                       <div className="pt-6 pb-2 flex flex-col items-center gap-2">
                         <button
-                          onClick={() => setDisplayCount((prev) => Math.min(prev + 20, filteredResults.length))}
+                          onClick={() => setDisplayCount((prev) => Math.min(prev + 30, filteredResults.length))}
                           className="px-6 py-2.5 rounded-xl bg-card border border-border shadow-sm text-sm font-semibold text-foreground hover:bg-muted/80 transition-all flex items-center gap-2 group"
                         >
-                          <span>Show More Flights (+{Math.min(20, filteredResults.length - displayCount)} more)</span>
+                          <span>Show More Flights (+{Math.min(30, filteredResults.length - displayCount)} more)</span>
                           <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:translate-y-0.5 transition-transform" />
                         </button>
                         <p className="text-xs text-muted-foreground">
