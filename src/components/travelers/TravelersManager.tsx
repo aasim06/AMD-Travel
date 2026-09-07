@@ -188,7 +188,37 @@ export default function TravelersManager() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [viewingTraveler, setViewingTraveler] = useState<Traveler | null>(null);
   const [editingTraveler, setEditingTraveler] = useState<Traveler | null>(null);
-  const [deletingTravelerId, setDeletingTravelerId] = useState<number | null>(null);
+  const [deletingTravelerId, setDeletingTravelerId] = useState<number | string | null>(null);
+
+  // WhatsApp Modal State
+  const [whatsAppTraveler, setWhatsAppTraveler] = useState<Traveler | null>(null);
+  const [whatsAppTemplate, setWhatsAppTemplate] = useState<"welcome" | "ticket" | "docs" | "custom">("welcome");
+  const [whatsAppMessage, setWhatsAppMessage] = useState("");
+  const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
+  const [whatsAppNotice, setWhatsAppNotice] = useState<string | null>(null);
+
+  // Load live travelers from backend API
+  useEffect(() => {
+    async function loadTravelers() {
+      try {
+        const res = await fetch("/api/admin/travelers");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.travelers) && data.travelers.length > 0) {
+            // Merge with initial, avoiding duplicates by email
+            setTravelers((prev) => {
+              const existingEmails = new Set(data.travelers.map((t: any) => t.email.toLowerCase()));
+              const preservedInitial = prev.filter((t) => !existingEmails.has(t.email.toLowerCase()));
+              return [...data.travelers, ...preservedInitial];
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("[TravelersManager] API sync warning:", err);
+      }
+    }
+    loadTravelers();
+  }, []);
 
   // Form states for Add / Edit
   const [formData, setFormData] = useState({
@@ -215,8 +245,74 @@ export default function TravelersManager() {
     setIsAddModalOpen(true);
   };
 
+  // Helper to generate template messages
+  const generateMessageText = (template: "welcome" | "ticket" | "docs" | "custom", name: string, phone: string) => {
+    const cleanName = name || "Valued Traveler";
+    if (template === "welcome") {
+      return `Assalam-o-Alaikum ${cleanName},\n\nWelcome to *AMD Global Travel*! ✈️\nYour traveler profile has been successfully registered. You can now book flights, umrah packages, and visa services with exclusive agency rates.\n\n📞 24/7 Helpline: +92 312 3456789\n🌐 Website: www.amdglobaltravel.com\n\n_Thank you for choosing AMD Global Travel!_`;
+    } else if (template === "ticket") {
+      return `Assalam-o-Alaikum ${cleanName},\n\nYour flight booking with *AMD Global Travel* is confirmed! 🎫\n\n📌 *Passenger:* ${cleanName}\n🛫 *Status:* Ticket Issued & Verified\n🛡️ *Agency:* AMD Global Travel Management\n\nPlease find your electronic ticket & itinerary attached. For any adjustments or baggage assistance, reply to this message.\n\n_Fly Smarter, Travel Further!_`;
+    } else if (template === "docs") {
+      return `Assalam-o-Alaikum ${cleanName},\n\nThis is from *AMD Global Travel Documentation Desk*.\nKindly share a clear copy of your *Passport (First 2 Pages)* and valid visa copy for your upcoming flight issuance.\n\n_AMD Global Operations Team_`;
+    }
+    return `Assalam-o-Alaikum ${cleanName},\n\nGreetings from *AMD Global Travel*! How can we assist you with your flight reservations today?`;
+  };
+
+  // Open WhatsApp Modal for a traveler
+  const handleOpenWhatsApp = (traveler: Traveler, templateType: "welcome" | "ticket" | "docs" | "custom" = "welcome") => {
+    setWhatsAppTraveler(traveler);
+    setWhatsAppTemplate(templateType);
+    setWhatsAppMessage(generateMessageText(templateType, traveler.name, traveler.phone));
+    setWhatsAppNotice(null);
+  };
+
+  // Dispatch WhatsApp message
+  const handleSendWhatsApp = async (openDirect = false) => {
+    if (!whatsAppTraveler) return;
+
+    if (openDirect) {
+      const clean = whatsAppTraveler.phone.replace(/\D/g, "");
+      window.open(`https://wa.me/${clean}?text=${encodeURIComponent(whatsAppMessage)}`, "_blank");
+      return;
+    }
+
+    setIsSendingWhatsApp(true);
+    setWhatsAppNotice(null);
+
+    try {
+      const res = await fetch("/api/admin/whatsapp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: whatsAppTraveler.phone,
+          message: whatsAppMessage,
+          customerName: whatsAppTraveler.name,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        if (data.sentViaSocket) {
+          setWhatsAppNotice(`✅ WhatsApp message sent directly to ${whatsAppTraveler.name}!`);
+        } else {
+          setWhatsAppNotice(`WhatsApp message prepared. Opening WhatsApp Web...`);
+          window.open(data.whatsappUrl, "_blank");
+        }
+      } else {
+        // Fallback open WhatsApp web
+        const clean = whatsAppTraveler.phone.replace(/\D/g, "");
+        window.open(`https://wa.me/${clean}?text=${encodeURIComponent(whatsAppMessage)}`, "_blank");
+      }
+    } catch {
+      const clean = whatsAppTraveler.phone.replace(/\D/g, "");
+      window.open(`https://wa.me/${clean}?text=${encodeURIComponent(whatsAppMessage)}`, "_blank");
+    } finally {
+      setIsSendingWhatsApp(false);
+    }
+  };
+
   // Submit Add Traveler
-  const handleSaveAdd = (e: React.FormEvent) => {
+  const handleSaveAdd = async (e: React.FormEvent, sendWhatsApp = false) => {
     e.preventDefault();
     if (!formData.name || !formData.email) return;
 
@@ -239,8 +335,24 @@ export default function TravelersManager() {
       recentBookings: [],
     };
 
+    // Sync with backend API
+    try {
+      fetch("/api/admin/travelers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newTraveler),
+      });
+    } catch (err) {
+      console.warn("DB save sync:", err);
+    }
+
     setTravelers((prev) => [newTraveler, ...prev]);
     setIsAddModalOpen(false);
+
+    // If user clicked "Save & Send WhatsApp"
+    if (sendWhatsApp) {
+      handleOpenWhatsApp(newTraveler, "welcome");
+    }
   };
 
   // Open Edit Modal
@@ -331,6 +443,7 @@ export default function TravelersManager() {
         onViewTraveler={(t) => setViewingTraveler(t)}
         onEditTraveler={(t) => handleOpenEditModal(t)}
         onDeleteTraveler={(id) => setDeletingTravelerId(id)}
+        onWhatsAppTraveler={(t) => handleOpenWhatsApp(t)}
       />
 
       {/* ========================================================================= */}
@@ -442,7 +555,7 @@ export default function TravelersManager() {
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+              <div className="mt-4 flex flex-wrap items-center justify-end gap-2.5 pt-4 border-t border-gray-100 dark:border-gray-800">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
@@ -452,9 +565,19 @@ export default function TravelersManager() {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg bg-brand-500 px-5 py-2 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600"
+                  className="rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
                 >
-                  Save Traveler
+                  Save Only
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => handleSaveAdd(e, true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-theme-xs hover:bg-emerald-700 transition-colors"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.897 2.796.897 3.18 0 5.767-2.587 5.767-5.766.001-3.181-2.586-5.766-5.767-5.766zm3.385 8.167c-.145.407-.723.754-1.026.8-.297.045-.67.064-1.082-.068-.255-.082-.581-.194-1.002-.375-1.776-.767-2.934-2.55-3.023-2.668-.088-.117-.722-.961-.722-1.832 0-.871.455-1.301.617-1.477.162-.176.353-.22.47-.22.118 0 .235.001.338.006.11.005.257-.042.403.308.146.352.5 1.22.544 1.309.044.088.073.191.015.308-.059.117-.088.19-.176.293-.088.103-.186.23-.265.31-.088.088-.18.184-.078.36.103.176.457.755.981 1.221.674.6 1.242.787 1.418.874.177.088.28.074.383-.044.103-.117.441-.513.559-.69.117-.176.235-.146.397-.088.162.059 1.029.485 1.206.573.176.088.294.132.338.206.044.073.044.426-.101.833z"/>
+                  </svg>
+                  Save & Send WhatsApp
                 </button>
               </div>
             </form>
@@ -705,13 +828,26 @@ export default function TravelersManager() {
             </div>
 
             {/* Footer buttons */}
-            <div className="mt-6 flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+            <div className="mt-6 flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
               <button
                 type="button"
                 onClick={() => setViewingTraveler(null)}
                 className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
               >
                 Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const t = viewingTraveler;
+                  handleOpenWhatsApp(t);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-theme-xs hover:bg-emerald-700 transition-colors"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.897 2.796.897 3.18 0 5.767-2.587 5.767-5.766.001-3.181-2.586-5.766-5.767-5.766zm3.385 8.167c-.145.407-.723.754-1.026.8-.297.045-.67.064-1.082-.068-.255-.082-.581-.194-1.002-.375-1.776-.767-2.934-2.55-3.023-2.668-.088-.117-.722-.961-.722-1.832 0-.871.455-1.301.617-1.477.162-.176.353-.22.47-.22.118 0 .235.001.338.006.11.005.257-.042.403.308.146.352.5 1.22.544 1.309.044.088.073.191.015.308-.059.117-.088.19-.176.293-.088.103-.186.23-.265.31-.088.088-.18.184-.078.36.103.176.457.755.981 1.221.674.6 1.242.787 1.418.874.177.088.28.074.383-.044.103-.117.441-.513.559-.69.117-.176.235-.146.397-.088.162.059 1.029.485 1.206.573.176.088.294.132.338.206.044.073.044.426-.101.833z"/>
+                </svg>
+                Send WhatsApp Message
               </button>
               <button
                 type="button"
@@ -761,6 +897,158 @@ export default function TravelersManager() {
               >
                 Delete Profile
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 5. DIRECT WHATSAPP MESSAGING MODAL */}
+      {/* ========================================================================= */}
+      {whatsAppTraveler && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-xs">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.897 2.796.897 3.18 0 5.767-2.587 5.767-5.766.001-3.181-2.586-5.766-5.767-5.766zm3.385 8.167c-.145.407-.723.754-1.026.8-.297.045-.67.064-1.082-.068-.255-.082-.581-.194-1.002-.375-1.776-.767-2.934-2.55-3.023-2.668-.088-.117-.722-.961-.722-1.832 0-.871.455-1.301.617-1.477.162-.176.353-.22.47-.22.118 0 .235.001.338.006.11.005.257-.042.403.308.146.352.5 1.22.544 1.309.044.088.073.191.015.308-.059.117-.088.19-.176.293-.088.103-.186.23-.265.31-.088.088-.18.184-.078.36.103.176.457.755.981 1.221.674.6 1.242.787 1.418.874.177.088.28.074.383-.044.103-.117.441-.513.559-.69.117-.176.235-.146.397-.088.162.059 1.029.485 1.206.573.176.088.294.132.338.206.044.073.044.426-.101.833z"/>
+                  </svg>
+                </span>
+                <div>
+                  <h3 className="text-base font-semibold text-gray-800 dark:text-white">
+                    Send WhatsApp Message
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    To: <span className="font-semibold text-gray-800 dark:text-white">{whatsAppTraveler.name}</span> ({whatsAppTraveler.phone})
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setWhatsAppTraveler(null)}
+                className="rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200 p-1.5 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Template Selector */}
+            <div className="mt-4">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                Select Quick Template
+              </label>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWhatsAppTemplate("welcome");
+                    setWhatsAppMessage(generateMessageText("welcome", whatsAppTraveler.name, whatsAppTraveler.phone));
+                  }}
+                  className={`rounded-lg px-2.5 py-1.5 text-xs font-medium border transition-colors ${
+                    whatsAppTemplate === "welcome"
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  👋 Welcome
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWhatsAppTemplate("ticket");
+                    setWhatsAppMessage(generateMessageText("ticket", whatsAppTraveler.name, whatsAppTraveler.phone));
+                  }}
+                  className={`rounded-lg px-2.5 py-1.5 text-xs font-medium border transition-colors ${
+                    whatsAppTemplate === "ticket"
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  🎫 Ticket Issue
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWhatsAppTemplate("docs");
+                    setWhatsAppMessage(generateMessageText("docs", whatsAppTraveler.name, whatsAppTraveler.phone));
+                  }}
+                  className={`rounded-lg px-2.5 py-1.5 text-xs font-medium border transition-colors ${
+                    whatsAppTemplate === "docs"
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  🛂 Passport Req
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWhatsAppTemplate("custom");
+                    setWhatsAppMessage(generateMessageText("custom", whatsAppTraveler.name, whatsAppTraveler.phone));
+                  }}
+                  className={`rounded-lg px-2.5 py-1.5 text-xs font-medium border transition-colors ${
+                    whatsAppTemplate === "custom"
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  ✏️ Custom
+                </button>
+              </div>
+            </div>
+
+            {/* Message Body */}
+            <div className="mt-4">
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                WhatsApp Message Content
+              </label>
+              <textarea
+                rows={6}
+                value={whatsAppMessage}
+                onChange={(e) => setWhatsAppMessage(e.target.value)}
+                placeholder="Type WhatsApp message..."
+                className="w-full rounded-xl border border-gray-300 bg-white p-3 text-xs leading-relaxed text-gray-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+
+            {whatsAppNotice && (
+              <div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 p-2.5 text-xs font-medium text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-300">
+                {whatsAppNotice}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+              <button
+                type="button"
+                onClick={() => setWhatsAppTraveler(null)}
+                className="rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+              >
+                Close
+              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleSendWhatsApp(true)}
+                  className="rounded-lg border border-emerald-500 px-3.5 py-2 text-xs font-medium text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                  title="Open WhatsApp Web or WhatsApp Desktop directly"
+                >
+                  Open in WhatsApp Web
+                </button>
+                <button
+                  type="button"
+                  disabled={isSendingWhatsApp}
+                  onClick={() => handleSendWhatsApp(false)}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-medium text-white shadow-theme-xs hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.585 1.961.897 2.796.897 3.18 0 5.767-2.587 5.767-5.766.001-3.181-2.586-5.766-5.767-5.766zm3.385 8.167c-.145.407-.723.754-1.026.8-.297.045-.67.064-1.082-.068-.255-.082-.581-.194-1.002-.375-1.776-.767-2.934-2.55-3.023-2.668-.088-.117-.722-.961-.722-1.832 0-.871.455-1.301.617-1.477.162-.176.353-.22.47-.22.118 0 .235.001.338.006.11.005.257-.042.403.308.146.352.5 1.22.544 1.309.044.088.073.191.015.308-.059.117-.088.19-.176.293-.088.103-.186.23-.265.31-.088.088-.18.184-.078.36.103.176.457.755.981 1.221.674.6 1.242.787 1.418.874.177.088.28.074.383-.044.103-.117.441-.513.559-.69.117-.176.235-.146.397-.088.162.059 1.029.485 1.206.573.176.088.294.132.338.206.044.073.044.426-.101.833z"/>
+                  </svg>
+                  {isSendingWhatsApp ? "Sending..." : "Send WhatsApp"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

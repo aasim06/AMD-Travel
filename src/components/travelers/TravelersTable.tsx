@@ -9,7 +9,7 @@ import {
 } from "../ui/table";
 
 export interface Traveler {
-  id: number;
+  id: number | string;
   name: string;
   email: string;
   initials: string;
@@ -34,16 +34,18 @@ interface TravelersTableProps {
   travelers: Traveler[];
   onViewTraveler: (traveler: Traveler) => void;
   onEditTraveler: (traveler: Traveler) => void;
-  onDeleteTraveler: (id: number) => void;
+  onDeleteTraveler: (id: number | string) => void;
+  onWhatsAppTraveler: (traveler: Traveler) => void;
 }
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
 export default function TravelersTable({
   travelers,
   onViewTraveler,
   onEditTraveler,
   onDeleteTraveler,
+  onWhatsAppTraveler,
 }: TravelersTableProps) {
   const [page, setPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(travelers.length / PAGE_SIZE));
@@ -171,6 +173,17 @@ export default function TravelersTable({
                   {/* Actions */}
                   <TableCell className="px-5 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
+                      {/* WhatsApp Direct Action Button */}
+                      <button
+                        title={`Send WhatsApp Message to ${traveler.name}`}
+                        onClick={() => onWhatsAppTraveler(traveler)}
+                        className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-600 dark:hover:text-white transition-all duration-150 cursor-pointer shadow-xs"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M17.472 14.382c-.301-.15-1.78-.878-2.056-.978-.276-.101-.477-.15-.678.15-.2.301-.777.978-.953 1.179-.175.201-.351.226-.652.075-.301-.15-1.272-.469-2.424-1.496-.897-.799-1.503-1.786-1.68-2.087-.175-.301-.019-.464.132-.614.136-.135.301-.351.452-.527.15-.176.201-.301.301-.502.101-.201.05-.377-.025-.527-.075-.15-.678-1.633-.929-2.235-.245-.588-.495-.508-.679-.518-.175-.009-.376-.011-.577-.011-.201 0-.527.075-.803.376-.276.301-1.054 1.03-1.054 2.512 0 1.482 1.08 2.914 1.23 3.115.15.201 2.126 3.247 5.151 4.554.72.311 1.282.497 1.72.636.724.23 1.383.197 1.904.12.58-.087 1.78-.727 2.031-1.431.251-.703.251-1.306.176-1.431-.075-.126-.276-.201-.577-.351zM12 2C6.477 2 2 6.477 2 12c0 1.96.568 3.79 1.547 5.334L2 22l4.823-1.507A9.957 9.957 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.182a8.136 8.136 0 0 1-4.328-1.242l-.31-.184-2.862.894.908-2.791-.202-.321A8.143 8.143 0 0 1 3.818 12c0-4.512 3.67-8.182 8.182-8.182 4.512 0 8.182 3.67 8.182 8.182 0 4.512-3.67 8.182-8.182 8.182z"/>
+                        </svg>
+                      </button>
+
                       {/* View Details / Preview Modal */}
                       <button
                         title="View Preview & Booking History"
