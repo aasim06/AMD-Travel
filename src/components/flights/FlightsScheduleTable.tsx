@@ -300,13 +300,34 @@ export default function FlightsScheduleTable({
                 {/* Flight / Airline */}
                 <TableCell className="px-5 py-4 whitespace-nowrap">
                   <div className="flex items-center gap-3">
-                    {/* Airline initials badge */}
-                    <div
-                      className={`flex items-center justify-center w-10 h-10 rounded-lg ${flight.airlineColor} shrink-0`}
-                    >
-                      <span className="text-xs font-bold text-white">
+                    {/* Airline Official Logo */}
+                    <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/80 shadow-xs p-1.5 shrink-0 overflow-hidden">
+                      <img
+                        src={`https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/${flight.airlineInitials}.svg`}
+                        alt={flight.airline}
+                        className="w-full h-full object-contain"
+                        loading="lazy"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (!target.dataset.triedAvs) {
+                            target.dataset.triedAvs = "true";
+                            target.src = `https://pics.avs.io/al_square/64/64/${flight.airlineInitials}.png`;
+                          } else if (!target.dataset.triedAirhex) {
+                            target.dataset.triedAirhex = "true";
+                            target.src = `https://content.airhex.com/content/logos/airlines_${flight.airlineInitials}_64_64_s.png`;
+                          } else {
+                            target.style.display = "none";
+                            const fallback = target.nextElementSibling as HTMLElement;
+                            if (fallback) fallback.style.display = "flex";
+                          }
+                        }}
+                      />
+                      <div
+                        style={{ display: "none" }}
+                        className={`w-full h-full rounded-lg ${flight.airlineColor || "bg-brand-500"} text-white font-bold text-xs items-center justify-center`}
+                      >
                         {flight.airlineInitials}
-                      </span>
+                      </div>
                     </div>
                     <div>
                       <p className="font-semibold text-gray-800 text-theme-sm dark:text-white/90">
