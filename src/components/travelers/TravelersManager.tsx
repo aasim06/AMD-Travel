@@ -291,21 +291,14 @@ export default function TravelersManager() {
       });
 
       const data = await res.json();
-      if (data.success) {
-        if (data.sentViaSocket) {
-          setWhatsAppNotice(`WhatsApp message sent directly to ${whatsAppTraveler.name}.`);
-        } else {
-          setWhatsAppNotice(`WhatsApp message prepared. Opening WhatsApp Web...`);
-          window.open(data.whatsappUrl, "_blank");
-        }
+      if (data.success && data.sentViaSocket) {
+        setWhatsAppNotice(`WhatsApp message sent directly to ${whatsAppTraveler.name} (${whatsAppTraveler.phone}) via scanned admin WhatsApp session.`);
       } else {
-        // Fallback open WhatsApp web
-        const clean = whatsAppTraveler.phone.replace(/\D/g, "");
-        window.open(`https://wa.me/${clean}?text=${encodeURIComponent(whatsAppMessage)}`, "_blank");
+        const errDetail = data.socketError || data.error || "Admin WhatsApp session is disconnected";
+        setWhatsAppNotice(`Direct dispatch notice: ${errDetail}. You can also use 'Open in WhatsApp Web' button below.`);
       }
-    } catch {
-      const clean = whatsAppTraveler.phone.replace(/\D/g, "");
-      window.open(`https://wa.me/${clean}?text=${encodeURIComponent(whatsAppMessage)}`, "_blank");
+    } catch (err: any) {
+      setWhatsAppNotice(`Dispatch error: ${err?.message || "Could not connect to server"}.`);
     } finally {
       setIsSendingWhatsApp(false);
     }

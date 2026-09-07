@@ -26,33 +26,32 @@ export async function POST(req: NextRequest) {
     const encodedText = encodeURIComponent(message);
     const directWhatsAppUrl = `https://wa.me/${cleanPhone}?text=${encodedText}`;
 
-    // Check Baileys Gateway state
-    const gatewayState = getWhatsAppGatewayState();
+    // Always attempt direct Baileys socket dispatch first
     let sentViaSocket = false;
     let socketError = null;
 
-    if (gatewayState.status === "connected") {
-      try {
-        const res = await sendWhatsAppMessage({ to: cleanPhone, body: message });
-        sentViaSocket = res.success;
-        if (!res.success) {
-          socketError = res.error;
-        }
-      } catch (err: any) {
-        socketError = err?.message || String(err);
+    try {
+      const res = await sendWhatsAppMessage({ to: cleanPhone, body: message });
+      sentViaSocket = res.success;
+      if (!res.success) {
+        socketError = res.error;
       }
+    } catch (err: any) {
+      socketError = err?.message || String(err);
     }
 
+    const gatewayState = getWhatsAppGatewayState();
+
     return NextResponse.json({
-      success: true,
+      success: sentViaSocket,
       sentViaSocket,
       gatewayStatus: gatewayState.status,
       socketError,
       phone: cleanPhone,
       whatsappUrl: directWhatsAppUrl,
       message: sentViaSocket
-        ? `WhatsApp message sent directly to ${customerName || cleanPhone}!`
-        : `WhatsApp prepared for ${customerName || cleanPhone}.`,
+        ? `WhatsApp message sent directly to ${customerName || cleanPhone}.`
+        : `Direct WhatsApp message could not be delivered: ${socketError || "Socket session not ready"}.`,
     });
   } catch (error: any) {
     console.error("[WhatsApp Send API Error]:", error);
