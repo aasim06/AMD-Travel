@@ -180,7 +180,7 @@ export const allFlights: Flight[] = [
   },
 ];
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
 const statusConfig: Record<
   FlightStatus,
@@ -193,10 +193,12 @@ const statusConfig: Record<
 
 interface FlightsScheduleTableProps {
   flights?: Flight[];
+  loading?: boolean;
 }
 
 export default function FlightsScheduleTable({
   flights = allFlights,
+  loading = false,
 }: FlightsScheduleTableProps) {
   const [page, setPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(flights.length / PAGE_SIZE));
@@ -257,7 +259,40 @@ export default function FlightsScheduleTable({
 
           {/* Body */}
           <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {paginated.map((flight) => (
+            {loading ? (
+              Array.from({ length: 6 }).map((_, idx) => (
+                <TableRow key={`skeleton-${idx}`}>
+                  <TableCell className="px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-gray-200 dark:bg-gray-800 animate-pulse shrink-0" />
+                      <div className="space-y-1.5">
+                        <div className="h-3.5 w-16 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+                        <div className="h-2.5 w-24 bg-gray-100 dark:bg-gray-850 rounded animate-pulse" />
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-5 py-4">
+                    <div className="h-4 w-24 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+                  </TableCell>
+                  <TableCell className="px-5 py-4">
+                    <div className="h-4 w-12 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+                  </TableCell>
+                  <TableCell className="px-5 py-4">
+                    <div className="h-4 w-12 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+                  </TableCell>
+                  <TableCell className="px-5 py-4">
+                    <div className="h-4 w-14 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+                  </TableCell>
+                  <TableCell className="px-5 py-4">
+                    <div className="h-5 w-20 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+                  </TableCell>
+                  <TableCell className="px-5 py-4">
+                    <div className="h-6 w-16 bg-gray-200 dark:bg-gray-800 rounded-full animate-pulse" />
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              paginated.map((flight) => (
               <TableRow
                 key={flight.id}
                 className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors duration-150"
@@ -345,7 +380,8 @@ export default function FlightsScheduleTable({
                   </Badge>
                 </TableCell>
               </TableRow>
-            ))}
+            ))
+          )}
           </TableBody>
         </Table>
       </div>
