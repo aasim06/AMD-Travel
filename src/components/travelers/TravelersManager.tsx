@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import TravelersHeader, { bookingFilters } from "./TravelersHeader";
 import TravelersTable, { Traveler } from "./TravelersTable";
 
