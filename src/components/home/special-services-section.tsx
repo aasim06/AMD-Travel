@@ -20,30 +20,30 @@ export function SpecialServicesSection() {
   const { t } = useCurrency();
 
   return (
-    <section className="relative bg-slate-50/60 py-16 lg:py-24 border-t border-slate-100/80 overflow-hidden">
+    <section className="relative bg-slate-50/60 py-10 sm:py-16 lg:py-24 border-t border-slate-100/80 overflow-hidden">
       {/* Background Decorative Blur Gradients */}
       <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-primary/10 via-blue-50/30 to-transparent blur-3xl pointer-events-none" />
 
       <div className="container relative z-10">
         {/* Section Header */}
-        <div className="flex flex-col items-center text-center mb-12 lg:mb-16">
+        <div className="flex flex-col items-center text-center mb-8 sm:mb-12 lg:mb-16">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider mb-3 shadow-xs">
             <Sparkles className="w-3.5 h-3.5 text-primary" />
             <span>SPECIAL SERVICES</span>
           </div>
-          <h2 className="font-heading font-extrabold text-slate-900 text-3xl sm:text-4xl lg:text-[2.5rem] leading-tight tracking-tight">
+          <h2 className="font-heading font-extrabold text-slate-900 text-2xl sm:text-4xl lg:text-[2.5rem] leading-tight tracking-tight">
             {t("services.title", "Tailored Travel Solutions")}
           </h2>
-          <p className="text-slate-500 text-sm sm:text-base mt-3 max-w-xl text-center font-normal leading-relaxed">
+          <p className="text-slate-500 text-xs sm:text-base mt-2 sm:mt-3 max-w-xl text-center font-normal leading-relaxed">
             {t("services.subtitle", "From sacred pilgrimages to global visa assistance, explore our specialized travel offerings.")}
           </p>
         </div>
 
         {/* 2-Column Balanced Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-8 items-stretch max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 items-stretch max-w-6xl mx-auto">
           
           {/* Card 1: Umrah Special Offer */}
-          <div className="group relative flex flex-col justify-between rounded-3xl bg-white border border-slate-200/90 p-8 sm:p-10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+          <div className="group relative flex flex-col justify-between rounded-2xl sm:rounded-3xl bg-white border border-slate-200/90 p-5 sm:p-8 lg:p-10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
             {/* Top Accent Gradient Bar */}
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600" />
             
@@ -52,12 +52,12 @@ export function SpecialServicesSection() {
 
             <div>
               {/* Card Header & Badge */}
-              <div className="flex items-center justify-between gap-4 mb-6">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-700 text-xs font-bold uppercase tracking-wider">
-                  <Compass className="w-4 h-4 text-emerald-600" />
+              <div className="flex items-center justify-between gap-2.5 mb-5 sm:mb-6">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-700 text-xs font-bold uppercase tracking-wider whitespace-nowrap shrink-0">
+                  <Compass className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   <span>Umrah Special</span>
                 </div>
-                <span className="text-xs font-semibold text-emerald-700 bg-emerald-100/60 px-2.5 py-1 rounded-md">
+                <span className="text-[11px] sm:text-xs font-semibold text-emerald-700 bg-emerald-100/60 px-2.5 py-1 rounded-full whitespace-nowrap shrink-0">
                   Exclusive Packages
                 </span>
               </div>
@@ -117,7 +117,7 @@ export function SpecialServicesSection() {
           </div>
 
           {/* Card 2: Visa Assistance */}
-          <div className="group relative flex flex-col justify-between rounded-3xl bg-white border border-slate-200/90 p-8 sm:p-10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+          <div className="group relative flex flex-col justify-between rounded-2xl sm:rounded-3xl bg-white border border-slate-200/90 p-5 sm:p-8 lg:p-10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
             {/* Top Accent Gradient Bar */}
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500" />
             
@@ -126,12 +126,12 @@ export function SpecialServicesSection() {
 
             <div>
               {/* Card Header & Badge */}
-              <div className="flex items-center justify-between gap-4 mb-6">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200/80 text-blue-700 text-xs font-bold uppercase tracking-wider">
-                  <Globe className="w-4 h-4 text-blue-600" />
-                  <span>Global Visa Services</span>
+              <div className="flex items-center justify-between gap-2.5 mb-5 sm:mb-6">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200/80 text-blue-700 text-xs font-bold uppercase tracking-wider whitespace-nowrap shrink-0">
+                  <Globe className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <span>Global Visa</span>
                 </div>
-                <span className="text-xs font-semibold text-blue-700 bg-blue-100/60 px-2.5 py-1 rounded-md">
+                <span className="text-[11px] sm:text-xs font-semibold text-blue-700 bg-blue-100/60 px-2.5 py-1 rounded-full whitespace-nowrap shrink-0">
                   High Approval Rate
                 </span>
               </div>

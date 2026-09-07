@@ -86,6 +86,7 @@ export default function RootLayout({
         />
       </head>
       <body
+        suppressHydrationWarning
         className={`${fontHeading.variable} ${fontBody.variable} ${fontOutfit.variable} font-outfit bg-background text-foreground antialiased overflow-x-hidden w-full max-w-full`}
       >
         <ThemeColorProvider>

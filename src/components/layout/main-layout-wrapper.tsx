@@ -20,7 +20,7 @@ export function MainLayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Header />
-      <div className={`min-h-[calc(100vh-4rem)] ${isSearchPage ? "pb-6" : "pb-24 md:pb-0"}`}>{children}</div>
+      <div className={`min-h-[calc(100vh-4rem)] ${isSearchPage ? "pb-20 md:pb-6" : ""}`}>{children}</div>
       <Footer />
       <MobileBottomNav />
       <FloatingSupport />

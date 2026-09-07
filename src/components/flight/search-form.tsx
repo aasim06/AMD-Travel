@@ -13,6 +13,7 @@ import {
   ChevronDown,
   Users,
   User,
+  Baby,
   Luggage,
   Plus,
   Minus,
@@ -169,10 +170,41 @@ export function FlightSearchForm() {
   const [activeCategory, setActiveCategory] = useState<CategoryKey>("flights");
   const [tripType, setTripType]             = useState<TripType>("round-trip");
   const [travelClass, setTravelClass]       = useState<TravelClass>("ECONOMY");
-  const [passengers, setPassengers]         = useState(1);
+  const [adults, setAdults]                 = useState(1);
+  const [children, setChildren]             = useState(0);
+  const [infants, setInfants]               = useState(0);
+  const passengers                          = adults + children + infants;
+
+  const updateAdults = (delta: number) => {
+    setAdults((prev) => {
+      const next = Math.max(1, Math.min(9, prev + delta));
+      if (next + children + infants > 9) return prev;
+      if (infants > next) setInfants(next);
+      return next;
+    });
+  };
+
+  const updateChildren = (delta: number) => {
+    setChildren((prev) => {
+      const next = Math.max(0, prev + delta);
+      if (adults + next + infants > 9) return prev;
+      return next;
+    });
+  };
+
+  const updateInfants = (delta: number) => {
+    setInfants((prev) => {
+      const next = Math.max(0, prev + delta);
+      if (next > adults) return prev;
+      if (adults + children + next > 9) return prev;
+      return next;
+    });
+  };
+
   const [carryOn, setCarryOn]               = useState(0);
   const [checked, setChecked]               = useState(0);
   const [paxOpen, setPaxOpen]               = useState(false);
+  const [classOpen, setClassOpen]           = useState(false);
   const [bagsOpen, setBagsOpen]             = useState(false);
 
   const [origin, setOrigin]                 = useState("");
@@ -245,6 +277,9 @@ export function FlightSearchForm() {
         destination: legs[legs.length - 1].destination,
         departureDate: formatISO(legs[0].departureDate!),
         passengers,
+        adults,
+        children,
+        infants,
         travelClass,
         currency: "USD",
       });
@@ -258,11 +293,14 @@ export function FlightSearchForm() {
         departureDate: formatISO(dateRange.departure),
         ...(tripType === "round-trip" && dateRange.returnDate ? { returnDate: formatISO(dateRange.returnDate) } : {}),
         passengers,
+        adults,
+        children,
+        infants,
         travelClass,
         currency: "USD",
       });
     }
-  }, [origin, destination, dateRange, legs, tripType, passengers, travelClass]);
+  }, [origin, destination, dateRange, legs, tripType, passengers, adults, children, infants, travelClass]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -274,6 +312,9 @@ export function FlightSearchForm() {
       const params = new URLSearchParams({
         tripType,
         passengers: String(passengers),
+        adults:     String(adults),
+        children:   String(children),
+        infants:    String(infants),
         class: travelClass,
         bags: String(carryOn + checked),
         legs: JSON.stringify(
@@ -313,6 +354,9 @@ export function FlightSearchForm() {
       toLabel:   destDisplay   || destination,
       dept: formatISO(dateRange.departure),
       passengers: String(passengers),
+      adults:     String(adults),
+      children:   String(children),
+      infants:    String(infants),
       class: travelClass,
       tripType,
       bags: String(carryOn + checked),
@@ -326,10 +370,18 @@ export function FlightSearchForm() {
   const classLabel = TRAVEL_CLASSES.find((c) => c.value === travelClass)?.label ?? "Economy";
   const totalBags  = carryOn + checked;
   const bagsLabel  = totalBags === 0 ? "No bags" : totalBags === 1 ? "1 bag" : `${totalBags} bags`;
-  const paxLabel   = `${passengers} Adult${passengers > 1 ? "s" : ""}, ${classLabel}`;
+  const getPaxSummary = () => {
+    const parts: string[] = [];
+    if (adults > 0) parts.push(`${adults} ${adults === 1 ? "Adult" : "Adults"}`);
+    if (children > 0) parts.push(`${children} ${children === 1 ? "Child" : "Children"}`);
+    if (infants > 0) parts.push(`${infants} ${infants === 1 ? "Infant" : "Infants"}`);
+    if (parts.length > 2) return `${passengers} Travellers`;
+    return parts.join(", ") || "1 Adult";
+  };
+  const paxLabel   = getPaxSummary();
 
   // ── Mobile bottom-sheet state ──────────────────────────────────────────────
-  const [mobileSheet, setMobileSheet] = useState<"pax" | "bags" | "dates" | null>(null);
+  const [mobileSheet, setMobileSheet] = useState<"pax" | "class" | "bags" | "dates" | null>(null);
 
   return (
     <div className="w-full max-w-full overflow-visible">
@@ -358,30 +410,36 @@ export function FlightSearchForm() {
             ))}
           </div>
 
-          {/* Pax & Bags Trigger Row */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* Pax, Class & Bags Trigger Row */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <button
               type="button"
               onClick={() => setMobileSheet("pax")}
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-slate-200 bg-white text-xs font-semibold text-slate-700 shadow-xs whitespace-nowrap shrink-0"
             >
-              <span className="flex items-center gap-1.5 truncate">
-                <Users className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="truncate">{paxLabel}</span>
-              </span>
-              <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <Users className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span>{paxLabel}</span>
+              <ChevronDown className="h-3 w-3 text-slate-400 shrink-0" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMobileSheet("class")}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-slate-200 bg-white text-xs font-semibold text-slate-700 shadow-xs whitespace-nowrap shrink-0"
+            >
+              <Armchair className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span>{classLabel}</span>
+              <ChevronDown className="h-3 w-3 text-slate-400 shrink-0" />
             </button>
 
             <button
               type="button"
               onClick={() => setMobileSheet("bags")}
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-slate-200 bg-white text-xs font-semibold text-slate-700 shadow-xs whitespace-nowrap shrink-0"
             >
-              <span className="flex items-center gap-1.5 truncate">
-                <Luggage className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="truncate">{bagsLabel}</span>
-              </span>
-              <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <Luggage className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span>{bagsLabel}</span>
+              <ChevronDown className="h-3 w-3 text-slate-400 shrink-0" />
             </button>
           </div>
 
@@ -487,7 +545,7 @@ export function FlightSearchForm() {
               {/* From & To inputs with Swap Button */}
               <div className="relative flex flex-col gap-2">
                 {/* From */}
-                <div className="w-full rounded-xl border border-slate-200 bg-white flex items-center px-3.5 py-3 gap-3 shadow-xs focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                <div className="w-full rounded-xl border border-slate-200 bg-white flex items-center pl-3.5 pr-12 py-3 gap-3 shadow-xs focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                   <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-primary shrink-0">
                     <PlaneTakeoff className="h-4.5 w-4.5" />
                   </div>
@@ -521,7 +579,7 @@ export function FlightSearchForm() {
                 </div>
 
                 {/* To */}
-                <div className="w-full rounded-xl border border-slate-200 bg-white flex items-center px-3.5 py-3 gap-3 shadow-xs focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                <div className="w-full rounded-xl border border-slate-200 bg-white flex items-center pl-3.5 pr-12 py-3 gap-3 shadow-xs focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                   <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-emerald-600 shrink-0">
                     <PlaneLanding className="h-4.5 w-4.5" />
                   </div>
@@ -588,28 +646,87 @@ export function FlightSearchForm() {
             {mobileSheet === "pax" && (
               <div className="relative z-10 bg-white dark:bg-slate-900 rounded-t-3xl p-5 shadow-2xl border-t border-slate-100 dark:border-slate-800 animate-in slide-in-from-bottom duration-250">
                 <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-4" />
-                <p className="text-sm font-bold text-slate-800 dark:text-white mb-3">Passengers &amp; Class</p>
-                {/* Adults */}
-                <div className="flex items-center justify-between py-2 px-3 mb-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                  <span className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
-                    <User className="h-4 w-4 text-slate-400" /> Adults
-                  </span>
-                  <div className="flex items-center gap-3">
-                    <button type="button" onClick={() => setPassengers((p) => Math.max(1, p - 1))}
-                      className="h-8 w-8 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center">
-                      <Minus className="h-3 w-3" />
-                    </button>
-                    <span className="w-5 text-center text-sm font-semibold">{passengers}</span>
-                    <button type="button" onClick={() => setPassengers((p) => Math.min(9, p + 1))}
-                      className="h-8 w-8 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center">
-                      <Plus className="h-3 w-3" />
-                    </button>
+                <p className="text-sm font-bold text-slate-800 dark:text-white mb-3">Passengers</p>
+                {/* Passenger Types */}
+                <div className="space-y-2 mb-4">
+                  {/* Adults */}
+                  <div className="flex items-center justify-between py-2 px-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                    <div>
+                      <span className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                        <User className="h-4 w-4 text-slate-400" /> Adults
+                      </span>
+                      <p className="text-[11px] text-slate-400 pl-6">Age 12+</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button type="button" onClick={() => updateAdults(-1)} disabled={adults <= 1}
+                        className="h-8 w-8 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center disabled:opacity-30">
+                        <Minus className="h-3 w-3" />
+                      </button>
+                      <span className="w-5 text-center text-sm font-bold">{adults}</span>
+                      <button type="button" onClick={() => updateAdults(1)} disabled={passengers >= 9}
+                        className="h-8 w-8 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center disabled:opacity-30">
+                        <Plus className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Children */}
+                  <div className="flex items-center justify-between py-2 px-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                    <div>
+                      <span className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                        <Users className="h-4 w-4 text-slate-400" /> Children
+                      </span>
+                      <p className="text-[11px] text-slate-400 pl-6">Age 2–11</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button type="button" onClick={() => updateChildren(-1)} disabled={children <= 0}
+                        className="h-8 w-8 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center disabled:opacity-30">
+                        <Minus className="h-3 w-3" />
+                      </button>
+                      <span className="w-5 text-center text-sm font-bold">{children}</span>
+                      <button type="button" onClick={() => updateChildren(1)} disabled={passengers >= 9}
+                        className="h-8 w-8 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center disabled:opacity-30">
+                        <Plus className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Infants */}
+                  <div className="flex items-center justify-between py-2 px-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                    <div>
+                      <span className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                        <Baby className="h-4 w-4 text-slate-400" /> Infants
+                      </span>
+                      <p className="text-[11px] text-slate-400 pl-6">Under 2 (on lap)</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button type="button" onClick={() => updateInfants(-1)} disabled={infants <= 0}
+                        className="h-8 w-8 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center disabled:opacity-30">
+                        <Minus className="h-3 w-3" />
+                      </button>
+                      <span className="w-5 text-center text-sm font-bold">{infants}</span>
+                      <button type="button" onClick={() => updateInfants(1)} disabled={passengers >= 9 || infants >= adults}
+                        className="h-8 w-8 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center disabled:opacity-30">
+                        <Plus className="h-3 w-3" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-                {/* Class */}
+                <button type="button" onClick={() => setMobileSheet(null)}
+                  className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-xl text-sm active:scale-[0.98]">
+                  Done
+                </button>
+              </div>
+            )}
+
+            {/* Cabin Class sheet */}
+            {mobileSheet === "class" && (
+              <div className="relative z-10 bg-white dark:bg-slate-900 rounded-t-3xl p-5 shadow-2xl border-t border-slate-100 dark:border-slate-800 animate-in slide-in-from-bottom duration-250">
+                <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-4" />
+                <p className="text-sm font-bold text-slate-800 dark:text-white mb-3">Cabin Class</p>
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   {TRAVEL_CLASSES.map((c) => (
-                    <button key={c.value} type="button" onClick={() => setTravelClass(c.value)}
+                    <button key={c.value} type="button" onClick={() => { setTravelClass(c.value); setMobileSheet(null); }}
                       className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
                         travelClass === c.value
                           ? "border-primary bg-primary/10 text-primary"
@@ -619,9 +736,9 @@ export function FlightSearchForm() {
                     </button>
                   ))}
                 </div>
-                <button type="button" onClick={() => setMobileSheet("bags")}
+                <button type="button" onClick={() => setMobileSheet(null)}
                   className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-xl text-sm active:scale-[0.98]">
-                  Next: Baggage
+                  Done
                 </button>
               </div>
             )}
@@ -689,7 +806,7 @@ export function FlightSearchForm() {
             ))}
           </DropdownButton>
 
-          {/* Passengers & class */}
+          {/* Passengers */}
           <Popover open={paxOpen} onOpenChange={setPaxOpen}>
             <PopoverTrigger asChild>
               <button
@@ -701,40 +818,108 @@ export function FlightSearchForm() {
                 <ChevronDown className={`h-3.5 w-3.5 transition-transform ${paxOpen ? "rotate-180" : ""}`} />
               </button>
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-64 p-4 space-y-4 z-[9999]">
-              {/* Adults row */}
-              <div className="flex items-center justify-between py-2 px-3">
-                <span className="flex items-center gap-2.5 text-sm font-medium text-slate-700">
-                  <User className="h-4 w-4 text-slate-400" />
-                  Adults
-                </span>
-                <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => setPassengers((p) => Math.max(1, p - 1))}
-                    className="h-7 w-7 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors">
-                    <Minus className="h-3 w-3" />
-                  </button>
-                  <span className="w-4 text-center text-sm font-medium text-slate-900">{passengers}</span>
-                  <button type="button" onClick={() => setPassengers((p) => Math.min(9, p + 1))}
-                    className="h-7 w-7 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors">
-                    <Plus className="h-3 w-3" />
-                  </button>
+            <PopoverContent align="start" className="w-64 p-4 space-y-3 z-[9999]">
+              <span className="px-1 text-xs font-semibold uppercase tracking-wider text-slate-400">Passengers</span>
+              {/* Passenger Types */}
+              <div className="space-y-2">
+                {/* Adults */}
+                <div className="flex items-center justify-between py-1 px-1">
+                  <div>
+                    <span className="flex items-center gap-2 text-xs font-semibold text-slate-800">
+                      <User className="h-3.5 w-3.5 text-slate-400" /> Adults
+                    </span>
+                    <p className="text-[10px] text-slate-400 pl-5.5">Age 12+</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => updateAdults(-1)} disabled={adults <= 1}
+                      className="h-7 w-7 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors disabled:opacity-30">
+                      <Minus className="h-3 w-3" />
+                    </button>
+                    <span className="w-4 text-center text-xs font-bold text-slate-900">{adults}</span>
+                    <button type="button" onClick={() => updateAdults(1)} disabled={passengers >= 9}
+                      className="h-7 w-7 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors disabled:opacity-30">
+                      <Plus className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Children */}
+                <div className="flex items-center justify-between py-1 px-1">
+                  <div>
+                    <span className="flex items-center gap-2 text-xs font-semibold text-slate-800">
+                      <Users className="h-3.5 w-3.5 text-slate-400" /> Children
+                    </span>
+                    <p className="text-[10px] text-slate-400 pl-5.5">Age 2–11</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => updateChildren(-1)} disabled={children <= 0}
+                      className="h-7 w-7 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors disabled:opacity-30">
+                      <Minus className="h-3 w-3" />
+                    </button>
+                    <span className="w-4 text-center text-xs font-bold text-slate-900">{children}</span>
+                    <button type="button" onClick={() => updateChildren(1)} disabled={passengers >= 9}
+                      className="h-7 w-7 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors disabled:opacity-30">
+                      <Plus className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Infants */}
+                <div className="flex items-center justify-between py-1 px-1">
+                  <div>
+                    <span className="flex items-center gap-2 text-xs font-semibold text-slate-800">
+                      <Baby className="h-3.5 w-3.5 text-slate-400" /> Infants
+                    </span>
+                    <p className="text-[10px] text-slate-400 pl-5.5">Under 2 (on lap)</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => updateInfants(-1)} disabled={infants <= 0}
+                      className="h-7 w-7 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors disabled:opacity-30">
+                      <Minus className="h-3 w-3" />
+                    </button>
+                    <span className="w-4 text-center text-xs font-bold text-slate-900">{infants}</span>
+                    <button type="button" onClick={() => updateInfants(1)} disabled={passengers >= 9 || infants >= adults}
+                      className="h-7 w-7 rounded-full border border-border flex items-center justify-center hover:border-primary hover:text-primary transition-colors disabled:opacity-30">
+                      <Plus className="h-3 w-3" />
+                    </button>
+                  </div>
                 </div>
               </div>
-              {/* Class */}
-              <div className="space-y-0.5">
-                <span className="px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Cabin Class</span>
-                {TRAVEL_CLASSES.map((c) => (
-                  <button key={c.value} type="button" onClick={() => { setTravelClass(c.value); setPaxOpen(false); }}
-                    className={`w-full text-left py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-2.5 ${
-                      travelClass === c.value
-                        ? "bg-primary/10 text-primary"
-                        : "text-slate-700 hover:bg-accent"
-                    }`}>
-                    {c.icon}
-                    {c.label}
-                  </button>
-                ))}
-              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Cabin Class */}
+          <Popover open={classOpen} onOpenChange={setClassOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-foreground/80 hover:bg-accent hover:text-primary transition-colors cursor-pointer"
+              >
+                <Armchair className="h-3.5 w-3.5" />
+                {classLabel}
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${classOpen ? "rotate-180" : ""}`} />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-52 p-2 space-y-0.5 z-[9999]">
+              <span className="px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Cabin Class</span>
+              {TRAVEL_CLASSES.map((c) => (
+                <button
+                  key={c.value}
+                  type="button"
+                  onClick={() => {
+                    setTravelClass(c.value);
+                    setClassOpen(false);
+                  }}
+                  className={`w-full text-left py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-2.5 ${
+                    travelClass === c.value
+                      ? "bg-primary/10 text-primary"
+                      : "text-slate-700 hover:bg-accent"
+                  }`}
+                >
+                  {c.icon}
+                  {c.label}
+                </button>
+              ))}
             </PopoverContent>
           </Popover>
 

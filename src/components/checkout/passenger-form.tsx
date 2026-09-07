@@ -164,11 +164,14 @@ export function StepIndicator({ current }: { current: string }) {
 
 interface PassengerFormProps {
   passengerCount: number;
+  adults?: number;
+  childrenCount?: number;
+  infants?: number;
   defaultValues?: Partial<CheckoutData>;
   onSubmit: (data: CheckoutData) => void;
 }
 
-export function PassengerForm({ passengerCount, defaultValues, onSubmit }: PassengerFormProps) {
+export function PassengerForm({ passengerCount, adults, childrenCount, infants, defaultValues, onSubmit }: PassengerFormProps) {
   const {
     register,
     control,
@@ -193,11 +196,25 @@ export function PassengerForm({ passengerCount, defaultValues, onSubmit }: Passe
   const today = new Date();
   const currentYr = today.getFullYear();
 
+  const getPassengerType = (i: number) => {
+    const numAdults = adults ?? passengerCount;
+    const numChildren = childrenCount ?? 0;
+    if (i < numAdults) {
+      return { label: "Adult traveler (Age 12+)", badge: "Adult", isLead: i === 0 };
+    }
+    if (i < numAdults + numChildren) {
+      return { label: "Child traveler (Age 2–11)", badge: "Child", isLead: false };
+    }
+    return { label: "Infant on lap (Under 2)", badge: "Infant", isLead: false };
+  };
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 
       {/* ── Passenger cards ── */}
-      {fields.map((field, i) => (
+      {fields.map((field, i) => {
+        const pType = getPassengerType(i);
+        return (
         <Card key={field.id} className="border-slate-200 shadow-[0_2px_12px_rgba(0,0,0,0.05)] bg-white">
 
           {/* Card header */}
@@ -206,13 +223,16 @@ export function PassengerForm({ passengerCount, defaultValues, onSubmit }: Passe
               <User className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-800">
-                Passenger {i + 1}{" "}
-                {i === 0 && (
-                  <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full ml-1">Lead</span>
+              <p className="text-sm font-bold text-slate-800 flex items-center gap-1.5 flex-wrap">
+                <span>Passenger {i + 1}</span>
+                {pType.isLead && (
+                  <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">Lead</span>
                 )}
+                <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+                  {pType.badge}
+                </span>
               </p>
-              <p className="text-[11px] text-slate-400">Adult traveler</p>
+              <p className="text-[11px] text-slate-400">{pType.label}</p>
             </div>
           </CardHeader>
 
@@ -374,7 +394,8 @@ export function PassengerForm({ passengerCount, defaultValues, onSubmit }: Passe
             </div>
           </CardContent>
         </Card>
-      ))}
+        );
+      })}
 
       {/* ── Contact Details ── */}
       <Card className="border-slate-200 shadow-[0_2px_12px_rgba(0,0,0,0.05)] bg-white">

@@ -43,6 +43,9 @@ function CheckoutContent() {
   const [fareClass,   setFareClass]   = useState<string>(() => sessionData?.fareClass ?? "Economy");
   const [selectedPrice, setSelectedPrice] = useState<number | null>(() => sessionData?.selectedPrice ?? null);
   const [passengers]  = useState<number>(() => sessionData?.passengers ?? 1);
+  const [adults]      = useState<number>(() => sessionData?.adults ?? (sessionData?.passengers ?? 1));
+  const [children]    = useState<number>(() => sessionData?.children ?? 0);
+  const [infants]     = useState<number>(() => sessionData?.infants ?? 0);
   const [step,      setStep]      = useState<CheckoutStep>("passengers");
   const [formData,  setFormData]  = useState<Partial<CheckoutData>>({});
   const [pnr,           setPnr]           = useState<string | null>(null);
@@ -194,6 +197,9 @@ function CheckoutContent() {
             {step === "passengers" && (
               <PassengerForm
                 passengerCount={passengers}
+                adults={adults}
+                childrenCount={children}
+                infants={infants}
                 defaultValues={formData}
                 onSubmit={handlePassengersSubmit}
               />
@@ -241,6 +247,9 @@ function CheckoutContent() {
                 carriers={carriers}
                 fareClass={fareClass}
                 passengers={passengers}
+                adults={adults}
+                children={children}
+                infants={infants}
                 selectedPrice={selectedPrice}
                 onUpgrade={step === "passengers" ? handleUpgrade : undefined}
               />

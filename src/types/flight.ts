@@ -15,6 +15,9 @@ export interface FlightSearchParams {
   departureDate: string;
   returnDate?: string;
   passengers: number;
+  adults?: number;
+  children?: number;
+  infants?: number;
   travelClass: TravelClass;
   currency: Currency;
   legs?: FlightLeg[]; // multi-city
@@ -58,6 +61,17 @@ export interface BaggageAllowance {
   weightUnit?: string;
 }
 
+export interface TravelerPricing {
+  travelerId: string;
+  fareOption?: string;
+  travelerType: string;
+  price: {
+    currency?: string;
+    total: string;
+    base: string;
+  };
+}
+
 export interface FlightOffer {
   id: string;
   source: "GDS" | "NDC";
@@ -67,6 +81,7 @@ export interface FlightOffer {
   numberOfBookableSeats: number;
   lastTicketingDate: string;
   baggageAllowance?: BaggageAllowance;
+  travelerPricings?: TravelerPricing[];
   rawAmadeusOffer?: unknown;
 }
 

@@ -18,34 +18,35 @@ export function FloatingAiTypewriterPill() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    const currentFullText = PROMPTS[promptIdx];
-    let timer: NodeJS.Timeout;
+    const currentFullText = PROMPTS[promptIdx % PROMPTS.length];
 
-    if (!isDeleting) {
-      // Typing phase
-      if (displayText.length < currentFullText.length) {
-        timer = setTimeout(() => {
+    const handleTyping = () => {
+      if (!isDeleting) {
+        if (displayText.length < currentFullText.length) {
           setDisplayText(currentFullText.slice(0, displayText.length + 1));
-        }, 75);
-      } else {
-        // Pause at end of text before deleting
-        timer = setTimeout(() => {
+        } else {
           setIsDeleting(true);
-        }, 2200);
-      }
-    } else {
-      // Deleting phase
-      if (displayText.length > 0) {
-        timer = setTimeout(() => {
-          setDisplayText(currentFullText.slice(0, displayText.length - 1));
-        }, 40);
+        }
       } else {
-        // Move to next prompt
-        setIsDeleting(false);
-        setPromptIdx((prev) => (prev + 1) % PROMPTS.length);
+        if (displayText.length > 0) {
+          setDisplayText(currentFullText.slice(0, displayText.length - 1));
+        } else {
+          setIsDeleting(false);
+          setPromptIdx((prev) => (prev + 1) % PROMPTS.length);
+        }
       }
+    };
+
+    let delay = 75;
+    if (!isDeleting && displayText.length === currentFullText.length) {
+      delay = 2000;
+    } else if (isDeleting && displayText.length === 0) {
+      delay = 350;
+    } else if (isDeleting) {
+      delay = 35;
     }
 
+    const timer = setTimeout(handleTyping, delay);
     return () => clearTimeout(timer);
   }, [displayText, isDeleting, promptIdx]);
 

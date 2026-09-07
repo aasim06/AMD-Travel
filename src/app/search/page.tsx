@@ -27,6 +27,7 @@ import {
   Loader2,
   Luggage,
   UserRound,
+  Baby,
   Menu,
   Moon,
   Car,
@@ -696,7 +697,37 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
   const [ret,        setRet]        = useState(searchParams.get("ret") ?? "");
   // Fix #1: bags as proper local state (was just a const from URL)
   const [bags,       setBags]       = useState(parseInt(searchParams.get("bags") ?? searchParams.get("checkedBags") ?? "0", 10));
-  const [passengers, setPassengers] = useState(parseInt(searchParams.get("passengers") ?? "1", 10));
+  const [adults,     setAdults]     = useState(() => parseInt(searchParams.get("adults") ?? searchParams.get("passengers") ?? "1", 10));
+  const [children,   setChildren]   = useState(() => parseInt(searchParams.get("children") ?? "0", 10));
+  const [infants,    setInfants]    = useState(() => parseInt(searchParams.get("infants") ?? "0", 10));
+  const passengers                  = adults + children + infants;
+
+  const updateAdults = (delta: number) => {
+    setAdults((prev) => {
+      const next = Math.max(1, Math.min(9, prev + delta));
+      if (next + children + infants > 9) return prev;
+      if (infants > next) setInfants(next);
+      return next;
+    });
+  };
+
+  const updateChildren = (delta: number) => {
+    setChildren((prev) => {
+      const next = Math.max(0, prev + delta);
+      if (adults + next + infants > 9) return prev;
+      return next;
+    });
+  };
+
+  const updateInfants = (delta: number) => {
+    setInfants((prev) => {
+      const next = Math.max(0, prev + delta);
+      if (next > adults) return prev;
+      if (adults + children + next > 9) return prev;
+      return next;
+    });
+  };
+
   const [tripType,   setTripType]   = useState<"one-way" | "round-trip" | "multi-city">(
     (searchParams.get("tripType") ?? "one-way") as "one-way" | "round-trip" | "multi-city"
   );
@@ -709,7 +740,9 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
     setToLabel(searchParams.get("toLabel") ?? searchParams.get("to") ?? "");
     setDept(searchParams.get("dept") ?? "");
     setRet(searchParams.get("ret") ?? "");
-    setPassengers(parseInt(searchParams.get("passengers") ?? "1", 10));
+    setAdults(parseInt(searchParams.get("adults") ?? searchParams.get("passengers") ?? "1", 10));
+    setChildren(parseInt(searchParams.get("children") ?? "0", 10));
+    setInfants(parseInt(searchParams.get("infants") ?? "0", 10));
     setBags(parseInt(searchParams.get("bags") ?? searchParams.get("checkedBags") ?? "0", 10));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.toString()]);
@@ -824,6 +857,9 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
       const p = new URLSearchParams({
         tripType: "multi-city",
         passengers: String(passengers),
+        adults:     String(adults),
+        children:   String(children),
+        infants:    String(infants),
         bags: String(bags), // Fix #3: include bags in URL
         class: searchParams.get("class") ?? "ECONOMY",
         legs: JSON.stringify(multiLegs.map((l) => ({ from: l.from, to: l.to, date: l.date }))),
@@ -840,6 +876,9 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
       toLabel,
       dept,
       passengers: String(passengers),
+      adults:     String(adults),
+      children:   String(children),
+      infants:    String(infants),
       bags: String(bags), // Fix #3: include bags in URL
       class: searchParams.get("class") ?? "ECONOMY",
       tripType,
@@ -858,7 +897,15 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
   const dateShort  = deptShort
     ? isRound && retShort ? `${deptShort} – ${retShort}` : deptShort
     : "Date";
-  const paxShort   = `${passengers} Adult${passengers > 1 ? "s" : ""}`;
+  const getPaxSummary = () => {
+    const parts: string[] = [];
+    if (adults > 0) parts.push(`${adults} ${adults === 1 ? "Adult" : "Adults"}`);
+    if (children > 0) parts.push(`${children} ${children === 1 ? "Child" : "Children"}`);
+    if (infants > 0) parts.push(`${infants} ${infants === 1 ? "Infant" : "Infants"}`);
+    if (parts.length > 2) return `${passengers} Travellers`;
+    return parts.join(", ") || "1 Adult";
+  };
+  const paxShort   = getPaxSummary();
 
   // ── Compact expand state ──────────────────────────────────────────────────
   const [expanded, setExpanded] = useState(false);
@@ -1339,30 +1386,86 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
 
             <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Travellers</p>
 
-            {/* Adults row */}
-            <div className="flex items-center justify-between py-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-800">Adults</p>
-                <p className="text-[11px] text-slate-400">Age 12+</p>
+            <div className="space-y-3">
+              {/* Adults row */}
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">Adults</p>
+                  <p className="text-[11px] text-slate-400">Age 12+</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => updateAdults(-1)}
+                    disabled={adults <= 1}
+                    className="h-9 w-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-30 cursor-pointer"
+                  >
+                    <Minus className="h-4 w-4" />
+                  </button>
+                  <span className="text-base font-bold text-slate-800 w-6 text-center tabular-nums">{adults}</span>
+                  <button
+                    type="button"
+                    onClick={() => updateAdults(1)}
+                    disabled={passengers >= 9}
+                    className="h-9 w-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-30 cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setPassengers(p => Math.max(1, p - 1))}
-                  disabled={passengers <= 1}
-                  className="h-9 w-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-30 cursor-pointer"
-                >
-                  <Minus className="h-4 w-4" />
-                </button>
-                <span className="text-base font-bold text-slate-800 w-6 text-center tabular-nums">{passengers}</span>
-                <button
-                  type="button"
-                  onClick={() => setPassengers(p => Math.min(9, p + 1))}
-                  disabled={passengers >= 9}
-                  className="h-9 w-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-30 cursor-pointer"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
+
+              {/* Children row */}
+              <div className="flex items-center justify-between py-2 border-t border-slate-100">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">Children</p>
+                  <p className="text-[11px] text-slate-400">Age 2–11</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => updateChildren(-1)}
+                    disabled={children <= 0}
+                    className="h-9 w-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-30 cursor-pointer"
+                  >
+                    <Minus className="h-4 w-4" />
+                  </button>
+                  <span className="text-base font-bold text-slate-800 w-6 text-center tabular-nums">{children}</span>
+                  <button
+                    type="button"
+                    onClick={() => updateChildren(1)}
+                    disabled={passengers >= 9}
+                    className="h-9 w-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-30 cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Infants row */}
+              <div className="flex items-center justify-between py-2 border-t border-slate-100">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">Infants</p>
+                  <p className="text-[11px] text-slate-400">Under 2 (on lap)</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => updateInfants(-1)}
+                    disabled={infants <= 0}
+                    className="h-9 w-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-30 cursor-pointer"
+                  >
+                    <Minus className="h-4 w-4" />
+                  </button>
+                  <span className="text-base font-bold text-slate-800 w-6 text-center tabular-nums">{infants}</span>
+                  <button
+                    type="button"
+                    onClick={() => updateInfants(1)}
+                    disabled={passengers >= 9 || infants >= adults}
+                    className="h-9 w-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-30 cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1578,8 +1681,7 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
                 >
                   <div className="flex items-center gap-2">
                     <Users className={`h-4 w-4 transition-colors ${paxOpen ? "text-primary" : "text-slate-400"}`} />
-                    <span className="font-semibold text-slate-800">{passengers}</span>
-                    <span className="text-slate-500">{passengers === 1 ? "Adult" : "Adults"}</span>
+                    <span className="font-semibold text-slate-800">{paxShort}</span>
                   </div>
                   <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ml-1 ${paxOpen ? "rotate-180" : ""}`} />
                 </button>
@@ -1607,31 +1709,97 @@ function ModifySearchBar({ compact = false }: { compact?: boolean }) {
     {paxOpen && paxCoords && createPortal(
       <div
         id="pax-portal"
-        className="fixed z-[9999] bg-white rounded-xl border border-slate-200 shadow-2xl p-4 min-w-[200px]"
+        className="fixed z-[9999] bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 w-[280px]"
         style={{ top: paxCoords.top, left: paxCoords.left }}
       >
-        <p className="text-xs font-semibold text-slate-700 mb-3">Passengers</p>
-        <div className="flex items-center justify-between gap-6">
-          <div>
-            <p className="text-sm font-medium text-slate-800">Adults</p>
-            <p className="text-[11px] text-slate-400">Age 12+</p>
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Travellers</p>
+        <div className="space-y-3">
+          {/* Adults row */}
+          <div className="flex items-center justify-between py-1">
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Adults</p>
+              <p className="text-[11px] text-slate-400">Age 12+</p>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => updateAdults(-1)}
+                disabled={adults <= 1}
+                className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-30 cursor-pointer"
+              >
+                <Minus className="h-3.5 w-3.5" />
+              </button>
+              <span className="text-sm font-bold text-slate-800 w-5 text-center tabular-nums">{adults}</span>
+              <button
+                type="button"
+                onClick={() => updateAdults(1)}
+                disabled={passengers >= 9}
+                className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-30 cursor-pointer"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2.5">
-            <button type="button" onClick={() => setPassengers(p => Math.max(1, p - 1))}
-              disabled={passengers <= 1}
-              className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-40">
-              <Minus className="h-3.5 w-3.5" />
-            </button>
-            <span className="text-sm font-bold text-slate-800 w-5 text-center tabular-nums">{passengers}</span>
-            <button type="button" onClick={() => setPassengers(p => Math.min(9, p + 1))}
-              disabled={passengers >= 9}
-              className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-40">
-              <Plus className="h-3.5 w-3.5" />
-            </button>
+
+          {/* Children row */}
+          <div className="flex items-center justify-between py-1 border-t border-slate-100">
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Children</p>
+              <p className="text-[11px] text-slate-400">Age 2–11</p>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => updateChildren(-1)}
+                disabled={children <= 0}
+                className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-30 cursor-pointer"
+              >
+                <Minus className="h-3.5 w-3.5" />
+              </button>
+              <span className="text-sm font-bold text-slate-800 w-5 text-center tabular-nums">{children}</span>
+              <button
+                type="button"
+                onClick={() => updateChildren(1)}
+                disabled={passengers >= 9}
+                className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-30 cursor-pointer"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Infants row */}
+          <div className="flex items-center justify-between py-1 border-t border-slate-100">
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Infants</p>
+              <p className="text-[11px] text-slate-400">Under 2 (on lap)</p>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => updateInfants(-1)}
+                disabled={infants <= 0}
+                className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-30 cursor-pointer"
+              >
+                <Minus className="h-3.5 w-3.5" />
+              </button>
+              <span className="text-sm font-bold text-slate-800 w-5 text-center tabular-nums">{infants}</span>
+              <button
+                type="button"
+                onClick={() => updateInfants(1)}
+                disabled={passengers >= 9 || infants >= adults}
+                className="h-8 w-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-30 cursor-pointer"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
         </div>
-        <button type="button" onClick={() => setPaxOpen(false)}
-          className="mt-3 w-full h-8 rounded-lg bg-primary/8 text-primary text-xs font-semibold hover:bg-primary/15 transition-colors">
+        <button
+          type="button"
+          onClick={() => setPaxOpen(false)}
+          className="mt-4 w-full h-9 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-colors cursor-pointer"
+        >
           Done
         </button>
       </div>,
@@ -2254,6 +2422,9 @@ function SearchContent() {
   const dept        = searchParams.get("dept") ?? "";
   const ret         = searchParams.get("ret") ?? undefined;
   const passengers  = parseInt(searchParams.get("passengers") ?? "1", 10);
+  const adults      = parseInt(searchParams.get("adults") ?? String(passengers), 10);
+  const children    = parseInt(searchParams.get("children") ?? "0", 10);
+  const infants     = parseInt(searchParams.get("infants") ?? "0", 10);
   const travelClass = (searchParams.get("class") ?? "ECONOMY") as TravelClass;
   const tripType    = (searchParams.get("tripType") ?? "one-way") as "one-way" | "round-trip" | "multi-city";
   const currency    = "USD" as Currency;
@@ -2301,7 +2472,11 @@ function SearchContent() {
 
   function handleFareTierConfirm(tier: FareTier, finalPrice: number, upgradedOffer?: FlightOffer) {
     if (!fareTierOffer) return;
-    const paxCount = parseInt(new URLSearchParams(window.location.search).get("passengers") ?? "1", 10);
+    const urlParams = new URLSearchParams(window.location.search);
+    const paxCount = parseInt(urlParams.get("passengers") ?? "1", 10);
+    const adtCount = parseInt(urlParams.get("adults") ?? String(paxCount), 10);
+    const chdCount = parseInt(urlParams.get("children") ?? "0", 10);
+    const infCount = parseInt(urlParams.get("infants") ?? "0", 10);
     const chosenOffer = upgradedOffer || fareTierOffer;
     sessionStorage.setItem("amd_checkout_offer", JSON.stringify({
       offer:         chosenOffer,
@@ -2309,6 +2484,9 @@ function SearchContent() {
       fareClass:     tier.label,
       selectedPrice: finalPrice,
       passengers:    paxCount,
+      adults:        adtCount,
+      children:      chdCount,
+      infants:       infCount,
     }));
     setFareTierOffer(null);
     router.push("/checkout");
@@ -2549,6 +2727,9 @@ const fetchFlights = useCallback(async () => {
       departureDate: isMultiCity ? parsedLegs![0].date : dept,
       returnDate:    ret,
       passengers,
+      adults,
+      children,
+      infants,
       travelClass,
       currency,
       ...(isMultiCity && {
@@ -2596,7 +2777,7 @@ const fetchFlights = useCallback(async () => {
       setIsSyncing(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [from, to, dept, ret, passengers, travelClass, tripType, parsedLegs]);
+  }, [from, to, dept, ret, passengers, adults, children, infants, travelClass, tripType, parsedLegs]);
 
   useEffect(() => {
     console.log("Search params changed, triggering fetchFlights", { from, to, dept });
@@ -2767,9 +2948,9 @@ const fetchFlights = useCallback(async () => {
                 ) : (
                   <>
                     <div className="space-y-3">
-                      {filteredResults.slice(0, displayCount).map((offer) => (
+                      {filteredResults.slice(0, displayCount).map((offer, idx) => (
                         <FlightCard
-                          key={offer.id}
+                          key={`${offer.id}-${idx}`}
                           offer={offer}
                           carriers={carriers}
                           onSelect={handleSelectFlight}

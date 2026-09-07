@@ -328,17 +328,8 @@ export function Header() {
             <LogoMark />
           </div>
 
-          {/* Right: currency + Ask AI + user account */}
+          {/* Right: currency + user account */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Ask AI Trigger Button */}
-            <button
-              type="button"
-              onClick={() => setAiDrawerOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#ff8a3d] hover:bg-[#ea792d] text-white text-xs font-bold shadow-md shadow-[#ff8a3d]/20 transition-all duration-200 cursor-pointer active:scale-95"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span className="tracking-tight font-outfit">Ask AI</span>
-            </button>
 
             {/* Currency selector */}
             <CurrencyDropdown />

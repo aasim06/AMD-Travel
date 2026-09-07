@@ -1,71 +1,86 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 interface TypewriterProps {
   words: string[];
   typingSpeed?: number;
   deletingSpeed?: number;
   pauseDuration?: number;
+  deletingPauseDuration?: number;
   className?: string;
   cursorClassName?: string;
 }
 
 export function Typewriter({
   words,
-  typingSpeed = 90,
-  deletingSpeed = 45,
-  pauseDuration = 2200,
+  typingSpeed = 80,
+  deletingSpeed = 40,
+  pauseDuration = 1800,
+  deletingPauseDuration = 350,
   className = "",
   cursorClassName = "",
 }: TypewriterProps) {
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [currentText, setCurrentText] = useState("");
+  const [displayText, setDisplayText] = useState("");
+  const [wordIdx, setWordIdx] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const wordsKey = JSON.stringify(words);
+  // Keep a stable list of words via ref
+  const wordsRef = useRef(words);
+  wordsRef.current = words;
 
-  // Reset state if words array changes
+  // Track words content change
+  const wordsKey = words.join("|||");
+  const prevKeyRef = useRef(wordsKey);
+
   useEffect(() => {
-    setCurrentWordIndex(0);
-    setCurrentText("");
-    setIsDeleting(false);
+    if (prevKeyRef.current !== wordsKey) {
+      prevKeyRef.current = wordsKey;
+      setWordIdx(0);
+      setDisplayText("");
+      setIsDeleting(false);
+    }
   }, [wordsKey]);
 
   useEffect(() => {
-    if (!words || words.length === 0) return;
+    const list = wordsRef.current;
+    if (!list || list.length === 0) return;
 
-    const fullWord = words[currentWordIndex % words.length];
+    const currentWord = list[wordIdx % list.length] || "";
 
-    let timer: NodeJS.Timeout;
-
-    if (!isDeleting) {
-      if (currentText.length < fullWord.length) {
-        timer = setTimeout(() => {
-          setCurrentText(fullWord.slice(0, currentText.length + 1));
-        }, typingSpeed);
-      } else {
-        timer = setTimeout(() => {
+    const handleTyping = () => {
+      if (!isDeleting) {
+        if (displayText.length < currentWord.length) {
+          setDisplayText(currentWord.slice(0, displayText.length + 1));
+        } else {
           setIsDeleting(true);
-        }, pauseDuration);
-      }
-    } else {
-      if (currentText.length > 0) {
-        timer = setTimeout(() => {
-          setCurrentText(fullWord.slice(0, currentText.length - 1));
-        }, deletingSpeed);
+        }
       } else {
-        setIsDeleting(false);
-        setCurrentWordIndex((prev) => (prev + 1) % words.length);
+        if (displayText.length > 0) {
+          setDisplayText(currentWord.slice(0, displayText.length - 1));
+        } else {
+          setIsDeleting(false);
+          setWordIdx((prev) => (prev + 1) % list.length);
+        }
       }
+    };
+
+    let delay = typingSpeed;
+    if (!isDeleting && displayText.length === currentWord.length) {
+      delay = pauseDuration;
+    } else if (isDeleting && displayText.length === 0) {
+      delay = deletingPauseDuration;
+    } else if (isDeleting) {
+      delay = deletingSpeed;
     }
 
+    const timer = setTimeout(handleTyping, delay);
     return () => clearTimeout(timer);
-  }, [currentText, isDeleting, currentWordIndex, words, typingSpeed, deletingSpeed, pauseDuration]);
+  }, [displayText, isDeleting, wordIdx, typingSpeed, deletingSpeed, pauseDuration, deletingPauseDuration]);
 
   return (
     <span className={`inline-flex items-center ${className}`}>
-      <span>{currentText || "\u00A0"}</span>
+      <span>{displayText || "\u00A0"}</span>
       <span
         className={`inline-block w-[3px] h-[0.85em] ml-1 bg-primary animate-pulse rounded-full ${cursorClassName}`}
         aria-hidden="true"

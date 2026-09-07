@@ -174,7 +174,7 @@ export function PopularFlights() {
   const { formatPrice, t } = useCurrency();
 
   return (
-    <section className="container py-14">
+    <section className="container py-10 sm:py-14">
 
       {/* Header */}
       <div className="flex items-end justify-between mb-8 gap-4">

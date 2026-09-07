@@ -59,10 +59,10 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="container py-6 sm:py-12">
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="container py-6 sm:py-12 pb-28 md:pb-12">
+        <div className="grid grid-cols-2 gap-8 sm:gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand + address */}
-          <div className="lg:col-span-1">
+          <div className="col-span-2 sm:col-span-2 lg:col-span-1">
             <Link href="/" className="flex items-center gap-2.5 group">
               {/* Icon mark — same as header */}
               <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-primary shadow-card group-hover:shadow-card-hover transition-shadow">
@@ -209,7 +209,7 @@ export function Footer() {
           </div>
 
           {/* Payment & Security */}
-          <div>
+          <div className="col-span-2 sm:col-span-1">
             <h3 className="font-heading font-semibold text-sm text-foreground uppercase tracking-wider">
               We Accept
             </h3>

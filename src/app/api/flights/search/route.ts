@@ -27,10 +27,15 @@ function generateMockFlights(
   travelClass: TravelClass,
   currency: Currency,
   tripType: string,
-  legs?: { origin: string; destination: string; departureDate: string }[]
+  legs?: { origin: string; destination: string; departureDate: string }[],
+  adultsCount: number = 1,
+  childrenCount: number = 0,
+  infantsCount: number = 0
 ): object {
   const isRound = tripType === "round-trip";
   const isMultiCity = tripType === "multi-city" && legs && legs.length >= 2;
+  const paxMultiplier = Math.max(1, adultsCount * 1.0 + childrenCount * 0.75 + infantsCount * 0.15);
+  const totalPaxCount = Math.max(1, passengers || (adultsCount + childrenCount + infantsCount));
 
   const isDomesticPk = ["LHE","ISB","KHI","PEW","MUX","SKT","UET"].includes(origin.toUpperCase()) &&
                        ["LHE","ISB","KHI","PEW","MUX","SKT","UET"].includes(destination.toUpperCase());
@@ -104,8 +109,8 @@ function generateMockFlights(
         });
       });
 
-      const totalAmount = Math.round(multiCityTotal * passengers);
-      const perPax = Math.round(totalAmount / passengers);
+      const totalAmount = Math.round(multiCityTotal * paxMultiplier);
+      const perPax = Math.round(totalAmount / totalPaxCount);
 
       return {
         id: `mock-multi-${i}-${c.code}`,
@@ -130,10 +135,10 @@ function generateMockFlights(
     const arrAt = new Date(new Date(depAt).getTime() + durationMins * 60000).toISOString().replace(".000Z","");
     const durStr = `PT${Math.floor(durationMins/60)}H${durationMins%60 > 0 ? durationMins%60+"M" : ""}`;
 
-    const baseTotal  = Math.round(c.basePrice * variation * passengers);
+    const baseTotal  = Math.round(c.basePrice * variation * paxMultiplier);
     const roundMult  = isRound ? 1.85 : 1;
     const total      = Math.round(baseTotal * roundMult);
-    const perPax     = Math.round(total / passengers);
+    const perPax     = Math.round(total / totalPaxCount);
 
     const seg: FlightSegment = {
       id: String(i + 1),
@@ -201,6 +206,9 @@ interface SearchBody {
   departureDate: string;
   returnDate?:   string;
   passengers?:   number;
+  adults?:       number;
+  children?:     number;
+  infants?:      number;
   travelClass?:  TravelClass;
   currency?:     Currency;
   fast?:         boolean;
@@ -239,6 +247,9 @@ interface AmadeusOffer {
   };
   validatingAirlineCodes: string[];
   travelerPricings?: {
+    travelerId: string;
+    fareOption?: string;
+    travelerType: string;
     price: { total: string; base: string };
     fareDetailsBySegment: {
       segmentId: string;
@@ -378,6 +389,22 @@ function mapOffer(offer: AmadeusOffer, requestedCurrency: Currency, markupType: 
     numberOfBookableSeats:  offer.numberOfBookableSeats ?? 9,
     lastTicketingDate:      offer.lastTicketingDate,
     baggageAllowance,
+    travelerPricings: offer.travelerPricings?.map((tp) => {
+      const tpTotal = parseFloat(tp.price?.total || "0");
+      const tpBase = parseFloat(tp.price?.base || "0");
+      const markedTotal = markupType === "FIXED" ? tpTotal + markupValue / numTravelers : tpTotal * (1 + markupValue / 100);
+      const markedBase = markupType === "FIXED" ? tpBase + markupValue / numTravelers : tpBase * (1 + markupValue / 100);
+      return {
+        travelerId: tp.travelerId,
+        fareOption: tp.fareOption,
+        travelerType: tp.travelerType,
+        price: {
+          currency: requestedCurrency,
+          total: markedTotal.toFixed(2),
+          base: markedBase.toFixed(2),
+        },
+      };
+    }),
     rawAmadeusOffer:        offer,
   };
 }
@@ -398,10 +425,45 @@ export async function POST(req: NextRequest) {
     destination,
     departureDate,
     returnDate,
-    passengers  = 1,
+    passengers,
+    adults:       reqAdults,
+    children:     reqChildren,
+    infants:      reqInfants,
     travelClass = "ECONOMY",
     currency    = "USD",
   } = body;
+
+  const rawAdults = Number(reqAdults ?? passengers ?? 1);
+  const adults = Math.max(1, Math.min(9, isNaN(rawAdults) ? 1 : rawAdults));
+  const rawChildren = Number(reqChildren ?? 0);
+  const children = Math.max(0, Math.min(9 - adults, isNaN(rawChildren) ? 0 : rawChildren));
+  const rawInfants = Number(reqInfants ?? 0);
+  const infants = Math.max(0, Math.min(adults, isNaN(rawInfants) ? 0 : rawInfants));
+  const totalPax = adults + children + infants;
+
+  // Helper to build Amadeus travelers structure for POST requests
+  const buildAmadeusTravelers = () => {
+    let tId = 1;
+    const travelersList: Array<{ id: string; travelerType: string; associatedAdultId?: string }> = [];
+    const adultIds: string[] = [];
+
+    for (let i = 0; i < adults; i++) {
+      const id = String(tId++);
+      adultIds.push(id);
+      travelersList.push({ id, travelerType: "ADULT" });
+    }
+    for (let i = 0; i < children; i++) {
+      travelersList.push({ id: String(tId++), travelerType: "CHILD" });
+    }
+    for (let i = 0; i < infants; i++) {
+      travelersList.push({
+        id: String(tId++),
+        travelerType: "HELD_INFANT",
+        associatedAdultId: adultIds[i % adultIds.length],
+      });
+    }
+    return travelersList;
+  };
 
   if (!origin || !destination || !departureDate) {
     return NextResponse.json(
@@ -421,7 +483,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Cache check ────────────────────────────────────────────────────────────
-  const cacheKey = [tripType, origin, destination, departureDate, returnDate ?? "", passengers, travelClass, currency,
+  const cacheKey = [tripType, origin, destination, departureDate, returnDate ?? "", adults, children, infants, travelClass, currency,
     isMultiCity ? JSON.stringify(body.legs) : ""].join(":");
   const cached = cacheGet(cacheKey);
   if (cached) {
@@ -433,8 +495,8 @@ export async function POST(req: NextRequest) {
   if (body.fast) {
     const instantData = generateMockFlights(
       origin, destination, departureDate, returnDate,
-      passengers, travelClass, currency, tripType,
-      body.legs
+      totalPax, travelClass, currency, tripType,
+      body.legs, adults, children, infants
     );
     return NextResponse.json({ ...instantData, isPartial: true }, { headers: { "X-Data-Source": "FAST_PREVIEW" } });
   }
@@ -448,8 +510,8 @@ export async function POST(req: NextRequest) {
     console.warn("[Amadeus] Auth failed — using mock fallback:", msg);
     const mockData = generateMockFlights(
       origin, destination, departureDate, returnDate,
-      passengers, travelClass, currency, tripType,
-      body.legs
+      totalPax, travelClass, currency, tripType,
+      body.legs, adults, children, infants
     );
     cacheSet(cacheKey, mockData);
     return NextResponse.json(mockData, { headers: { "X-Data-Source": "MOCK" } });
@@ -472,10 +534,7 @@ export async function POST(req: NextRequest) {
           destinationLocationCode: leg.destination.toUpperCase(),
           departureDateTimeRange:  { date: leg.departureDate },
         })),
-        travelers: Array.from({ length: passengers }, (_, i) => ({
-          id: String(i + 1),
-          travelerType: "ADULT",
-        })),
+        travelers: buildAmadeusTravelers(),
         sources: ["GDS"],
         searchCriteria: {
           maxFlightOffers: 250,
@@ -495,12 +554,19 @@ export async function POST(req: NextRequest) {
         originLocationCode:      origin.toUpperCase(),
         destinationLocationCode: destination.toUpperCase(),
         departureDate:           departureDate,
-        adults:                  String(passengers),
+        adults:                  String(adults),
         travelClass:             travelClass,
         currencyCode:            currency,
         max:                     "250",
         nonStop:                 "false",
       });
+
+      if (children > 0) {
+        params.set("children", String(children));
+      }
+      if (infants > 0) {
+        params.set("infants", String(infants));
+      }
 
       if (isRoundTrip && returnDate) {
         params.set("returnDate", returnDate);
@@ -527,10 +593,7 @@ export async function POST(req: NextRequest) {
       const postBody = {
         currencyCode: currency,
         originDestinations,
-        travelers: Array.from({ length: passengers }, (_, i) => ({
-          id: String(i + 1),
-          travelerType: "ADULT",
-        })),
+        travelers: buildAmadeusTravelers(),
         sources: ["GDS"],
         pricingOptions: {
           fareType: ["PUBLISHED"],
@@ -580,8 +643,8 @@ export async function POST(req: NextRequest) {
       console.warn("[Amadeus] 0 live results returned — generating rich fallback options for search");
       const fallbackData = generateMockFlights(
         origin, destination, departureDate, returnDate,
-        passengers, travelClass, currency, tripType,
-        body.legs
+        totalPax, travelClass, currency, tripType,
+        body.legs, adults, children, infants
       );
       return NextResponse.json(fallbackData, { headers: { "X-Data-Source": "FALLBACK" } });
     }
@@ -598,7 +661,10 @@ export async function POST(req: NextRequest) {
       /* default 5% */
     }
 
-    const offers: FlightOffer[] = rawOffers.map((o: AmadeusOffer) => mapOffer(o, currency, markupType, markupValue));
+    const offers: FlightOffer[] = rawOffers.map((o: AmadeusOffer, idx: number) => {
+      const uniqueId = o.id ? `${o.id}-${idx + 1}` : String(idx + 1);
+      return mapOffer({ ...o, id: uniqueId }, currency, markupType, markupValue);
+    });
 
     const dicts = amadeusData.dictionaries ?? {};
     const response = {
@@ -619,8 +685,8 @@ export async function POST(req: NextRequest) {
     console.warn("[Amadeus] Live search timeout/error — returning instant realistic flight options:", message);
     const mockData = generateMockFlights(
       origin, destination, departureDate, returnDate,
-      passengers, travelClass, currency, tripType,
-      body.legs
+      totalPax, travelClass, currency, tripType,
+      body.legs, adults, children, infants
     );
     cacheSet(cacheKey, mockData);
     return NextResponse.json(mockData, { headers: { "X-Data-Source": "FAST_FALLBACK" } });

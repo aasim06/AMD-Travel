@@ -56,29 +56,29 @@ export function WhyChooseUsSection() {
   const { t } = useCurrency();
 
   return (
-    <section className="bg-slate-50/50 py-14 lg:py-20 border-t border-slate-100">
+    <section className="bg-slate-50/50 py-10 sm:py-14 lg:py-20 border-t border-slate-100">
       <div className="container">
         {/* Section Header */}
-        <div className="flex flex-col items-center text-center mb-12 lg:mb-16">
+        <div className="flex flex-col items-center text-center mb-10 sm:mb-12 lg:mb-16">
           <span className="inline-flex items-center justify-center px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-[11px] font-bold uppercase tracking-wider text-primary shadow-xs mb-3">
             WHY CHOOSE US
           </span>
-          <h2 className="font-heading font-extrabold text-slate-900 text-3xl sm:text-4xl leading-tight tracking-tight">
+          <h2 className="font-heading font-extrabold text-slate-900 text-2xl sm:text-4xl leading-tight tracking-tight">
             {t("why.title", "Travel With Confidence")}
           </h2>
-          <p className="text-slate-500 text-sm sm:text-base mt-2.5 max-w-xl text-center font-normal leading-relaxed">
+          <p className="text-slate-500 text-xs sm:text-base mt-2 sm:mt-2.5 max-w-xl text-center font-normal leading-relaxed">
             {t("why.subtitle", "Experience seamless booking, transparent pricing, and 24/7 dedicated support.")}
           </p>
         </div>
 
         {/* 4-Column Feature Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-8">
           {FEATURES.map((feature) => {
             const Icon = feature.icon;
             return (
               <div
                 key={feature.id}
-                className="group flex flex-col rounded-2xl bg-white border border-slate-200/70 p-6 lg:p-7 shadow-xs hover:-translate-y-1 hover:shadow-lg transition-all duration-300 text-left"
+                className="group flex flex-col rounded-2xl bg-white border border-slate-200/70 p-5 sm:p-6 lg:p-7 shadow-xs hover:-translate-y-1 hover:shadow-lg transition-all duration-300 text-left"
               >
                 {/* Icon Badge */}
                 <div className="bg-primary/10 text-primary p-3 rounded-xl w-12 h-12 flex items-center justify-center mb-5 group-hover:scale-105 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 shrink-0">

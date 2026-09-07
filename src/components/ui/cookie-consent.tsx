@@ -1,5 +1,6 @@
 "use client";
 
+// AMD Global Travel - Modern Non-blocking Cookie Consent Sheet
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Cookie, ShieldCheck, SlidersHorizontal, Check, X, ChevronDown, ChevronUp, Lock } from "lucide-react";
@@ -53,17 +54,6 @@ export function CookieConsent() {
     return () => window.removeEventListener("open-cookie-preferences", handleOpen);
   }, []);
 
-  // Prevent background scroll when modal is active
-  useEffect(() => {
-    if (isVisible) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isVisible]);
 
   const saveConsent = (status: "accepted" | "declined" | "customized", customPrefs?: CookiePreferences) => {
     const finalPrefs: CookiePreferences = customPrefs || {
@@ -114,189 +104,199 @@ export function CookieConsent() {
   if (!isVisible) return null;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Cookie Preferences and Consent"
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
-    >
-      {/* Background Dim & Blur Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity animate-in fade-in duration-300"
-        aria-hidden="true"
-      />
+    <>
+      {/* Dim backdrop only when detailed settings are open */}
+      {showPreferences && (
+        <div
+          className="fixed inset-0 z-[95] bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+          onClick={() => setShowPreferences(false)}
+          aria-hidden="true"
+        />
+      )}
 
-      {/* Centered Modal Card */}
-      <div className="relative w-full max-w-lg sm:max-w-xl rounded-3xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-[#0f172a] shadow-[0_25px_80px_rgba(0,0,0,0.45)] dark:shadow-[0_25px_80px_rgba(0,0,0,0.85)] p-6 sm:p-7 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-300 transition-all">
-        
-        {/* Top Header Row */}
-        <div className="flex items-start justify-between gap-3 relative">
-          <div className="flex items-center gap-3.5">
-            <div className="h-12 w-12 rounded-2xl bg-amber-500/15 dark:bg-amber-500/20 text-amber-500 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/30 shadow-xs">
-              <Cookie className="h-6 w-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-heading text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-                  We value your privacy
-                </h3>
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-700/60 px-2 py-0.5 rounded-full">
-                  <ShieldCheck className="w-3 h-3" /> GDPR Safe
-                </span>
+      {/* Modern Bottom Docked / Floating Cookie Card */}
+      <aside
+        role="dialog"
+        aria-modal={showPreferences}
+        aria-label="Cookie Consent"
+        className={`fixed z-[100] transition-all duration-300 ease-out animate-in slide-in-from-bottom-6 ${
+          showPreferences
+            ? "inset-x-3 bottom-3 sm:bottom-6 sm:right-6 sm:left-auto sm:max-w-md"
+            : "bottom-0 inset-x-0 sm:bottom-6 sm:right-6 sm:inset-x-auto sm:max-w-md sm:mx-0"
+        }`}
+      >
+        <div className="relative rounded-t-3xl sm:rounded-2xl border-t sm:border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-[0_-10px_35px_rgba(0,0,0,0.12)] sm:shadow-[0_16px_45px_rgba(0,0,0,0.18)] p-5 sm:p-5 max-h-[85vh] overflow-y-auto">
+          
+          {/* Header Row */}
+          <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800/80">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-400 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Cookie className="h-5 w-5" />
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                AMD Global Travel Cookie & Privacy Consent
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleDeclineAll}
-            className="text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            title="Decline non-essential & close"
-            aria-label="Decline and close"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Description Text */}
-        <p className="mt-4 text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed font-normal">
-          We use cookies to improve your flight search, remember your preferences (such as currency), and personalize travel offers. Read our{" "}
-          <Link
-            href="/legal/cookies"
-            className="text-primary hover:text-primary/80 dark:text-primary dark:hover:text-primary/80 font-semibold underline underline-offset-2 transition-colors"
-          >
-            Cookie Policy
-          </Link>{" "}
-          and{" "}
-          <Link
-            href="/legal/privacy"
-            className="text-primary hover:text-primary/80 dark:text-primary dark:hover:text-primary/80 font-semibold underline underline-offset-2 transition-colors"
-          >
-            Privacy Policy
-          </Link>{" "}
-          for more details.
-        </p>
-
-        {/* Expandable Preferences Drawer */}
-        {showPreferences && (
-          <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-slate-800 space-y-2.5 animate-in fade-in duration-200">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Customize Cookie Settings
-            </p>
-
-            {/* Necessary Cookies (Locked) */}
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-              <div className="flex flex-col pr-2">
+              <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
-                    Essential / Necessary
-                  </span>
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/60">
-                    Always On
+                  <h3 className="font-heading text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight truncate">
+                    Cookie Preferences
+                  </h3>
+                  <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200/70 dark:border-emerald-800/60 px-1.5 py-0.5 rounded-full shrink-0">
+                    <ShieldCheck className="w-2.5 h-2.5" /> GDPR
                   </span>
                 </div>
-                <span className="text-xs text-slate-500 dark:text-slate-400 leading-tight mt-1">
-                  Required for site security, navigation & currency memory.
-                </span>
-              </div>
-              <div className="flex items-center text-slate-400 shrink-0">
-                <Lock className="w-4 h-4 mr-1 text-slate-400" />
               </div>
             </div>
 
-            {/* Analytics Cookies Toggle */}
-            <label className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-800 transition-colors">
-              <div className="flex flex-col pr-2">
-                <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
-                  Analytics & Performance
-                </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400 leading-tight mt-1">
-                  Helps us measure site traffic and improve booking speeds.
-                </span>
-              </div>
-              <input
-                type="checkbox"
-                checked={preferences.analytics}
-                onChange={(e) =>
-                  setPreferences((prev) => ({ ...prev, analytics: e.target.checked }))
-                }
-                className="w-4 h-4 rounded text-primary focus:ring-primary accent-primary cursor-pointer"
-              />
-            </label>
-
-            {/* Marketing Cookies Toggle */}
-            <label className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-800 transition-colors">
-              <div className="flex flex-col pr-2">
-                <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
-                  Marketing & Deals
-                </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400 leading-tight mt-1">
-                  Used to deliver personalized discounts and relevant flights.
-                </span>
-              </div>
-              <input
-                type="checkbox"
-                checked={preferences.marketing}
-                onChange={(e) =>
-                  setPreferences((prev) => ({ ...prev, marketing: e.target.checked }))
-                }
-                className="w-4 h-4 rounded text-primary focus:ring-primary accent-primary cursor-pointer"
-              />
-            </label>
+            <button
+              type="button"
+              onClick={handleDeclineAll}
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+              title="Decline & close"
+              aria-label="Decline and close"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-        )}
 
-        {/* Action Buttons */}
-        <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => setShowPreferences((prev) => !prev)}
-            className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer w-full sm:w-auto justify-center"
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>{showPreferences ? "Hide Settings" : "Preferences"}</span>
-            {showPreferences ? (
-              <ChevronUp className="w-3.5 h-3.5 ml-0.5" />
-            ) : (
-              <ChevronDown className="w-3.5 h-3.5 ml-0.5" />
-            )}
-          </button>
+          {/* Body Text */}
+          <p className="mt-3 text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+            We use cookies to optimize search speed, remember your currency, and provide personalized travel offers. Learn more in our{" "}
+            <Link
+              href="/legal/cookies"
+              className="text-primary hover:underline font-semibold"
+            >
+              Cookie Policy
+            </Link>{" "}
+            and{" "}
+            <Link
+              href="/legal/privacy"
+              className="text-primary hover:underline font-semibold"
+            >
+              Privacy Policy
+            </Link>.
+          </p>
 
-          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+          {/* Expandable Preferences Drawer */}
+          {showPreferences && (
+            <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2 animate-in fade-in duration-200">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                Select Allowed Cookies
+              </p>
+
+              {/* Necessary Cookies (Locked) */}
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-xs">
+                <div className="flex flex-col pr-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-slate-800 dark:text-slate-100">
+                      Essential Cookies
+                    </span>
+                    <span className="text-[9px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                      Always On
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-400 mt-0.5">
+                    Required for site security, navigation & bookings.
+                  </span>
+                </div>
+                <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              </div>
+
+              {/* Analytics Cookies Toggle */}
+              <label className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 cursor-pointer hover:bg-slate-100/70 transition-colors text-xs">
+                <div className="flex flex-col pr-2">
+                  <span className="font-bold text-slate-800 dark:text-slate-100">
+                    Analytics & Performance
+                  </span>
+                  <span className="text-[11px] text-slate-400 mt-0.5">
+                    Helps us analyze traffic to improve flight search speeds.
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={preferences.analytics}
+                  onChange={(e) =>
+                    setPreferences((prev) => ({ ...prev, analytics: e.target.checked }))
+                  }
+                  className="w-4 h-4 rounded text-primary focus:ring-primary accent-primary cursor-pointer shrink-0"
+                />
+              </label>
+
+              {/* Marketing Cookies Toggle */}
+              <label className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 cursor-pointer hover:bg-slate-100/70 transition-colors text-xs">
+                <div className="flex flex-col pr-2">
+                  <span className="font-bold text-slate-800 dark:text-slate-100">
+                    Marketing & Discounts
+                  </span>
+                  <span className="text-[11px] text-slate-400 mt-0.5">
+                    Used to show relevant travel deals and flight offers.
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={preferences.marketing}
+                  onChange={(e) =>
+                    setPreferences((prev) => ({ ...prev, marketing: e.target.checked }))
+                  }
+                  className="w-4 h-4 rounded text-primary focus:ring-primary accent-primary cursor-pointer shrink-0"
+                />
+              </label>
+            </div>
+          )}
+
+          {/* Action Buttons Row */}
+          <div className="mt-4 pt-1 flex flex-col gap-2.5">
             {showPreferences ? (
-              <button
-                type="button"
-                onClick={handleSavePreferences}
-                className="w-full sm:w-auto text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl bg-primary text-primary-foreground hover:opacity-95 active:scale-95 shadow-lg shadow-primary/25 transition-all cursor-pointer flex items-center justify-center gap-2"
-              >
-                <Check className="w-4 h-4" />
-                <span>Save Preferences</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPreferences(false)}
+                  className="flex-1 text-xs font-semibold py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-colors text-center"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSavePreferences}
+                  className="flex-1 text-xs font-bold py-2.5 px-4 rounded-xl bg-primary text-white hover:bg-primary/95 shadow-md shadow-primary/25 transition-all text-center flex items-center justify-center gap-1.5"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  Save Choices
+                </button>
+              </div>
             ) : (
               <>
-                <button
-                  type="button"
-                  onClick={handleDeclineAll}
-                  className="flex-1 sm:flex-none text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer text-center"
-                >
-                  Decline Non-Essential
-                </button>
-                <button
-                  type="button"
-                  onClick={handleAcceptAll}
-                  className="flex-1 sm:flex-none text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl bg-primary text-primary-foreground hover:opacity-95 active:scale-95 shadow-lg shadow-primary/25 transition-all cursor-pointer text-center"
-                >
-                  Accept All
-                </button>
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={handleDeclineAll}
+                    className="flex-1 text-xs font-semibold py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer text-center whitespace-nowrap"
+                  >
+                    Essential Only
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAcceptAll}
+                    className="flex-1 text-xs font-bold py-2.5 px-4 rounded-xl bg-primary text-white hover:opacity-95 shadow-md shadow-primary/25 transition-all cursor-pointer text-center whitespace-nowrap active:scale-98"
+                  >
+                    Accept All
+                  </button>
+                </div>
+
+                <div className="flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowPreferences(true)}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer py-0.5"
+                  >
+                    <SlidersHorizontal className="w-3 h-3" />
+                    <span>Customize preferences</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                </div>
               </>
             )}
           </div>
-        </div>
 
-      </div>
-    </div>
+        </div>
+      </aside>
+    </>
   );
 }

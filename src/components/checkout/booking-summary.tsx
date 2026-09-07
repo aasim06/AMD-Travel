@@ -5,6 +5,8 @@ import type { FlightOffer } from "@/types/flight";
 import { AIRLINE_NAMES } from "@/types/flight";
 import { useCurrency } from "@/context/currency-context";
 
+import { useMemo } from "react";
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatTime(iso: string) {
@@ -28,21 +30,43 @@ interface BookingSummaryProps {
   carriers:       Record<string, string>;
   fareClass:      string;
   passengers:     number;
+  adults?:        number;
+  children?:      number;
+  infants?:       number;
   selectedPrice?: number | null;
   compact?:       boolean;
   onUpgrade?:     (newFareClass: string, newPrice: number) => void;
 }
 
-export function BookingSummary({ offer, carriers, fareClass, passengers, selectedPrice, compact, onUpgrade }: BookingSummaryProps) {
+export function BookingSummary({ offer, carriers, fareClass, passengers, adults, children, infants, selectedPrice, compact, onUpgrade }: BookingSummaryProps) {
   const { formatPrice } = useCurrency();
 
   const totalPrice    = selectedPrice ?? parseFloat(offer.price.total);
   const basePrice     = parseFloat(offer.price.base);
-  const taxes         = totalPrice - basePrice;
-  const perPax        = totalPrice / passengers;
+  const taxes         = Math.max(0, totalPrice - basePrice);
+  const perPax        = totalPrice / Math.max(1, passengers);
   const isLightFare   = fareClass === "Economy Light";
   const standardPrice = Math.round(totalPrice * 1.12);
   const standardDelta = standardPrice - totalPrice;
+
+  const travelerBreakdown = useMemo(() => {
+    if (!offer.travelerPricings || offer.travelerPricings.length === 0) return null;
+    const summary: Record<string, { count: number; base: number; total: number; label: string }> = {};
+    for (const tp of offer.travelerPricings) {
+      const type = tp.travelerType || "ADULT";
+      let label = "Adult";
+      if (type === "CHILD") label = "Child";
+      else if (type === "HELD_INFANT" || type === "SEATED_INFANT") label = "Infant";
+
+      if (!summary[type]) {
+        summary[type] = { count: 0, base: 0, total: 0, label };
+      }
+      summary[type].count += 1;
+      summary[type].base += parseFloat(tp.price?.base || "0");
+      summary[type].total += parseFloat(tp.price?.total || "0");
+    }
+    return Object.values(summary);
+  }, [offer.travelerPricings]);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden" style={{ boxShadow: "rgba(0,0,0,0.06) 0px 4px 24px" }}>
@@ -165,10 +189,24 @@ export function BookingSummary({ offer, carriers, fareClass, passengers, selecte
         <div className="space-y-2">
           <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Price Breakdown</p>
 
-          <div className="flex justify-between text-sm">
-            <span className="text-slate-600">Base fare × {passengers}</span>
-            <span className="font-medium text-slate-800">{formatPrice(basePrice)}</span>
-          </div>
+          {travelerBreakdown && travelerBreakdown.length > 0 ? (
+            travelerBreakdown.map((tb, idx) => (
+              <div key={idx} className="flex justify-between text-sm">
+                <span className="text-slate-600">{tb.count}× {tb.label} (Base)</span>
+                <span className="font-medium text-slate-800">{formatPrice(tb.base)}</span>
+              </div>
+            ))
+          ) : (
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-600">
+                Base fare × {passengers}
+                {adults !== undefined && (children || infants)
+                  ? ` (${adults} Adt${children ? `, ${children} Chd` : ""}${infants ? `, ${infants} Inf` : ""})`
+                  : ""}
+              </span>
+              <span className="font-medium text-slate-800">{formatPrice(basePrice)}</span>
+            </div>
+          )}
           <div className="flex justify-between text-sm">
             <span className="text-slate-600">Taxes & fees</span>
             <span className="font-medium text-slate-800">{formatPrice(taxes)}</span>

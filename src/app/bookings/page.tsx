@@ -263,16 +263,16 @@ export default function MyBookingsPage() {
           </p>
 
           {/* Stats Row */}
-          <div className="flex flex-wrap gap-4 mb-10">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 mb-6 sm:mb-10">
             {[
               { label: "Total Bookings", value: stats.total, color: "text-white" },
               { label: "Confirmed", value: stats.confirmed, color: "text-emerald-400" },
               { label: "Processing", value: stats.processing, color: "text-amber-400" },
               { label: "Completed", value: stats.completed, color: "text-sky-400" },
             ].map((s) => (
-              <div key={s.label} className="bg-white/8 backdrop-blur-sm border border-white/10 rounded-2xl px-5 py-3 text-center">
-                <p className={cn("text-2xl font-extrabold", s.color)}>{s.value}</p>
-                <p className="text-[11px] text-white/50 font-medium mt-0.5 uppercase tracking-wide">{s.label}</p>
+              <div key={s.label} className="bg-white/8 backdrop-blur-sm border border-white/10 rounded-2xl p-3 sm:px-5 sm:py-3 text-center">
+                <p className={cn("text-xl sm:text-2xl font-extrabold", s.color)}>{s.value}</p>
+                <p className="text-[10px] sm:text-[11px] text-white/50 font-medium mt-0.5 uppercase tracking-wide truncate">{s.label}</p>
               </div>
             ))}
           </div>
@@ -280,10 +280,10 @@ export default function MyBookingsPage() {
           {/* Lookup Form Card */}
           <form
             onSubmit={handleSearch}
-            className="bg-white/10 backdrop-blur-xl border border-white/15 rounded-3xl p-5 sm:p-6 shadow-2xl"
+            className="bg-white/10 backdrop-blur-xl border border-white/15 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl"
           >
-            <p className="text-xs font-bold uppercase tracking-wider text-white/50 mb-4">Search Your Booking</p>
-            <div className="flex flex-col sm:flex-row gap-3">
+            <p className="text-xs font-bold uppercase tracking-wider text-white/50 mb-3 sm:mb-4">Search Your Booking</p>
+            <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
               <div className="flex-1 relative">
                 <Hash className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40 pointer-events-none" />
                 <input
@@ -291,7 +291,7 @@ export default function MyBookingsPage() {
                   value={pnrInput}
                   onChange={(e) => setPnrInput(e.target.value)}
                   placeholder="Booking Ref / PNR (e.g. AMD-94820)"
-                  className="w-full h-12 bg-white/10 text-white placeholder:text-white/30 border border-white/15 rounded-2xl pl-10 pr-4 text-sm focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                  className="w-full h-11 sm:h-12 bg-white/10 text-white placeholder:text-white/30 border border-white/15 rounded-xl sm:rounded-2xl pl-10 pr-4 text-xs sm:text-sm focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
                 />
               </div>
               <div className="flex-1 relative">
@@ -301,12 +301,12 @@ export default function MyBookingsPage() {
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
                   placeholder="Email used at booking"
-                  className="w-full h-12 bg-white/10 text-white placeholder:text-white/30 border border-white/15 rounded-2xl pl-10 pr-4 text-sm focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                  className="w-full h-11 sm:h-12 bg-white/10 text-white placeholder:text-white/30 border border-white/15 rounded-xl sm:rounded-2xl pl-10 pr-4 text-xs sm:text-sm focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
                 />
               </div>
               <Button
                 type="submit"
-                className="h-12 rounded-2xl px-6 bg-primary hover:bg-primary/90 text-white font-bold gap-2 shrink-0"
+                className="h-11 sm:h-12 rounded-xl sm:rounded-2xl px-6 bg-primary hover:bg-primary/90 text-white font-bold text-xs sm:text-sm gap-2 shrink-0"
               >
                 <Search className="h-4 w-4" />
                 Find Booking
@@ -323,18 +323,18 @@ export default function MyBookingsPage() {
       </section>
 
       {/* ── Filters & Booking List ── */}
-      <section className="container -mt-8 pb-24 space-y-6">
+      <section className="container -mt-6 sm:-mt-8 pb-8 sm:pb-12 space-y-5 sm:space-y-6">
 
         {/* Filter Bar */}
-        <div className="bg-background/90 backdrop-blur-xl border border-border rounded-2xl px-4 py-3 shadow-sm flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-          {/* Category Tabs */}
-          <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="bg-background/95 backdrop-blur-xl border border-border rounded-2xl p-3 sm:px-4 sm:py-3 shadow-sm flex flex-col sm:flex-row gap-2.5 sm:gap-3 sm:items-center sm:justify-between overflow-hidden">
+          {/* Category Tabs (Single Row Scrollable) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {(["all", "flight", "visa", "tour", "car"] as const).map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 className={cn(
-                  "px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition-all",
+                  "px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize whitespace-nowrap shrink-0 transition-all",
                   activeCategory === cat
                     ? "bg-primary text-white shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -345,15 +345,15 @@ export default function MyBookingsPage() {
             ))}
           </div>
 
-          {/* Status Filter */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+          {/* Status Filter (Single Row Scrollable) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pt-2 sm:pt-0 border-t sm:border-t-0 border-border/50">
+            <Filter className="h-3.5 w-3.5 text-muted-foreground shrink-0 ml-0.5 mr-1" />
             {(["all", "confirmed", "processing", "completed", "cancelled"] as const).map((st) => (
               <button
                 key={st}
                 onClick={() => setActiveStatus(st)}
                 className={cn(
-                  "px-3 py-1 rounded-lg text-[11px] font-semibold capitalize transition-all border",
+                  "px-3 py-1 rounded-lg text-[11px] font-semibold capitalize whitespace-nowrap shrink-0 transition-all border",
                   activeStatus === st
                     ? "border-primary/40 bg-primary/10 text-primary"
                     : "border-border text-muted-foreground hover:text-foreground hover:border-primary/20"
@@ -419,21 +419,21 @@ export default function MyBookingsPage() {
                   </div>
 
                   {/* Card Body */}
-                  <div className="p-5 sm:p-6">
+                  <div className="p-4 sm:p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       {/* Main Info */}
                       <div className="space-y-1">
-                        <h2 className="text-lg font-extrabold text-foreground">{booking.title}</h2>
-                        <p className="text-sm text-muted-foreground">{booking.subtitle}</p>
+                        <h2 className="text-base sm:text-lg font-extrabold text-foreground">{booking.title}</h2>
+                        <p className="text-xs sm:text-sm text-muted-foreground">{booking.subtitle}</p>
 
                         {/* Flight Route Visual */}
                         {booking.type === "flight" && (
-                          <div className="flex items-center gap-2 mt-2 text-xs font-semibold">
+                          <div className="flex items-center gap-2 mt-2 text-xs font-semibold flex-wrap">
                             <span className="text-foreground font-mono">{booking.details.departureCity}</span>
                             <div className="flex items-center gap-1">
-                              <div className="h-[2px] w-8 bg-primary/40 rounded" />
+                              <div className="h-[2px] w-6 sm:w-8 bg-primary/40 rounded" />
                               <Plane className="h-3.5 w-3.5 text-primary" />
-                              <div className="h-[2px] w-8 bg-primary/40 rounded" />
+                              <div className="h-[2px] w-6 sm:w-8 bg-primary/40 rounded" />
                             </div>
                             <span className="text-foreground font-mono">{booking.details.arrivalCity}</span>
                             <span className="text-muted-foreground">·</span>
@@ -456,16 +456,16 @@ export default function MyBookingsPage() {
                         {/* Date & Passengers */}
                         <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1.5">
-                            <Calendar className="h-3.5 w-3.5 text-primary" />
+                            <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
                             Travel: <span className="font-semibold text-foreground">{booking.travelDate}</span>
                           </span>
                           <span className="flex items-center gap-1.5">
-                            <User className="h-3.5 w-3.5 text-primary" />
+                            <User className="h-3.5 w-3.5 text-primary shrink-0" />
                             {booking.passengers.length} Passenger{booking.passengers.length > 1 ? "s" : ""}
                           </span>
                           {booking.type === "flight" && (
                             <span className="flex items-center gap-1.5">
-                              <Luggage className="h-3.5 w-3.5 text-primary" />
+                              <Luggage className="h-3.5 w-3.5 text-primary shrink-0" />
                               {booking.details.baggage}
                             </span>
                           )}
@@ -473,16 +473,16 @@ export default function MyBookingsPage() {
                       </div>
 
                       {/* Amount & Booked On */}
-                      <div className="sm:text-right space-y-1 shrink-0">
-                        <p className="text-2xl font-extrabold text-foreground">{booking.details.totalAmount}</p>
-                        <p className="text-[11px] text-muted-foreground">Booked on {booking.bookingDate}</p>
+                      <div className="sm:text-right space-y-0.5 sm:space-y-1 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/50">
+                        <p className="text-xl sm:text-2xl font-extrabold text-foreground">{booking.details.totalAmount}</p>
+                        <p className="text-[10px] sm:text-[11px] text-muted-foreground">Booked on {booking.bookingDate}</p>
                       </div>
                     </div>
 
                     {/* Visa Progress Tracker */}
                     {isVisa && booking.status === "processing" && (
-                      <div className="mt-5 p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800">
-                        <p className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-3">
+                      <div className="mt-4 sm:mt-5 p-3 sm:p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800">
+                        <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-2.5 sm:mb-3">
                           Application Progress
                         </p>
                         <div className="flex items-center gap-0">
@@ -493,7 +493,7 @@ export default function MyBookingsPage() {
                               <div key={idx} className="flex items-center flex-1 last:flex-none">
                                 <div className="flex flex-col items-center gap-1">
                                   <div className={cn(
-                                    "h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-all shrink-0",
+                                    "h-5 w-5 sm:h-6 sm:w-6 rounded-full flex items-center justify-center text-[9px] sm:text-[10px] font-bold border-2 transition-all shrink-0",
                                     done ? "bg-emerald-500 border-emerald-500 text-white"
                                       : active ? "bg-amber-500 border-amber-500 text-white animate-pulse"
                                       : "bg-background border-border text-muted-foreground"
@@ -501,7 +501,7 @@ export default function MyBookingsPage() {
                                     {done ? "✓" : idx + 1}
                                   </div>
                                   <span className={cn(
-                                    "text-[9px] font-semibold text-center max-w-[60px] leading-tight",
+                                    "text-[8.5px] sm:text-[9.5px] font-medium text-center max-w-[64px] sm:max-w-[75px] leading-tight",
                                     done ? "text-emerald-600 dark:text-emerald-400"
                                       : active ? "text-amber-600 dark:text-amber-400"
                                       : "text-muted-foreground"
@@ -511,7 +511,7 @@ export default function MyBookingsPage() {
                                 </div>
                                 {idx < VISA_STEPS.length - 1 && (
                                   <div className={cn(
-                                    "flex-1 h-[2px] mx-1 rounded",
+                                    "flex-1 h-[2px] mx-0.5 sm:mx-1 rounded",
                                     done ? "bg-emerald-400" : "bg-border"
                                   )} />
                                 )}
@@ -523,43 +523,56 @@ export default function MyBookingsPage() {
                     )}
 
                     {/* Action Buttons */}
-                    <div className="mt-5 flex flex-wrap items-center gap-2">
-                      {/* E-Ticket */}
-                      {!isCancelled && (
-                        <Button
-                          size="sm"
-                          onClick={() => setTicketBooking(booking)}
-                          className="rounded-xl gap-2 font-bold text-xs bg-primary hover:bg-primary/90 text-white"
-                        >
-                          <Bookmark className="h-3.5 w-3.5" />
-                          View E-Ticket
-                        </Button>
-                      )}
+                    <div className="mt-4 pt-3.5 border-t border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {/* E-Ticket */}
+                        {!isCancelled && (
+                          <Button
+                            size="sm"
+                            onClick={() => setTicketBooking(booking)}
+                            className="rounded-xl gap-1.5 font-bold text-xs bg-primary hover:bg-primary/90 text-white shadow-xs"
+                          >
+                            <Bookmark className="h-3.5 w-3.5" />
+                            View E-Ticket
+                          </Button>
+                        )}
 
-                      {/* Print */}
-                      {!isCancelled && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => { setTicketBooking(booking); setTimeout(() => window.print(), 300); }}
-                          className="rounded-xl gap-2 font-semibold text-xs hover:bg-primary/5 hover:text-primary hover:border-primary/30"
-                        >
-                          <Printer className="h-3.5 w-3.5" />
-                          Print Ticket
-                        </Button>
-                      )}
+                        {/* Print */}
+                        {!isCancelled && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => { setTicketBooking(booking); setTimeout(() => window.print(), 300); }}
+                            className="rounded-xl gap-1.5 font-semibold text-xs hover:bg-primary/5 hover:text-primary hover:border-primary/30"
+                          >
+                            <Printer className="h-3.5 w-3.5" />
+                            Print
+                          </Button>
+                        )}
 
-                      {/* Share */}
-                      {!isCancelled && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="rounded-xl gap-2 font-semibold text-xs hover:bg-primary/5 hover:text-primary hover:border-primary/30"
-                        >
-                          <Share2 className="h-3.5 w-3.5" />
-                          Share
-                        </Button>
-                      )}
+                        {/* Share */}
+                        {!isCancelled && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              if (typeof navigator !== "undefined" && navigator.share) {
+                                navigator.share({
+                                  title: booking.title,
+                                  text: `Booking Reference: ${booking.pnr}`,
+                                  url: window.location.href,
+                                }).catch(() => {});
+                              } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+                                navigator.clipboard.writeText(`Booking: ${booking.title} (${booking.pnr})`);
+                              }
+                            }}
+                            className="rounded-xl gap-1.5 font-semibold text-xs hover:bg-primary/5 hover:text-primary hover:border-primary/30"
+                          >
+                            <Share2 className="h-3.5 w-3.5" />
+                            Share
+                          </Button>
+                        )}
+                      </div>
 
                       {/* Cancel */}
                       {!isCancelled && !isCompleted && (
@@ -567,7 +580,7 @@ export default function MyBookingsPage() {
                           size="sm"
                           variant="ghost"
                           onClick={() => setCancelBooking(booking)}
-                          className="rounded-xl gap-2 font-semibold text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 ml-auto"
+                          className="rounded-xl gap-1.5 font-semibold text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 self-start sm:self-auto"
                         >
                           <X className="h-3.5 w-3.5" />
                           Cancel Booking
@@ -575,7 +588,7 @@ export default function MyBookingsPage() {
                       )}
 
                       {isCancelled && (
-                        <span className="ml-auto text-xs text-muted-foreground italic">
+                        <span className="text-xs text-muted-foreground italic">
                           This booking has been cancelled.
                         </span>
                       )}
@@ -588,23 +601,23 @@ export default function MyBookingsPage() {
         )}
 
         {/* Help Banner */}
-        <div className="rounded-3xl border border-border bg-gradient-to-br from-primary/5 via-background to-background p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 mt-6">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+        <div className="rounded-3xl border border-border bg-gradient-to-br from-primary/5 via-background to-background p-5 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-5 sm:gap-6 mt-6">
+          <div className="flex items-center gap-3.5 sm:gap-4 w-full sm:w-auto">
+            <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
               <Phone className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="font-bold text-foreground">Need Help with Your Booking?</p>
-              <p className="text-sm text-muted-foreground mt-0.5">Our travel experts are available 24/7 to assist you.</p>
+              <p className="font-bold text-foreground text-sm sm:text-base">Need Help with Your Booking?</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Our travel experts are available 24/7 to assist you.</p>
             </div>
           </div>
-          <div className="flex gap-3 shrink-0">
-            <Button variant="outline" className="rounded-xl gap-2 font-semibold hover:bg-primary/5 hover:text-primary hover:border-primary/30" asChild>
+          <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto shrink-0">
+            <Button variant="outline" className="rounded-xl gap-2 font-semibold text-xs sm:text-sm hover:bg-primary/5 hover:text-primary hover:border-primary/30 w-full sm:w-auto justify-center" asChild>
               <a href="mailto:support@amdglobaltravel.com">
                 <Mail className="h-4 w-4" /> Email Support
               </a>
             </Button>
-            <Button className="rounded-xl gap-2 font-bold bg-primary hover:bg-primary/90 text-white" asChild>
+            <Button className="rounded-xl gap-2 font-bold text-xs sm:text-sm bg-primary hover:bg-primary/90 text-white w-full sm:w-auto justify-center" asChild>
               <a href="/contact">
                 <Phone className="h-4 w-4" /> Contact Us
               </a>

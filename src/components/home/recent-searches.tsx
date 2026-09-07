@@ -199,7 +199,7 @@ export function RecentSearches() {
       </div>
 
       {/* Cards row */}
-      <div className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="-mx-4 px-4 sm:mx-0 sm:px-0 flex items-stretch gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
         {searches.map((s) => {
           const originCity = cityOf(s.origin);
@@ -220,7 +220,7 @@ export function RecentSearches() {
                 type="button"
                 onClick={() => removeOne(s.id)}
                 aria-label="Remove search"
-                className="absolute top-2.5 right-2.5 h-6 w-6 rounded-full flex items-center justify-center text-slate-300 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
+                className="absolute top-2.5 right-2.5 h-6 w-6 rounded-full flex items-center justify-center text-slate-300 hover:text-destructive hover:bg-destructive/10 transition-all sm:opacity-0 sm:group-hover:opacity-100"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -287,15 +287,18 @@ export function RecentSearches() {
 
         {/* ── New Search card ── */}
         <div
-          className="flex-none w-56 snap-start rounded-2xl border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-white flex flex-col items-center justify-center gap-4 p-5 hover:bg-primary/15 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
+          className="flex-none w-64 snap-start rounded-2xl border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-white flex flex-col items-center justify-between p-6 hover:bg-primary/15 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         >
-          <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-gradient-to-r from-primary to-primary/80 shadow-md group-hover:shadow-primary/40 group-hover:scale-105 transition-all">
-            <Plus className="h-6 w-6 text-white" />
-          </div>
-          <div className="text-center">
-            <p className="text-sm font-semibold text-foreground">New Search</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Start fresh</p>
+          <div />
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-gradient-to-r from-primary to-primary/80 shadow-md group-hover:shadow-primary/40 group-hover:scale-105 transition-all">
+              <Plus className="h-6 w-6 text-white" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-foreground">New Search</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Start fresh</p>
+            </div>
           </div>
           {/* Quick category icons */}
           <div className="flex items-center gap-2">
