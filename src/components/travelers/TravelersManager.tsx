@@ -249,13 +249,13 @@ export default function TravelersManager() {
   const generateMessageText = (template: "welcome" | "ticket" | "docs" | "custom", name: string, phone: string) => {
     const cleanName = name || "Valued Traveler";
     if (template === "welcome") {
-      return `Assalam-o-Alaikum ${cleanName},\n\nWelcome to *AMD Global Travel*! ✈️\nYour traveler profile has been successfully registered. You can now book flights, umrah packages, and visa services with exclusive agency rates.\n\n📞 24/7 Helpline: +92 312 3456789\n🌐 Website: www.amdglobaltravel.com\n\n_Thank you for choosing AMD Global Travel!_`;
+      return `Assalam-o-Alaikum ${cleanName},\n\nWelcome to AMD Global Travel.\nYour traveler profile has been successfully registered. You can now book flights, umrah packages, and visa services with exclusive agency rates.\n\nHelpline: +92 312 3456789\nWebsite: www.amdglobaltravel.com\n\nThank you for choosing AMD Global Travel.`;
     } else if (template === "ticket") {
-      return `Assalam-o-Alaikum ${cleanName},\n\nYour flight booking with *AMD Global Travel* is confirmed! 🎫\n\n📌 *Passenger:* ${cleanName}\n🛫 *Status:* Ticket Issued & Verified\n🛡️ *Agency:* AMD Global Travel Management\n\nPlease find your electronic ticket & itinerary attached. For any adjustments or baggage assistance, reply to this message.\n\n_Fly Smarter, Travel Further!_`;
+      return `Assalam-o-Alaikum ${cleanName},\n\nYour flight booking with AMD Global Travel is confirmed.\n\nPassenger: ${cleanName}\nStatus: Ticket Issued & Verified\nAgency: AMD Global Travel Management\n\nPlease find your electronic ticket & itinerary attached. For any adjustments or baggage assistance, reply to this message.\n\nAMD Global Travel`;
     } else if (template === "docs") {
-      return `Assalam-o-Alaikum ${cleanName},\n\nThis is from *AMD Global Travel Documentation Desk*.\nKindly share a clear copy of your *Passport (First 2 Pages)* and valid visa copy for your upcoming flight issuance.\n\n_AMD Global Operations Team_`;
+      return `Assalam-o-Alaikum ${cleanName},\n\nThis is from AMD Global Travel Documentation Desk.\nKindly share a clear copy of your Passport (First 2 Pages) and valid visa copy for your upcoming flight issuance.\n\nAMD Global Operations Team`;
     }
-    return `Assalam-o-Alaikum ${cleanName},\n\nGreetings from *AMD Global Travel*! How can we assist you with your flight reservations today?`;
+    return `Assalam-o-Alaikum ${cleanName},\n\nGreetings from AMD Global Travel. How can we assist you with your flight reservations today?`;
   };
 
   // Open WhatsApp Modal for a traveler
@@ -293,7 +293,7 @@ export default function TravelersManager() {
       const data = await res.json();
       if (data.success) {
         if (data.sentViaSocket) {
-          setWhatsAppNotice(`✅ WhatsApp message sent directly to ${whatsAppTraveler.name}!`);
+          setWhatsAppNotice(`WhatsApp message sent directly to ${whatsAppTraveler.name}.`);
         } else {
           setWhatsAppNotice(`WhatsApp message prepared. Opening WhatsApp Web...`);
           window.open(data.whatsappUrl, "_blank");
@@ -946,13 +946,16 @@ export default function TravelersManager() {
                     setWhatsAppTemplate("welcome");
                     setWhatsAppMessage(generateMessageText("welcome", whatsAppTraveler.name, whatsAppTraveler.phone));
                   }}
-                  className={`rounded-lg px-2.5 py-1.5 text-xs font-medium border transition-colors ${
+                  className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium border transition-colors ${
                     whatsAppTemplate === "welcome"
                       ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300"
                       : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
                   }`}
                 >
-                  👋 Welcome
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                  </svg>
+                  Welcome
                 </button>
                 <button
                   type="button"
@@ -960,13 +963,16 @@ export default function TravelersManager() {
                     setWhatsAppTemplate("ticket");
                     setWhatsAppMessage(generateMessageText("ticket", whatsAppTraveler.name, whatsAppTraveler.phone));
                   }}
-                  className={`rounded-lg px-2.5 py-1.5 text-xs font-medium border transition-colors ${
+                  className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium border transition-colors ${
                     whatsAppTemplate === "ticket"
                       ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300"
                       : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
                   }`}
                 >
-                  🎫 Ticket Issue
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z" />
+                  </svg>
+                  Ticket Issue
                 </button>
                 <button
                   type="button"
@@ -974,13 +980,16 @@ export default function TravelersManager() {
                     setWhatsAppTemplate("docs");
                     setWhatsAppMessage(generateMessageText("docs", whatsAppTraveler.name, whatsAppTraveler.phone));
                   }}
-                  className={`rounded-lg px-2.5 py-1.5 text-xs font-medium border transition-colors ${
+                  className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium border transition-colors ${
                     whatsAppTemplate === "docs"
                       ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300"
                       : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
                   }`}
                 >
-                  🛂 Passport Req
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                  </svg>
+                  Passport Req
                 </button>
                 <button
                   type="button"
@@ -988,13 +997,16 @@ export default function TravelersManager() {
                     setWhatsAppTemplate("custom");
                     setWhatsAppMessage(generateMessageText("custom", whatsAppTraveler.name, whatsAppTraveler.phone));
                   }}
-                  className={`rounded-lg px-2.5 py-1.5 text-xs font-medium border transition-colors ${
+                  className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium border transition-colors ${
                     whatsAppTemplate === "custom"
                       ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300"
                       : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
                   }`}
                 >
-                  ✏️ Custom
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                  </svg>
+                  Custom
                 </button>
               </div>
             </div>
