@@ -900,7 +900,7 @@ export default function TravelersManager() {
       {/* ========================================================================= */}
       {whatsAppTraveler && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+          <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white p-7 shadow-2xl dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
             {/* Header */}
             <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
               <div className="flex items-center gap-2.5">
@@ -1005,16 +1005,16 @@ export default function TravelersManager() {
             </div>
 
             {/* Message Body */}
-            <div className="mt-4">
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <div className="mt-5">
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                 WhatsApp Message Content
               </label>
               <textarea
-                rows={6}
+                rows={7}
                 value={whatsAppMessage}
                 onChange={(e) => setWhatsAppMessage(e.target.value)}
                 placeholder="Type WhatsApp message..."
-                className="w-full rounded-xl border border-gray-300 bg-white p-3 text-xs leading-relaxed text-gray-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-xl border border-gray-300 bg-white p-3.5 text-sm leading-relaxed text-gray-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
             </div>
 
