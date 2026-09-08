@@ -480,19 +480,19 @@ export function FareTierModal({ offer, carriers, onClose, onConfirm }: FareTierM
       >
 
         {/* ── Top Header Bar ── */}
-        <div className="px-4 sm:px-6 py-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="h-8 w-11 rounded-lg bg-slate-50 dark:bg-slate-800 p-1 border border-slate-100 dark:border-slate-700 flex items-center justify-center shrink-0">
+        <div className="px-4 sm:px-6 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-12 rounded-lg bg-slate-50 dark:bg-slate-800 p-1 border border-slate-100 dark:border-slate-700 flex items-center justify-center shrink-0">
               <AirlineLogo code={carrierCode} className="h-full w-full object-contain" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-slate-900 dark:text-white leading-none">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
                 Choose your fare
               </h2>
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 leading-none">
-                <span className="font-medium text-slate-600 dark:text-slate-300">{airlineName}</span>
+              <div className="flex items-center gap-1.5 text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 mt-0.5 leading-none">
+                <span className="font-semibold text-slate-700 dark:text-slate-200">{airlineName}</span>
                 <span>·</span>
-                <span className="font-medium text-slate-600 dark:text-slate-300">{firstSeg.departure.iataCode} → {lastSeg.arrival.iataCode}</span>
+                <span className="font-semibold text-slate-700 dark:text-slate-200">{firstSeg.departure.iataCode} → {lastSeg.arrival.iataCode}</span>
                 <span>·</span>
                 <span>{stops === 0 ? "Direct" : `${stops} stop`} · {durationFormatted}</span>
               </div>
@@ -501,9 +501,9 @@ export function FareTierModal({ offer, carriers, onClose, onConfirm }: FareTierM
           <button
             onClick={onClose}
             aria-label="Close fare selector"
-            className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer shrink-0"
+            className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer shrink-0"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
@@ -518,16 +518,16 @@ export function FareTierModal({ offer, carriers, onClose, onConfirm }: FareTierM
                   key={tier.id}
                   type="button"
                   onClick={() => scrollToTier(tier.id)}
-                  className={`py-1.5 px-2 rounded-[8px] flex flex-col items-center justify-center text-center transition-all cursor-pointer relative ${
+                  className={`py-2 px-2 rounded-[8px] flex flex-col items-center justify-center text-center transition-all cursor-pointer relative ${
                     isSelected
                       ? "bg-white dark:bg-slate-700 shadow-sm"
                       : "text-slate-500 dark:text-slate-400"
                   }`}
                 >
-                  <span className={`text-[10px] leading-tight ${isSelected ? 'font-semibold text-slate-900 dark:text-white' : 'font-medium'}`}>
+                  <span className={`text-[11px] leading-tight ${isSelected ? 'font-bold text-slate-900 dark:text-white' : 'font-medium'}`}>
                     {tier.label.replace(/^(Economy\s*|Business\s*)/i, "")}
                   </span>
-                  <span className={`text-[11px] mt-px ${isSelected ? 'font-bold text-primary' : 'font-medium'}`}>
+                  <span className={`text-xs mt-0.5 ${isSelected ? 'font-bold text-primary' : 'font-semibold'}`}>
                     {formatPrice(finalPrice)}
                   </span>
                 </button>
@@ -538,8 +538,8 @@ export function FareTierModal({ offer, carriers, onClose, onConfirm }: FareTierM
             {tiers.map((t) => (
               <span
                 key={t.id}
-                className={`h-1 rounded-full transition-all ${
-                  selectedTierId === t.id ? "w-3 bg-primary" : "w-1 bg-slate-300 dark:bg-slate-600"
+                className={`h-1.5 rounded-full transition-all ${
+                  selectedTierId === t.id ? "w-4 bg-primary" : "w-1.5 bg-slate-300 dark:bg-slate-600"
                 }`}
               />
             ))}
@@ -550,7 +550,7 @@ export function FareTierModal({ offer, carriers, onClose, onConfirm }: FareTierM
         <div
           ref={scrollContainerRef}
           data-lenis-prevent="true"
-          className="flex sm:grid sm:grid-cols-3 overflow-x-auto sm:overflow-x-visible overflow-y-auto snap-x snap-mandatory sm:snap-none gap-2.5 sm:gap-3 lg:gap-4 px-3 sm:px-4 lg:px-5 py-3 sm:py-4 flex-1 custom-scrollbar overscroll-contain touch-pan-x"
+          className="flex sm:grid sm:grid-cols-3 overflow-x-auto sm:overflow-x-visible overflow-y-auto snap-x snap-mandatory sm:snap-none gap-3 sm:gap-4 lg:gap-5 px-3 sm:px-5 lg:px-6 py-3.5 sm:py-5 flex-1 custom-scrollbar overscroll-contain touch-pan-x"
           style={{
             WebkitOverflowScrolling: "touch",
             overscrollBehavior: "contain",
@@ -566,90 +566,90 @@ export function FareTierModal({ offer, carriers, onClose, onConfirm }: FareTierM
                 key={tier.id}
                 ref={cardRef}
                 onClick={() => setSelectedTierId(tier.id)}
-                className={`group relative flex flex-col rounded-xl border transition-all duration-150 cursor-pointer overflow-hidden shrink-0 sm:shrink snap-center w-[80vw] max-w-[320px] sm:w-auto sm:max-w-none ${
+                className={`group relative flex flex-col rounded-xl border transition-all duration-150 cursor-pointer overflow-hidden shrink-0 sm:shrink snap-center w-[82vw] max-w-[340px] sm:w-auto sm:max-w-none shadow-sm hover:shadow-md ${
                   isSelected
-                    ? "border-primary ring-1 ring-primary/25 bg-white dark:bg-slate-900"
+                    ? "border-primary ring-2 ring-primary/30 bg-white dark:bg-slate-900"
                     : "border-slate-200 dark:border-slate-800 hover:border-slate-300 bg-white dark:bg-slate-900"
                 }`}
               >
                 {/* Top Ribbon */}
                 {tier.recommended ? (
-                  <div className="bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wider py-1 px-3 text-center flex items-center justify-center gap-1">
-                    <Zap className="h-2.5 w-2.5 fill-current" />
+                  <div className="bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider py-1.5 px-3 text-center flex items-center justify-center gap-1.5">
+                    <Zap className="h-3 w-3 fill-current" />
                     Recommended
                   </div>
                 ) : tier.id === "flex" ? (
-                  <div className="bg-slate-800 text-white text-[10px] font-semibold uppercase tracking-wider py-1 px-3 text-center flex items-center justify-center gap-1">
-                    <Crown className="h-2.5 w-2.5 fill-current" />
+                  <div className="bg-slate-800 text-white text-xs font-bold uppercase tracking-wider py-1.5 px-3 text-center flex items-center justify-center gap-1.5">
+                    <Crown className="h-3 w-3 fill-current" />
                     Premium
                   </div>
                 ) : (
-                  <div className="bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-medium uppercase tracking-wider py-1 px-3 text-center">
+                  <div className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider py-1.5 px-3 text-center">
                     Basic
                   </div>
                 )}
 
                 {/* Header */}
-                <div className="px-3.5 pt-3 pb-2.5">
-                  <div className="flex items-start justify-between">
+                <div className="px-4 sm:px-5 pt-3.5 pb-3">
+                  <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h3 className="text-[13px] font-semibold text-slate-900 dark:text-white leading-tight">
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white leading-tight">
                         {tier.label}
                       </h3>
-                      <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-snug">
                         {tier.tagline}
                       </p>
                     </div>
                     {/* Radio */}
                     <div
-                      className={`h-[18px] w-[18px] rounded-full border-[1.5px] flex items-center justify-center transition-all mt-0.5 ${
+                      className={`h-5 w-5 rounded-full border-[1.5px] flex items-center justify-center transition-all mt-0.5 shrink-0 ${
                         isSelected
-                          ? "border-primary bg-primary text-white"
+                          ? "border-primary bg-primary text-white shadow-sm"
                           : "border-slate-300 dark:border-slate-600"
                       }`}
                     >
-                      {isSelected && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                      {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
                     </div>
                   </div>
 
                   {/* Price */}
-                  <div className="mt-2 flex items-baseline gap-1">
-                    <span className="text-lg font-bold text-slate-900 dark:text-white tracking-tight leading-none">
+                  <div className="mt-3 flex items-baseline gap-1.5">
+                    <span className="text-2xl sm:text-[26px] font-extrabold text-slate-900 dark:text-white tracking-tight leading-none">
                       {formatPrice(finalPrice)}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-normal">/person</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">/person</span>
                     {tier.priceAdd > 0 && (
-                      <span className="text-[9px] font-medium text-primary ml-auto">
+                      <span className="text-xs font-bold text-primary ml-auto bg-primary/10 px-2 py-0.5 rounded">
                         +{formatPrice(tier.priceAdd)}
                       </span>
                     )}
                   </div>
-                  <p className="text-[9px] text-slate-400 mt-0.5">Incl. taxes & fees</p>
+                  <p className="text-[11px] sm:text-xs text-slate-400 mt-1">Incl. taxes & fees</p>
                 </div>
 
                 {/* Feature List */}
-                <div className="flex-1 px-3.5 py-2.5 border-t border-slate-100 dark:border-slate-800">
-                  <div className="space-y-0">
+                <div className="flex-1 px-4 sm:px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950/20">
+                  <div className="space-y-0.5">
                     {tier.features.map((feat, fi) => (
                       <div
                         key={fi}
-                        className={`flex items-center gap-2 py-[5px] ${
-                          fi < tier.features.length - 1 ? 'border-b border-slate-50 dark:border-slate-800/50' : ''
+                        className={`flex items-center gap-2.5 py-1.5 ${
+                          fi < tier.features.length - 1 ? 'border-b border-slate-100/70 dark:border-slate-800/60' : ''
                         }`}
                       >
                         {feat.included ? (
-                          <Check className={`h-3 w-3 shrink-0 stroke-[2.5] ${
+                          <Check className={`h-4 w-4 shrink-0 stroke-[2.5] ${
                             feat.highlight ? 'text-primary' : 'text-emerald-500'
                           }`} />
                         ) : (
-                          <X className="h-3 w-3 shrink-0 stroke-[2] text-slate-300 dark:text-slate-600" />
+                          <X className="h-4 w-4 shrink-0 stroke-[2] text-slate-300 dark:text-slate-600" />
                         )}
                         <span
-                          className={`text-[11px] leading-tight ${
+                          className={`text-xs sm:text-[13px] leading-snug ${
                             feat.included
                               ? feat.highlight
-                                ? 'text-slate-800 dark:text-slate-100 font-medium'
-                                : 'text-slate-600 dark:text-slate-300 font-normal'
+                                ? 'text-slate-900 dark:text-slate-100 font-semibold'
+                                : 'text-slate-700 dark:text-slate-200 font-medium'
                               : 'text-slate-400 dark:text-slate-500 font-normal line-through'
                           }`}
                         >
@@ -661,21 +661,21 @@ export function FareTierModal({ offer, carriers, onClose, onConfirm }: FareTierM
                 </div>
 
                 {/* CTA */}
-                <div className="p-3 mt-auto shrink-0">
+                <div className="p-3.5 sm:p-4 mt-auto shrink-0 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       onConfirm(tier, finalPrice, tier.upgradedOffer);
                     }}
-                    className={`w-full py-2.5 px-3 rounded-lg text-[12px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98] ${
+                    className={`w-full py-2.5 px-4 rounded-lg text-[13px] sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98] ${
                       isSelected || tier.recommended
-                        ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                        ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
                         : "bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                     }`}
                   >
                     Select {tier.label.replace(/^(Economy\s*|Business\s*)/i, "")}
-                    <ArrowRight className="h-3 w-3" />
+                    <ArrowRight className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
@@ -684,36 +684,36 @@ export function FareTierModal({ offer, carriers, onClose, onConfirm }: FareTierM
         </div>
 
         {/* ── Bottom Bar ── */}
-        <div className="px-4 sm:px-6 py-2 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between shrink-0">
+        <div className="px-4 sm:px-6 py-2.5 sm:py-3 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between shrink-0">
           {/* Trust */}
-          <div className="hidden sm:flex items-center gap-3 text-[10px] text-slate-400">
+          <div className="hidden sm:flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
             <div className="flex items-center gap-1.5">
-              <span className={`inline-block h-2 w-2 rounded-full ${isLiveGds ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" : "bg-blue-400 animate-pulse"}`} />
-              <ShieldCheck className="h-3 w-3 text-emerald-500" />
-              <span className={isLiveGds ? "text-emerald-700 dark:text-emerald-400 font-medium" : ""}>
+              <span className={`inline-block h-2.5 w-2.5 rounded-full ${isLiveGds ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" : "bg-blue-400 animate-pulse"}`} />
+              <ShieldCheck className="h-4 w-4 text-emerald-500" />
+              <span className={isLiveGds ? "text-emerald-700 dark:text-emerald-400 font-semibold" : "font-medium"}>
                 {isLiveGds ? "Live Amadeus GDS Rates" : isLiveLoading ? "Verifying live GDS fares..." : "Amadeus GDS Verified"}
               </span>
             </div>
             <span>·</span>
-            <div className="flex items-center gap-1">
-              <Lock className="h-2.5 w-2.5 text-blue-500" />
-              <span>SSL Encrypted</span>
+            <div className="flex items-center gap-1.5">
+              <Lock className="h-3.5 w-3.5 text-blue-500" />
+              <span className="font-medium">SSL Encrypted</span>
             </div>
           </div>
 
           {/* Mobile bottom CTA */}
           <div className="sm:hidden flex items-center gap-3 w-full">
             <div className="flex-1 min-w-0">
-              <span className="text-[9px] text-slate-400 uppercase tracking-wider block">{activeTier.label}</span>
-              <span className="text-base font-bold text-slate-900 dark:text-white leading-tight">{formatPrice(activeFinalPrice)}</span>
+              <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">{activeTier.label}</span>
+              <span className="text-lg font-extrabold text-slate-900 dark:text-white leading-tight">{formatPrice(activeFinalPrice)}</span>
             </div>
             <button
               type="button"
               onClick={() => onConfirm(activeTier, activeFinalPrice, activeTier.upgradedOffer)}
-              className="py-2.5 px-5 rounded-lg bg-primary text-primary-foreground font-semibold text-[12px] flex items-center gap-1.5 active:scale-[0.97] cursor-pointer"
+              className="py-2.5 px-5 rounded-lg bg-primary text-primary-foreground font-bold text-xs sm:text-sm flex items-center gap-1.5 active:scale-[0.97] cursor-pointer"
             >
               Continue
-              <ArrowRight className="h-3.5 w-3.5" />
+              <ArrowRight className="h-4 w-4" />
             </button>
           </div>
 
@@ -721,10 +721,10 @@ export function FareTierModal({ offer, carriers, onClose, onConfirm }: FareTierM
           <button
             type="button"
             onClick={() => onConfirm(activeTier, activeFinalPrice, activeTier.upgradedOffer)}
-            className="hidden sm:flex items-center gap-2 py-2 px-5 rounded-lg bg-primary text-primary-foreground font-semibold text-[12px] active:scale-[0.98] cursor-pointer hover:bg-primary/90 transition-colors"
+            className="hidden sm:flex items-center gap-2 py-2.5 px-6 rounded-lg bg-primary text-primary-foreground font-bold text-xs sm:text-sm active:scale-[0.98] cursor-pointer hover:bg-primary/90 transition-all shadow-sm"
           >
             Continue with {activeTier.label.replace(/^(Economy\s*|Business\s*)/i, "")} · {formatPrice(activeFinalPrice)}
-            <ArrowRight className="h-3.5 w-3.5" />
+            <ArrowRight className="h-4 w-4" />
           </button>
         </div>
 

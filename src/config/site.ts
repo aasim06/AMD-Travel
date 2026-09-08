@@ -73,6 +73,6 @@ export const siteConfig = {
   },
 
   payments: {
-    accepted: ["Visa", "Mastercard", "American Express", "PayPal", "Apple Pay"],
+    accepted: ["Visa", "Mastercard", "American Express", "PayPal", "Apple Pay", "PAYONE", "Sofort", "Giropay", "SEPA"],
   },
 } as const;

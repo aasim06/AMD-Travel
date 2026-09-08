@@ -256,6 +256,20 @@ export function Footer() {
                 </span>
               </div>
 
+              {/* PAYONE */}
+              <div className="flex items-center justify-center h-8 px-2.5 rounded border border-blue-200 bg-blue-50/70 shadow-xs">
+                <span className="font-extrabold text-[11px] tracking-tight text-blue-900 font-sans">
+                  PAY<span className="text-blue-600">ONE</span>
+                </span>
+              </div>
+
+              {/* SOFORT */}
+              <div className="flex items-center justify-center h-8 px-2.5 rounded border border-pink-200 bg-pink-50/60 shadow-xs">
+                <span className="font-black text-[11px] tracking-tighter text-pink-700 font-sans">
+                  SOFORT
+                </span>
+              </div>
+
             </div>
 
             <p className="mt-4 text-[11px] text-muted-foreground/80 leading-tight">

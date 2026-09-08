@@ -1,104 +1,236 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { loadStripe } from "@stripe/stripe-js";
-import {
-  Elements,
-  PaymentElement,
-  useStripe,
-  useElements,
-} from "@stripe/react-stripe-js";
-import { Lock } from "lucide-react";
+import { useState } from "react";
+import { ShieldCheck, Building2, CheckCircle, ArrowRight, Loader2 } from "lucide-react";
 import type { CheckoutData } from "./types";
+import type { FlightOffer } from "@/types/flight";
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-
-// ─── Inner form (must be inside <Elements>) ───────────────────────────────────
-
-function StripeForm({
-  totalPrice,
-  currency,
-  onPay,
-  onBack,
-}: {
+interface PaymentStepProps {
+  formData: CheckoutData;
   totalPrice: number;
   currency: string;
+  offer?: FlightOffer | null;
+  carriers?: Record<string, string>;
+  fareClass?: string;
   onPay: () => void;
   onBack: () => void;
-}) {
-  const stripe   = useStripe();
-  const elements = useElements();
+}
+
+export function PaymentStep({
+  formData,
+  totalPrice,
+  currency,
+  offer,
+  carriers,
+  fareClass,
+  onBack,
+}: PaymentStepProps) {
+  const [payoneMethod, setPayoneMethod] = useState<"sofort" | "giropay" | "sepa" | "card">("sofort");
   const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!stripe || !elements) return;
+  const methods = [
+    {
+      id: "sofort" as const,
+      name: "Sofort / Klarna Pay Now",
+      sub: "Instant direct bank transfer via German online banking PIN/TAN",
+      badge: "Fast & Popular in Germany",
+      type: "sb" as const,
+      onlineType: "PNT" as const,
+    },
+    {
+      id: "giropay" as const,
+      name: "Giropay",
+      sub: "Direct debit from German Sparkasse, Postbank & Bank accounts",
+      badge: "German Bank Account",
+      type: "sb" as const,
+      onlineType: "GPY" as const,
+    },
+    {
+      id: "sepa" as const,
+      name: "SEPA Lastschrift",
+      sub: "Direct debit authorization across European Union checking accounts",
+      badge: "EU Standard",
+      type: "elv" as const,
+      onlineType: undefined,
+    },
+    {
+      id: "card" as const,
+      name: "Credit Card (PAYONE)",
+      sub: "Visa, Mastercard with German 3D-Secure 2.0 authorization",
+      badge: "Zero Surcharge",
+      type: "cc" as const,
+      onlineType: undefined,
+    },
+  ];
 
+  async function handlePayoneCheckout() {
     setLoading(true);
     setError(null);
 
-    const { error: stripeError } = await stripe.confirmPayment({
-      elements,
-      confirmParams: { return_url: window.location.origin + "/checkout" },
-      redirect: "if_required",
-    });
+    const activeMethod = methods.find((m) => m.id === payoneMethod) || methods[0];
 
-    if (stripeError) {
-      setError(stripeError.message ?? "Payment failed. Please try again.");
+    try {
+      // 1. Save checkout state to pending storage so return handler can finalize
+      if (typeof window !== "undefined") {
+        const pendingData = {
+          offer,
+          carriers,
+          fareClass,
+          selectedPrice: totalPrice,
+          formData,
+          selectedGateway: "PAYONE",
+          payoneMethod,
+          timestamp: Date.now(),
+        };
+        sessionStorage.setItem("amd_checkout_pending", JSON.stringify(pendingData));
+      }
+
+      // 2. Call backend PAYONE API
+      const primaryPassenger = formData.passengers[0];
+      const res = await fetch("/api/payment/payone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: totalPrice,
+          currency: currency || "EUR",
+          firstName: primaryPassenger.firstName,
+          lastName: primaryPassenger.lastName,
+          email: formData.contact.email,
+          paymentType: activeMethod.type,
+          onlineBankTransferType: activeMethod.onlineType,
+          bookingType: "flight",
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Could not initiate payment session with PAYONE");
+      }
+
+      if (data.redirectUrl) {
+        // Redirect to PAYONE hosted checkout / test simulator
+        window.location.href = data.redirectUrl;
+      } else {
+        throw new Error("No redirect URL received from PAYONE gateway");
+      }
+    } catch (err: any) {
+      console.error("[PAYONE Checkout Error]:", err);
+      setError(err?.message || "Failed to connect to PAYONE gateway. Please try again.");
       setLoading(false);
-      return;
     }
-
-    setLoading(false);
-    onPay();
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {/* Secure header */}
-      <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-xl">
-        <Lock className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-        <span className="text-[11px] font-semibold text-emerald-700">
-          Secured by Stripe · 256-bit SSL · PCI DSS Compliant
+    <div className="space-y-5">
+      {/* German Gateway Trust Banner */}
+      <div className="flex items-center justify-between px-4 py-3 bg-blue-50 border border-blue-100 rounded-2xl">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-5 w-5 text-blue-600 shrink-0" />
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-slate-900 tracking-tight">PAYONE</span>
+              <span className="text-[10px] text-blue-700 font-semibold bg-blue-100/80 px-1.5 py-0.5 rounded">
+                Official Gateway
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500">
+              BS PAYONE GmbH (Frankfurt am Main) · BaFin Regulated · PCI-DSS Level 1
+            </p>
+          </div>
+        </div>
+        <span className="text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-100 px-2.5 py-1 rounded-lg">
+          Germany 🇩🇪
         </span>
       </div>
 
-      {/* Stripe Payment Element */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5" style={{ boxShadow: "rgba(0,0,0,0.04) 0px 2px 16px" }}>
-        <PaymentElement
-          options={{
-            layout: "tabs",
-            paymentMethodOrder: ["card", "paypal"],
-          }}
-        />
+      {/* Payment methods list */}
+      <div
+        className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3"
+        style={{ boxShadow: "rgba(0,0,0,0.04) 0px 2px 16px" }}
+      >
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+          Choose Payment Method:
+        </p>
+
+        <div className="space-y-2.5">
+          {methods.map((method) => {
+            const isSelected = payoneMethod === method.id;
+            return (
+              <label
+                key={method.id}
+                onClick={() => setPayoneMethod(method.id)}
+                className={`flex items-start gap-3.5 p-3.5 rounded-xl border transition-all cursor-pointer ${
+                  isSelected
+                    ? "border-primary bg-primary/[0.03] shadow-sm ring-1 ring-primary/30"
+                    : "border-slate-200 hover:border-slate-300 bg-slate-50/40"
+                }`}
+              >
+                <div className="mt-0.5">
+                  <input
+                    type="radio"
+                    name="payone_method"
+                    value={method.id}
+                    checked={isSelected}
+                    onChange={() => setPayoneMethod(method.id)}
+                    className="h-4 w-4 text-primary border-slate-300 focus:ring-primary"
+                  />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-bold text-slate-800">{method.name}</span>
+                    <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full shrink-0">
+                      {method.badge}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">{method.sub}</p>
+                </div>
+              </label>
+            );
+          })}
+        </div>
+
+        {/* Security Info */}
+        <div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-[11px] text-slate-500">
+          <div className="flex items-center gap-1.5">
+            <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+            <span>Instant booking confirmation</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+            <span>Official Amadeus e-ticket</span>
+          </div>
+        </div>
       </div>
 
-      {/* Error */}
+      {/* Error display */}
       {error && (
         <p className="text-sm text-rose-500 bg-rose-50 border border-rose-100 rounded-xl px-4 py-3">
           {error}
         </p>
       )}
 
-      {/* Pay button */}
+      {/* Payone Submit Button */}
       <button
-        type="submit"
-        disabled={!stripe || loading}
-        className="w-full py-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20 active:scale-[0.98] disabled:opacity-70"
+        type="button"
+        onClick={handlePayoneCheckout}
+        disabled={loading}
+        className="w-full py-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-slate-900/15 active:scale-[0.98] disabled:opacity-70"
       >
         {loading ? (
           <>
-            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-            </svg>
-            Processing payment…
+            <Loader2 className="animate-spin h-4 w-4 text-white" />
+            Connecting to PAYONE Gateway…
           </>
         ) : (
           <>
-            <Lock className="h-4 w-4" />
-            Pay {currency} {totalPrice.toLocaleString()} securely
+            <Building2 className="h-4 w-4 text-amber-400" />
+            <span>
+              Pay {currency} {totalPrice.toLocaleString()} via PAYONE
+            </span>
+            <ArrowRight className="h-4 w-4 opacity-70 ml-1" />
           </>
         )}
       </button>
@@ -110,85 +242,6 @@ function StripeForm({
       >
         ← Back to Review
       </button>
-    </form>
-  );
-}
-
-// ─── Exported component ───────────────────────────────────────────────────────
-
-interface PaymentStepProps {
-  formData:   CheckoutData;
-  totalPrice: number;
-  currency:   string;
-  onPay:      () => void;
-  onBack:     () => void;
-}
-
-export function PaymentStep({ formData, totalPrice, currency, onPay, onBack }: PaymentStepProps) {
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [fetchError,   setFetchError]   = useState<string | null>(null);
-
-  const email       = formData.contact.email;
-  const passengerName = `${formData.passengers[0].firstName} ${formData.passengers[0].lastName}`;
-
-  useEffect(() => {
-    fetch("/api/payment", {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: totalPrice, currency, email, passengerName }),
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.error) setFetchError(data.error);
-        else setClientSecret(data.clientSecret);
-      })
-      .catch(() => setFetchError("Could not initialize payment. Please try again."));
-  }, [totalPrice, currency, email, passengerName]);
-
-  if (fetchError) {
-    return (
-      <div className="space-y-4">
-        <p className="text-sm text-rose-500 bg-rose-50 border border-rose-100 rounded-xl px-4 py-3">
-          {fetchError}
-        </p>
-        <button type="button" onClick={onBack} className="w-full text-sm text-slate-400 hover:text-slate-600 transition-colors py-1">
-          ← Back to Review
-        </button>
-      </div>
-    );
-  }
-
-  if (!clientSecret) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-      </div>
-    );
-  }
-
-  return (
-    <Elements
-      stripe={stripePromise}
-      options={{
-        clientSecret,
-        appearance: {
-          theme: "stripe",
-          variables: {
-            colorPrimary:       "hsl(207, 90%, 54%)",
-            borderRadius:       "12px",
-            fontFamily:         "inherit",
-            colorText:          "#1e293b",
-            colorTextSecondary: "#64748b",
-          },
-        },
-      }}
-    >
-      <StripeForm
-        totalPrice={totalPrice}
-        currency={currency}
-        onPay={onPay}
-        onBack={onBack}
-      />
-    </Elements>
+    </div>
   );
 }

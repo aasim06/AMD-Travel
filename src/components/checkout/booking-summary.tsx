@@ -9,15 +9,20 @@ import { useMemo } from "react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+function formatTime(iso?: string | null) {
+  if (!iso) return "--:--";
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? "--:--" : d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short" });
+function formatDate(iso?: string | null) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short" });
 }
 
-function parseDuration(iso: string) {
+function parseDuration(iso?: string | null) {
+  if (!iso || typeof iso !== "string") return "";
   const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
   if (!m) return iso;
   return [m[1] ? `${m[1]}h` : "", m[2] ? `${m[2]}m` : ""].filter(Boolean).join(" ");

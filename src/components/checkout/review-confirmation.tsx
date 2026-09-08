@@ -1,11 +1,12 @@
 "use client";
 
-import { CheckCircle, Download, Share2, Plane, Calendar, User } from "lucide-react";
+import { CheckCircle, Download, Share2, Plane, Calendar, User, Mail, QrCode, Clock } from "lucide-react";
 import type { CheckoutData } from "./types";
 import type { FlightOffer } from "@/types/flight";
 import { AIRLINE_NAMES } from "@/types/flight";
 import { useCurrency } from "@/context/currency-context";
 import { useCallback } from "react";
+import { generateFlightTicketPdf } from "@/lib/flightTicketPdfGenerator";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -139,122 +140,20 @@ export function ConfirmationStep({ pnr, bookingSource, formData, offer, carriers
   const arr = offer.itineraries[offer.itineraries.length - 1].segments.at(-1)!;
 
   const handleDownload = useCallback(async () => {
-    const { jsPDF } = await import("jspdf");
-    const doc = new jsPDF({ unit: "pt", format: "a4" });
-    const W = doc.internal.pageSize.getWidth();
-    let y = 0;
-
-    // ── Header bar ──
-    doc.setFillColor(30, 64, 175);
-    doc.rect(0, 0, W, 72, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(22);
-    doc.setFont("helvetica", "bold");
-    doc.text("AMD Global Travel", 40, 38);
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text("E-Ticket / Booking Confirmation", 40, 56);
-    y = 100;
-
-    // ── PNR block ──
-    doc.setFillColor(239, 246, 255);
-    doc.roundedRect(40, y, W - 80, 52, 6, 6, "F");
-    doc.setTextColor(30, 64, 175);
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
-    doc.text("BOOKING REFERENCE (PNR)", 56, y + 18);
-    doc.setFontSize(26);
-    doc.setFont("helvetica", "bold");
-    doc.text(pnr, 56, y + 42);
-    doc.setTextColor(100, 116, 139);
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Fare: ${formData.passengers.length} passenger${formData.passengers.length > 1 ? "s" : ""}`, W - 80, y + 30, { align: "right" });
-    y += 72;
-
-    // ── Itineraries ──
-    offer.itineraries.forEach((itin, idx) => {
-      const s0  = itin.segments[0];
-      const sLast = itin.segments.at(-1)!;
-      const isMulti = offer.itineraries.length > 2;
-      const label = isMulti ? `Flight ${idx + 1}` : offer.itineraries.length === 1 ? "Outbound" : idx === 0 ? "Outbound" : "Return";
-      const airline = AIRLINE_NAMES[s0.carrierCode] ?? s0.carrierCode;
-
-      y += 18;
-      doc.setFillColor(248, 250, 252);
-      doc.roundedRect(40, y, W - 80, 90, 6, 6, "F");
-
-      doc.setTextColor(100, 116, 139);
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "bold");
-      doc.text(label.toUpperCase(), 56, y + 16);
-
-      doc.setTextColor(15, 23, 42);
-      doc.setFontSize(20);
-      doc.setFont("helvetica", "bold");
-      doc.text(s0.departure.iataCode, 56, y + 40);
-      doc.text(sLast.arrival.iataCode, W - 56, y + 40, { align: "right" });
-
-      doc.setTextColor(30, 64, 175);
-      doc.setFontSize(9);
-      doc.text("→", W / 2, y + 40, { align: "center" });
-
-      doc.setTextColor(71, 85, 105);
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
-      const depTime = new Date(s0.departure.at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
-      const arrTime = new Date(sLast.arrival.at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
-      const depDate = new Date(s0.departure.at).toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
-      doc.text(`${depTime}  ·  ${depDate}`, 56, y + 56);
-      doc.text(`${arrTime}`, W - 56, y + 56, { align: "right" });
-
-      doc.setTextColor(100, 116, 139);
-      doc.setFontSize(8);
-      doc.text(`${airline}  ·  ${s0.carrierCode}${s0.flightNumber}  ·  ${itin.segments.length - 1 === 0 ? "Non-stop" : `${itin.segments.length - 1} stop(s)`}`, 56, y + 72);
-
-      y += 108;
-    });
-
-    // ── Passengers ──
-    y += 10;
-    doc.setTextColor(100, 116, 139);
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    doc.text("PASSENGERS", 40, y);
-    y += 12;
-
-    formData.passengers.forEach((p, i) => {
-      doc.setFillColor(i % 2 === 0 ? 248 : 255, 250, 252);
-      doc.rect(40, y, W - 80, 22, "F");
-      doc.setTextColor(15, 23, 42);
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
-      doc.text(`${p.title} ${p.firstName} ${p.lastName}`, 56, y + 14);
-      doc.setTextColor(100, 116, 139);
-      doc.text(`Passport: ${p.passportNumber}  ·  ${p.nationality}`, W - 56, y + 14, { align: "right" });
-      y += 22;
-    });
-
-    // ── Price ──
-    y += 18;
-    doc.setFillColor(30, 64, 175);
-    doc.roundedRect(40, y, W - 80, 40, 6, 6, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text("Total Paid", 56, y + 16);
-    doc.setFontSize(16);
-    doc.text(formatPrice(selectedPrice), W - 56, y + 24, { align: "right" });
-    y += 58;
-
-    // ── Footer ──
-    doc.setTextColor(148, 163, 184);
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.text("AMD Global Travel  ·  support@amdglobal.com  ·  This is a computer-generated document.", W / 2, y + 10, { align: "center" });
-
-    doc.save(`AMD-${pnr}.pdf`);
-  }, [pnr, offer, formData, carriers, selectedPrice, formatPrice]);
+    try {
+      await generateFlightTicketPdf({
+        pnr,
+        offer,
+        formData,
+        carriers,
+        selectedPrice,
+        formattedPrice: formatPrice(selectedPrice),
+        bookingSource,
+      });
+    } catch (err) {
+      console.error("[E-Ticket PDF Error]:", err);
+    }
+  }, [pnr, offer, formData, carriers, selectedPrice, formatPrice, bookingSource]);
 
   const handleShare = useCallback(async () => {
     const text =
@@ -314,6 +213,26 @@ export function ConfirmationStep({ pnr, bookingSource, formData, offer, carriers
             </button>
           </div>
         </div>
+
+        {/* Prominent Action Buttons */}
+        <div className="mt-4 flex flex-wrap justify-center gap-3">
+          <button
+            type="button"
+            onClick={handleDownload}
+            className="py-2.5 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm flex items-center gap-2 transition-all shadow-md shadow-slate-900/10 active:scale-[0.98]"
+          >
+            <Download className="h-4 w-4 text-amber-400" />
+            <span>Download Official E-Ticket (PDF)</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleShare}
+            className="py-2.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm flex items-center gap-1.5 transition-colors"
+          >
+            <Share2 className="h-3.5 w-3.5 text-slate-500" />
+            <span>Share Details</span>
+          </button>
+        </div>
       </div>
 
       {/* Itinerary card */}
@@ -371,18 +290,38 @@ export function ConfirmationStep({ pnr, bookingSource, formData, offer, carriers
       </div>
 
       {/* Next steps */}
-      <div className="bg-slate-50 rounded-2xl p-5 space-y-3">
-        <p className="text-xs font-bold uppercase tracking-widest text-slate-400">What's Next</p>
+      <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-5 space-y-3.5">
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Next Steps</p>
         {[
-          { icon: "📧", text: "Check your email for e-ticket and booking details" },
-          { icon: "📱", text: "Save your PNR for check-in and airport reference" },
-          { icon: "🧳", text: "Online check-in opens 24–48 hours before departure" },
-        ].map((item) => (
-          <div key={item.text} className="flex items-start gap-3">
-            <span className="text-base mt-0.5">{item.icon}</span>
-            <p className="text-sm text-slate-600">{item.text}</p>
-          </div>
-        ))}
+          {
+            icon: Mail,
+            title: "E-Ticket Delivery",
+            text: "Official airline e-ticket with barcode has been sent to your email",
+          },
+          {
+            icon: QrCode,
+            title: "Airport Check-In",
+            text: "Present your PNR code at the airport check-in desk or online portal",
+          },
+          {
+            icon: Clock,
+            title: "Departure Advisory",
+            text: "Online check-in opens 24–48 hours prior to scheduled departure",
+          },
+        ].map((item) => {
+          const Icon = item.icon;
+          return (
+            <div key={item.title} className="flex items-start gap-3">
+              <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
+                <Icon className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-800">{item.title}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{item.text}</p>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <button

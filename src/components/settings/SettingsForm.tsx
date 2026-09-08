@@ -632,6 +632,53 @@ export default function SettingsForm() {
               className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-brand-500 dark:border-gray-700 dark:text-white/90 font-mono"
             />
           </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              PAYONE Merchant ID (MID)
+            </label>
+            <input
+              type="text"
+              defaultValue="10000"
+              placeholder="e.g. 10000"
+              className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-brand-500 dark:border-gray-700 dark:text-white/90 font-mono"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              PAYONE Portal ID
+            </label>
+            <input
+              type="text"
+              defaultValue="2000000"
+              placeholder="e.g. 2000000"
+              className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-brand-500 dark:border-gray-700 dark:text-white/90 font-mono"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              PAYONE Sub-Account ID (AID)
+            </label>
+            <input
+              type="text"
+              defaultValue="30000"
+              placeholder="e.g. 30000"
+              className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-brand-500 dark:border-gray-700 dark:text-white/90 font-mono"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              PAYONE Secret Key
+            </label>
+            <input
+              type="password"
+              defaultValue="*************************"
+              className="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-brand-500 dark:border-gray-700 dark:text-white/90 font-mono"
+            />
+          </div>
         </div>
       </div>
 

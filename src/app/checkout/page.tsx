@@ -46,20 +46,25 @@ function CheckoutContent() {
   const [adults]      = useState<number>(() => sessionData?.adults ?? (sessionData?.passengers ?? 1));
   const [children]    = useState<number>(() => sessionData?.children ?? 0);
   const [infants]     = useState<number>(() => sessionData?.infants ?? 0);
-  const [step,      setStep]      = useState<CheckoutStep>("passengers");
-  const [formData,  setFormData]  = useState<Partial<CheckoutData>>({});
+  const [step,        setStep]          = useState<CheckoutStep>("passengers");
+  const [formData,    setFormData]      = useState<Partial<CheckoutData>>({});
   const [pnr,           setPnr]           = useState<string | null>(null);
   const [bookingSource, setBookingSource] = useState<string | null>(null);
+  const [mounted,       setMounted]       = useState(false);
   const [isBooking,     setIsBooking]     = useState(false);
   const [bookingError,  setBookingError]  = useState<string | null>(null);
 
   useEffect(() => {
-    if (!offer) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !offer) {
       router.replace("/search");
     }
-  }, [offer, router]);
+  }, [mounted, offer, router]);
 
-  if (!offer) {
+  if (!mounted || !offer) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
@@ -222,6 +227,9 @@ function CheckoutContent() {
                 formData={formData as CheckoutData}
                 totalPrice={selectedPrice ?? parseFloat(offer.price.total)}
                 currency={offer.price.currency}
+                offer={offer}
+                carriers={carriers}
+                fareClass={fareClass}
                 onPay={handlePaymentSuccess}
                 onBack={() => setStep("review")}
               />
