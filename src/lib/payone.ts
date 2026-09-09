@@ -11,6 +11,8 @@ export interface PayoneConfig {
   mode: "test" | "live";
   environment: "preprod" | "prod";
   gatewayUrl: string;
+  webhookKeyId: string;
+  secretWebhookKey: string;
 }
 
 export function getPayoneConfig(): PayoneConfig {
@@ -26,6 +28,8 @@ export function getPayoneConfig(): PayoneConfig {
     mode: (process.env.PAYONE_MODE === "live" ? "live" : "test") as "test" | "live",
     environment: (process.env.PAYONE_ENVIRONMENT === "prod" ? "prod" : "preprod") as "preprod" | "prod",
     gatewayUrl: process.env.PAYONE_GATEWAY_URL || "https://api.preprod.payone.com/post-gateway/",
+    webhookKeyId: process.env.PAYONE_WEBHOOK_KEY_ID || "E0256368F7FF29912A82",
+    secretWebhookKey: process.env.PAYONE_SECRET_WEBHOOK_KEY || "4D8C6672B04AC3EA5560AE80AA920C386C7F8C86A8CA83834B8F8527B89629D11104426A3878928339D3B903B541DD8492380787E84DE9C3AF51AE407B17ECBF",
   };
 }
 

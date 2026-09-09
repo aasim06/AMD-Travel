@@ -38,14 +38,41 @@ export interface PayoneWebhookResult {
 }
 
 /**
- * Validates PAYONE webhook signature (MD5 of portal key) and portal ID.
+ * Validates PAYONE webhook signature:
+ * 1. Checks modern HMAC signature from Developer Portal using secretWebhookKey
+ * 2. Checks traditional MD5 key hash from Post-Gateway
+ * 3. Verifies portal ID if present
  */
 export function verifyPayoneWebhookSignature(
-  data: PayoneTransactionStatusPayload
+  data: PayoneTransactionStatusPayload,
+  rawBody?: string,
+  signatureHeader?: string | null
 ): { valid: boolean; reason?: string } {
   const config = getPayoneConfig();
 
-  // 1. Verify Portal ID if supplied
+  // 1. Check Modern Webhook HMAC-SHA256 Signature from PAYONE Developer Portal
+  if (signatureHeader && rawBody && config.secretWebhookKey) {
+    try {
+      const hmacSha256 = crypto
+        .createHmac("sha256", config.secretWebhookKey)
+        .update(rawBody)
+        .digest("hex");
+
+      const hmacSha384 = crypto
+        .createHmac("sha384", config.secretWebhookKey)
+        .update(rawBody)
+        .digest("hex");
+
+      const cleanSig = signatureHeader.trim().toLowerCase();
+      if (cleanSig === hmacSha256.toLowerCase() || cleanSig === hmacSha384.toLowerCase()) {
+        return { valid: true };
+      }
+    } catch (e) {
+      console.warn("[PAYONE HMAC Check Error]:", e);
+    }
+  }
+
+  // 2. Verify Portal ID if supplied
   if (data.portalid && config.portalId && data.portalid !== config.portalId) {
     if (config.mode === "live") {
       return {
@@ -55,19 +82,24 @@ export function verifyPayoneWebhookSignature(
     }
   }
 
-  // 2. Verify Key / MD5 Hash if supplied by PAYONE
-  if (data.key && config.key) {
-    const expectedMd5 = crypto
-      .createHash("md5")
-      .update(config.key)
-      .digest("hex")
-      .toLowerCase();
+  // 3. Verify Key / MD5 Hash if supplied in payload
+  if (data.key && (config.key || config.secretWebhookKey)) {
+    const expectedMd5PortalKey = config.key
+      ? crypto.createHash("md5").update(config.key).digest("hex").toLowerCase()
+      : "";
+    const expectedMd5WebhookKey = config.secretWebhookKey
+      ? crypto.createHash("md5").update(config.secretWebhookKey).digest("hex").toLowerCase()
+      : "";
 
     const receivedKey = data.key.trim().toLowerCase();
 
-    // Check against expected MD5 or literal key
-    const matchesMd5 = receivedKey === expectedMd5;
-    const matchesRaw = receivedKey === config.key.trim().toLowerCase();
+    const matchesMd5 =
+      receivedKey === expectedMd5PortalKey ||
+      receivedKey === expectedMd5WebhookKey;
+    const matchesRaw =
+      receivedKey === config.key.trim().toLowerCase() ||
+      receivedKey === config.secretWebhookKey.trim().toLowerCase() ||
+      receivedKey === config.webhookKeyId.trim().toLowerCase();
 
     if (!matchesMd5 && !matchesRaw) {
       if (config.mode === "live") {
@@ -77,7 +109,7 @@ export function verifyPayoneWebhookSignature(
         };
       } else {
         console.warn(
-          `[PAYONE Webhook Warning] Signature key hash mismatch in test mode (received: ${receivedKey}, expected MD5: ${expectedMd5}). Continuing in test mode.`
+          `[PAYONE Webhook Warning] Signature key hash mismatch in test mode (received: ${receivedKey}). Continuing in test mode.`
         );
       }
     }
@@ -88,27 +120,72 @@ export function verifyPayoneWebhookSignature(
 
 /**
  * Extracts and parses key-value pairs from multiple request payload formats:
- * - application/x-www-form-urlencoded
+ * - Modern PAYONE Developer Webhooks (JSON with nested data / status)
+ * - Classic Post-Gateway (application/x-www-form-urlencoded)
  * - multipart/form-data
- * - application/json
- * - raw text body
  */
 export async function parsePayoneRequestPayload(
   req: Request
-): Promise<PayoneTransactionStatusPayload> {
+): Promise<{ payload: PayoneTransactionStatusPayload; rawBody: string; signatureHeader: string | null }> {
   const contentType = req.headers.get("content-type") || "";
+  const signatureHeader =
+    req.headers.get("payone-hmac") ||
+    req.headers.get("x-payone-signature") ||
+    req.headers.get("payone-signature") ||
+    req.headers.get("x-signature") ||
+    null;
+
   const data: Record<string, string> = {};
+  let rawBody = "";
 
   try {
-    if (contentType.includes("application/json")) {
-      const json = await req.json();
+    rawBody = await req.text();
+
+    if (contentType.includes("application/json") || rawBody.trim().startsWith("{")) {
+      const json = JSON.parse(rawBody || "{}");
+
+      // Check if modern nested structure: { event: "...", data: { ... } }
+      const subData = json.data || json.payload || json.event_data || {};
+
       for (const [k, v] of Object.entries(json)) {
-        data[k] = String(v ?? "");
+        if (typeof v !== "object") {
+          data[k] = String(v ?? "");
+        }
+      }
+
+      for (const [k, v] of Object.entries(subData)) {
+        if (typeof v !== "object") {
+          data[k] = String(v ?? "");
+        }
+      }
+
+      // Map modern Developer API fields to common PAYONE status fields
+      if (subData.reference) data.reference = String(subData.reference);
+      if (subData.paymentId) data.txid = String(subData.paymentId);
+      if (subData.id && !data.txid) data.txid = String(subData.id);
+
+      if (subData.status) {
+        const s = String(subData.status).toLowerCase();
+        data.txaction = s === "completed" || s === "paid" ? "paid" : s;
+      } else if (json.type) {
+        const t = String(json.type).toLowerCase();
+        if (t.includes("paid") || t.includes("completed") || t.includes("succeeded")) {
+          data.txaction = "paid";
+        } else if (t.includes("failed") || t.includes("cancelled")) {
+          data.txaction = "failed";
+        }
+      }
+
+      if (subData.amount?.value) {
+        data.price = (Number(subData.amount.value) / 100).toString();
+      }
+      if (subData.amount?.currency) {
+        data.currency = String(subData.amount.currency);
       }
     } else {
-      const text = await req.text();
-      if (text) {
-        const params = new URLSearchParams(text);
+      // urlencoded, formData, or raw text fallback
+      if (rawBody) {
+        const params = new URLSearchParams(rawBody);
         params.forEach((value, key) => {
           data[key] = value;
         });
@@ -118,7 +195,7 @@ export async function parsePayoneRequestPayload(
     console.error("[PAYONE Webhook Payload Parse Error]:", err);
   }
 
-  return {
+  const payload: PayoneTransactionStatusPayload = {
     txid: data.txid || "",
     reference: data.reference || "",
     txaction: (data.txaction || "").toLowerCase(),
@@ -136,6 +213,8 @@ export async function parsePayoneRequestPayload(
     failedcause: data.failedcause,
     ...data,
   };
+
+  return { payload, rawBody, signatureHeader };
 }
 
 /**

@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(req: NextRequest) {
   try {
-    const payload = await parsePayoneRequestPayload(req);
+    const { payload, rawBody, signatureHeader } = await parsePayoneRequestPayload(req);
 
     console.log("[PAYONE Webhook Route] Incoming event:", {
       txid: payload.txid,
@@ -29,8 +29,8 @@ export async function POST(req: NextRequest) {
       currency: payload.currency,
     });
 
-    // Verify PAYONE security signature / MD5 hash
-    const signatureCheck = verifyPayoneWebhookSignature(payload);
+    // Verify PAYONE security signature (HMAC from Developer portal or MD5 from Post-Gateway)
+    const signatureCheck = verifyPayoneWebhookSignature(payload, rawBody, signatureHeader);
     if (!signatureCheck.valid) {
       console.error(
         `[PAYONE Webhook Security Warning] Signature rejected: ${signatureCheck.reason}`
