@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
       successUrl,
       errorUrl,
       backUrl,
+      statusUrl: `${origin}/api/payment/payone/webhook`,
       customData: {
         bookingType,
         pnr: reference,

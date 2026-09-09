@@ -42,6 +42,7 @@ export interface PayoneInitPaymentParams {
   successUrl: string;
   errorUrl: string;
   backUrl: string;
+  statusUrl?: string;
   customData?: Record<string, string>;
 }
 
@@ -87,6 +88,7 @@ export async function createPayonePayment(params: PayoneInitPaymentParams): Prom
     successurl: params.successUrl,
     errorurl: params.errorUrl,
     backurl: params.backUrl,
+    statusurl: params.statusUrl || `${new URL(params.successUrl).origin}/api/payment/payone/webhook`,
     encoding: "UTF-8",
   };
 
