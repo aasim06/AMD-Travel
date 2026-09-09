@@ -183,11 +183,11 @@ const SECTIONS = [
     content: [
       {
         subtitle: "Cookie Enquiries",
-        text: "If you have any questions about our use of cookies, please contact us at team@amdglobal.org or via WhatsApp at +49 179 7296856.",
+        text: "If you have any questions about our use of cookies, please contact us at team@amdglobal.org or by phone at +49 69 94548001.",
       },
       {
         subtitle: "Registered Address",
-        text: "AMD Global Travel, Charlottenstraße 17, 52070 Aachen, Germany.",
+        text: "AMD Global Travel, Kaiserstraße 61, 60329 Frankfurt am Main, Germany.",
       },
     ],
   },

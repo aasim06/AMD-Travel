@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Mail, MapPin, Globe, Camera, Briefcase, X, MessageCircle, ArrowRight } from "lucide-react";
+import { Mail, Phone, MapPin, Globe, Camera, Briefcase, X, MessageCircle, ArrowRight } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { useCurrency } from "@/context/currency-context";
 
@@ -100,7 +100,13 @@ export function Footer() {
 
             <div className="mt-4 flex items-start gap-2 text-sm text-muted-foreground">
               <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
-              <span>Charlottenstraße 17, 52070 Aachen Germany</span>
+              <span>Kaiserstraße 61, 60329 Frankfurt am Main, Germany</span>
+            </div>
+            <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+              <Phone className="h-4 w-4 shrink-0 text-primary" />
+              <a href="tel:+496994548001" className="hover:text-primary transition-colors">
+                +49 69 94548001
+              </a>
             </div>
             <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
               <Mail className="h-4 w-4 shrink-0 text-primary" />
@@ -110,8 +116,8 @@ export function Footer() {
             </div>
             <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
               <MessageCircle className="h-4 w-4 shrink-0 text-primary" />
-              <a href="https://wa.me/4917972968560" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                +49 179 7296856
+              <a href="https://wa.me/496994548001" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                WhatsApp Chat
               </a>
             </div>
 

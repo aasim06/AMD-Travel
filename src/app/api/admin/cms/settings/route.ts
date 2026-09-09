@@ -42,8 +42,8 @@ const DEFAULT_CMS_SETTINGS = {
   contactEmail: "team@amdglobal.org",
 
   // Footer & Address
-  officeAddress: "Charlottenstraße 17, 52070 Aachen, Germany",
-  officePhone: "+49 179 72968560",
+  officeAddress: "Kaiserstraße 61, 60329 Frankfurt am Main, Germany",
+  officePhone: "+49 69 94548001",
   officeEmail: "team@amdglobal.org",
   copyrightText: "© 2026 AMD Global Travel. All rights reserved.",
 };

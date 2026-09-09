@@ -149,11 +149,11 @@ const SECTIONS = [
     content: [
       {
         subtitle: "Refund Enquiries",
-        text: "For all refund-related enquiries, please contact our team at team@amdglobal.org or via WhatsApp at +49 179 7296856. Our team is available Monday to Saturday, 9am – 7pm CET.",
+        text: "For all refund-related enquiries, please contact our team at team@amdglobal.org or by phone at +49 69 94548001. Our team is available Monday to Saturday, 9am – 7pm CET.",
       },
       {
         subtitle: "Registered Address",
-        text: "AMD Global Travel, Charlottenstraße 17, 52070 Aachen, Germany.",
+        text: "AMD Global Travel, Kaiserstraße 61, 60329 Frankfurt am Main, Germany.",
       },
     ],
   },

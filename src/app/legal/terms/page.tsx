@@ -161,7 +161,7 @@ const SECTIONS = [
     content: [
       {
         subtitle: "Governing Law",
-        text: "These Terms of Service are governed by and construed in accordance with the laws of Germany. Any disputes arising from these terms shall be subject to the exclusive jurisdiction of the courts of Aachen, Germany.",
+        text: "These Terms of Service are governed by and construed in accordance with the laws of Germany. Any disputes arising from these terms shall be subject to the exclusive jurisdiction of the courts of Frankfurt am Main, Germany.",
       },
       {
         subtitle: "Dispute Resolution",
@@ -181,11 +181,11 @@ const SECTIONS = [
     content: [
       {
         subtitle: "Registered Address",
-        text: "AMD Global Travel, Charlottenstraße 17, 52070 Aachen, Germany.",
+        text: "AMD Global Travel, Kaiserstraße 61, 60329 Frankfurt am Main, Germany.",
       },
       {
         subtitle: "Get In Touch",
-        text: "For any questions regarding these Terms of Service, please contact us at team@amdglobal.org or via WhatsApp at +49 179 7296856. Our team is available Monday to Saturday, 9am – 7pm CET.",
+        text: "For any questions regarding these Terms of Service, please contact us at team@amdglobal.org or by phone at +49 69 94548001. Our team is available Monday to Saturday, 9am – 7pm CET.",
       },
     ],
   },

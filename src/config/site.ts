@@ -17,13 +17,14 @@ export const siteConfig = {
   },
 
   contact: {
-    email: "support@amdglobaltravel.com",
-    phone: "+1 (800) 555-0192",
-    whatsapp: "+18005550192", // digits only, for wa.me links
+    email: "team@amdglobal.org",
+    phone: "+49 69 94548001",
+    whatsapp: "+496994548001", // digits only, for wa.me links
     address: {
-      line1: "1 Aviation Plaza",
-      city: "Dubai",
-      country: "United Arab Emirates",
+      line1: "Kaiserstraße 61",
+      city: "Frankfurt am Main",
+      postalCode: "60329",
+      country: "Germany",
     },
   },
 

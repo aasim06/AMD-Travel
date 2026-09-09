@@ -102,8 +102,8 @@ export default function CmsForm() {
     whatsappNumber: "+4917972968560",
     contactEmail: "team@amdglobal.org",
 
-    officeAddress: "Charlottenstraße 17, 52070 Aachen, Germany",
-    officePhone: "+49 179 72968560",
+    officeAddress: "Kaiserstraße 61, 60329 Frankfurt am Main, Germany",
+    officePhone: "+49 69 94548001",
     officeEmail: "team@amdglobal.org",
     copyrightText: "© 2026 AMD Global Travel. All rights reserved.",
   });

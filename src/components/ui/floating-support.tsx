@@ -110,7 +110,7 @@ export function FloatingSupport() {
 
           {/* Phone Hotline Direct Call */}
           <a
-            href="tel:+4917972968560"
+            href="tel:+496994548001"
             className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-200 dark:hover:bg-blue-500/10 dark:hover:text-blue-400 transition-colors"
           >
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-white shadow-xs">
@@ -118,7 +118,7 @@ export function FloatingSupport() {
             </div>
             <div className="flex flex-col text-left">
               <span>Call Direct Hotline</span>
-              <span className="text-[10px] text-slate-400 font-normal">+49 179 72968560</span>
+              <span className="text-[10px] text-slate-400 font-normal">+49 69 94548001</span>
             </div>
           </a>
         </div>

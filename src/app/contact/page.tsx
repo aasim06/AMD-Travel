@@ -6,6 +6,15 @@ import {
 
 const CONTACT_CARDS = [
   {
+    icon: <Phone className="h-5 w-5 text-sky-500" />,
+    bg: "bg-sky-50 border-sky-100",
+    iconBg: "bg-sky-500/10",
+    label: "Phone Support",
+    value: "+49 69 94548001",
+    href: "tel:+496994548001",
+    sub: "Direct Office Hotline",
+  },
+  {
     icon: <Mail className="h-5 w-5 text-blue-500" />,
     bg: "bg-blue-50 border-blue-100",
     iconBg: "bg-blue-500/10",
@@ -15,22 +24,13 @@ const CONTACT_CARDS = [
     sub: "We reply within 24 hours",
   },
   {
-    icon: <MessageCircle className="h-5 w-5 text-emerald-500" />,
-    bg: "bg-emerald-50 border-emerald-100",
-    iconBg: "bg-emerald-500/10",
-    label: "WhatsApp",
-    value: "+49 179 7296856",
-    href: "https://wa.me/4917972968560",
-    sub: "Chat with us instantly",
-  },
-  {
     icon: <MapPin className="h-5 w-5 text-violet-500" />,
     bg: "bg-violet-50 border-violet-100",
     iconBg: "bg-violet-500/10",
     label: "Our Office",
-    value: "Charlottenstraße 17",
-    href: "https://maps.google.com/?q=Charlottenstraße+17,+52070+Aachen,+Germany",
-    sub: "52070 Aachen, Germany",
+    value: "Kaiserstraße 61",
+    href: "https://maps.google.com/?q=Kaiserstraße+61,+60329+Frankfurt+am+Main,+Germany",
+    sub: "60329 Frankfurt am Main, Germany",
   },
   {
     icon: <Clock className="h-5 w-5 text-amber-500" />,
@@ -186,7 +186,7 @@ export default function ContactPage() {
               style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
               <iframe
                 title="AMD Global Travel Office"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2517.3!2d6.0838!3d50.7753!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47c0999b5f3b1b1b%3A0x0!2sCharlottenstra%C3%9Fe+17%2C+52070+Aachen%2C+Germany!5e0!3m2!1sen!2sde!4v1"
+                src="https://maps.google.com/maps?q=Kaiserstra%C3%9Fe+61,+60329+Frankfurt+am+Main,+Germany&t=&z=15&ie=UTF8&iwloc=&output=embed"
                 width="100%"
                 height="200"
                 style={{ border: 0 }}
@@ -197,10 +197,10 @@ export default function ContactPage() {
               <div className="px-4 py-3 flex items-start gap-2.5">
                 <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-slate-700">Charlottenstraße 17</p>
-                  <p className="text-xs text-slate-400">52070 Aachen, Germany</p>
+                  <p className="text-sm font-semibold text-slate-700">Kaiserstraße 61</p>
+                  <p className="text-xs text-slate-400">60329 Frankfurt am Main, Germany</p>
                 </div>
-                <a href="https://maps.google.com/?q=Charlottenstraße+17,+52070+Aachen,+Germany"
+                <a href="https://maps.google.com/?q=Kaiserstraße+61,+60329+Frankfurt+am+Main,+Germany"
                   target="_blank" rel="noopener noreferrer"
                   className="ml-auto text-[11px] font-semibold text-primary hover:underline shrink-0">
                   Get Directions

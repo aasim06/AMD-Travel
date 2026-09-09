@@ -153,11 +153,11 @@ const SECTIONS = [
     content: [
       {
         subtitle: "Data Controller",
-        text: "AMD Global Travel, Charlottenstraße 17, 52070 Aachen, Germany is the data controller responsible for your personal information.",
+        text: "AMD Global Travel, Kaiserstraße 61, 60329 Frankfurt am Main, Germany is the data controller responsible for your personal information.",
       },
       {
         subtitle: "Get In Touch",
-        text: "For any privacy-related questions, requests, or complaints, please contact our Data Protection team at team@amdglobal.org or via WhatsApp at +49 179 7296856. We aim to respond within 5 business days.",
+        text: "For any privacy-related questions, requests, or complaints, please contact our Data Protection team at team@amdglobal.org or by phone at +49 69 94548001. We aim to respond within 5 business days.",
       },
     ],
   },
