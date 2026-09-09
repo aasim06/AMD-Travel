@@ -50,25 +50,41 @@ export function verifyPayoneWebhookSignature(
 ): { valid: boolean; reason?: string } {
   const config = getPayoneConfig();
 
-  // 1. Check Modern Webhook HMAC-SHA256 Signature from PAYONE Developer Portal
-  if (signatureHeader && rawBody && config.secretWebhookKey) {
-    try {
-      const hmacSha256 = crypto
-        .createHmac("sha256", config.secretWebhookKey)
-        .update(rawBody)
-        .digest("hex");
+  const candidateSecretKeys = [
+    config.secretWebhookKey,
+    config.secretApiKey,
+    config.key,
+  ].filter(Boolean);
 
-      const hmacSha384 = crypto
-        .createHmac("sha384", config.secretWebhookKey)
-        .update(rawBody)
-        .digest("hex");
+  // 1. Check Modern Webhook HMAC Signature (SHA256 / SHA384 / SHA512)
+  if (signatureHeader && rawBody) {
+    const cleanSig = signatureHeader.trim().toLowerCase();
+    for (const secret of candidateSecretKeys) {
+      try {
+        const hmacSha256 = crypto
+          .createHmac("sha256", secret)
+          .update(rawBody)
+          .digest("hex")
+          .toLowerCase();
 
-      const cleanSig = signatureHeader.trim().toLowerCase();
-      if (cleanSig === hmacSha256.toLowerCase() || cleanSig === hmacSha384.toLowerCase()) {
-        return { valid: true };
+        const hmacSha384 = crypto
+          .createHmac("sha384", secret)
+          .update(rawBody)
+          .digest("hex")
+          .toLowerCase();
+
+        const hmacSha512 = crypto
+          .createHmac("sha512", secret)
+          .update(rawBody)
+          .digest("hex")
+          .toLowerCase();
+
+        if (cleanSig === hmacSha256 || cleanSig === hmacSha384 || cleanSig === hmacSha512) {
+          return { valid: true };
+        }
+      } catch (e) {
+        console.warn("[PAYONE HMAC Check Error]:", e);
       }
-    } catch (e) {
-      console.warn("[PAYONE HMAC Check Error]:", e);
     }
   }
 
@@ -83,35 +99,37 @@ export function verifyPayoneWebhookSignature(
   }
 
   // 3. Verify Key / MD5 Hash if supplied in payload
-  if (data.key && (config.key || config.secretWebhookKey)) {
-    const expectedMd5PortalKey = config.key
-      ? crypto.createHash("md5").update(config.key).digest("hex").toLowerCase()
-      : "";
-    const expectedMd5WebhookKey = config.secretWebhookKey
-      ? crypto.createHash("md5").update(config.secretWebhookKey).digest("hex").toLowerCase()
-      : "";
-
+  if (data.key) {
     const receivedKey = data.key.trim().toLowerCase();
 
-    const matchesMd5 =
-      receivedKey === expectedMd5PortalKey ||
-      receivedKey === expectedMd5WebhookKey;
-    const matchesRaw =
-      receivedKey === config.key.trim().toLowerCase() ||
-      receivedKey === config.secretWebhookKey.trim().toLowerCase() ||
-      receivedKey === config.webhookKeyId.trim().toLowerCase();
+    for (const secret of candidateSecretKeys) {
+      const expectedMd5 = crypto
+        .createHash("md5")
+        .update(secret)
+        .digest("hex")
+        .toLowerCase();
 
-    if (!matchesMd5 && !matchesRaw) {
-      if (config.mode === "live") {
-        return {
-          valid: false,
-          reason: "PAYONE MD5 security key hash verification failed",
-        };
-      } else {
-        console.warn(
-          `[PAYONE Webhook Warning] Signature key hash mismatch in test mode (received: ${receivedKey}). Continuing in test mode.`
-        );
+      if (receivedKey === expectedMd5 || receivedKey === secret.trim().toLowerCase()) {
+        return { valid: true };
       }
+    }
+
+    if (
+      receivedKey === config.webhookKeyId.trim().toLowerCase() ||
+      receivedKey === config.apiKeyId.trim().toLowerCase()
+    ) {
+      return { valid: true };
+    }
+
+    if (config.mode === "live") {
+      return {
+        valid: false,
+        reason: "PAYONE MD5 security key hash verification failed",
+      };
+    } else {
+      console.warn(
+        `[PAYONE Webhook Warning] Signature key hash mismatch in test mode (received: ${receivedKey}). Continuing in test mode.`
+      );
     }
   }
 
