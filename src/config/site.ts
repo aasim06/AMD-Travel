@@ -6,7 +6,7 @@ export const siteConfig = {
   tagline: "Fly Smarter, Travel Further",
   description:
     "AMD Global Travel is your premium flight aggregator — compare fares, book flights, and manage trips worldwide with confidence.",
-  url: "https://www.amdglobaltravel.com",
+  url: "https://amdglobal.de",
 
   logo: {
     icon: "/brand/logo-icon.svg",
