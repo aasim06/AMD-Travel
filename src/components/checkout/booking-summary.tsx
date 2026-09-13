@@ -4,6 +4,7 @@ import { Plane, Clock, Zap, ArrowRight } from "lucide-react";
 import type { FlightOffer } from "@/types/flight";
 import { AIRLINE_NAMES } from "@/types/flight";
 import { useCurrency } from "@/context/currency-context";
+import { TrustSeals } from "@/components/ui/trust-seals";
 
 import { useMemo } from "react";
 
@@ -235,17 +236,7 @@ export function BookingSummary({ offer, carriers, fareClass, passengers, adults,
         </div>
 
         {/* Trust badges */}
-        <div className="bg-slate-50 rounded-xl p-3 flex flex-col gap-1.5">
-          {[
-            "Secure 256-bit SSL encryption",
-            "Instant booking confirmation",
-            "Free cancellation within 24h",
-          ].map((text) => (
-            <div key={text} className="flex items-center">
-              <span className="text-[11px] text-slate-500 font-medium">{text}</span>
-            </div>
-          ))}
-        </div>
+        <TrustSeals variant="compact" />
       </div>
     </div>
   );

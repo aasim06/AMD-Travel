@@ -37,7 +37,7 @@ export const siteConfig = {
 
   locale: {
     defaultCurrency: "EUR",
-    supportedCurrencies: ["EUR", "USD"],
+    supportedCurrencies: ["EUR", "USD", "GBP", "SAR", "AED", "PKR"],
     defaultLanguage: "en",
     supportedLanguages: ["en", "ar", "fr", "de"],
   },

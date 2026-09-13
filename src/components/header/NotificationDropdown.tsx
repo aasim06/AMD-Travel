@@ -232,8 +232,9 @@ export default function NotificationDropdown() {
             </svg>
             Sync Live DB
           </button>
-          <span className="text-[10px] text-gray-400">
-            Realtime DB Connected 🟢
+          <span className="inline-flex items-center gap-1 text-[10px] text-gray-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Realtime DB Connected
           </span>
         </div>
       </Dropdown>

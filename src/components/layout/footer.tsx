@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Mail, Phone, MapPin, Globe, Camera, Briefcase, X, MessageCircle, ArrowRight } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { useCurrency } from "@/context/currency-context";
+import { TrustSeals } from "@/components/ui/trust-seals";
 
 export function Footer() {
   const { t } = useCurrency();
@@ -58,6 +59,9 @@ export function Footer() {
           </div>
         </div>
       </div>
+
+      {/* Trust & Safety Seals */}
+      <TrustSeals />
 
       <div className="container py-6 sm:py-12 pb-28 md:pb-12">
         <div className="grid grid-cols-2 gap-8 sm:gap-10 sm:grid-cols-2 lg:grid-cols-4">

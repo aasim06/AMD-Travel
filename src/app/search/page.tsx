@@ -32,6 +32,7 @@ import {
   Moon,
   Car,
   FileText,
+  MapPin,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -2101,7 +2102,7 @@ function LegRow({
           <span className="mx-1.5 text-slate-300">·</span>
           <span className="capitalize">{label}</span>
         </p>
-        <span className="text-primary text-xs opacity-60">📌</span>
+        <MapPin className="h-3.5 w-3.5 text-primary opacity-60" />
       </div>
 
       {/* Flight Main Row */}
@@ -2147,14 +2148,15 @@ function LegRow({
           </div>
 
           {/* Direct or Stops Label */}
-          <p className="text-[10px] sm:text-xs font-semibold text-slate-400 mt-1.5">
-            {stops === 0
-              ? "Direct"
-              : layovers.length > 0
-                ? `${stops} stop · ${layovers.map(l => l.code).join(", ")}`
-                : `${stops} stop`
-            }
-          </p>
+          {stops === 0 ? (
+            <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] sm:text-xs font-bold border border-emerald-200/60">
+              Direct Flight
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[10px] sm:text-xs font-bold border border-amber-200/60">
+              {stops} {stops === 1 ? "Stop" : "Stops"} {layovers.length > 0 ? `(${layovers.map(l => l.code).join(", ")})` : ""}
+            </span>
+          )}
         </div>
 
         {/* Arrival block */}
@@ -2311,25 +2313,22 @@ function FlightCard({
                 <button
                   type="button"
                   onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-2 text-xs text-slate-600 hover:text-primary font-medium transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100/90 hover:bg-primary/10 hover:text-primary transition-all cursor-pointer border border-slate-200/80 shadow-2xs"
                 >
-                  {/* Personal / Cabin item */}
-                  <span className="flex items-center gap-0.5">
-                    <span className="font-semibold">1</span>
-                    <svg className="h-3.5 w-3.5 text-slate-500" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M20.583 2.25a.806.806 0 0 1 1.167 0 .806.806 0 0 1 0 1.167l-4.907 4.906h.008l-1.149 1.141L3.417 21.75c-.25.333-.834.333-1.167 0a.806.806 0 0 1 0-1.167l1.809-1.808c-.177-.327-.259-.692-.259-1.129 0-.692.353-7.091.42-7.448.093-.468.285-.828.641-1.18.28-.285.656-.517 1-.62.089-.029.521-.06.97-.077l.056-.002c.56-.017.75-.022.849-.12a.4.4 0 0 0 .085-.147c.053-.39.31-1.078.59-1.487.187-.268.576-.673.856-.88.408-.309.856-.509 1.429-.637.18-.04.432-.056.856-.044 1.113.031 1.72.108 2.225.36.7.356 1.309.977 1.649 1.685q.059.121.108.25zm-8.753 8.754H7c-.417 0-.667.25-.667.667 0 .416.334.666.667.666h.137c.167 0 .334.167.334.417v.833c0 .417.124.667.666.667.582 0 .667-.254.667-.667.006-.587 0-.833 0-.833 0-.25.167-.417.417-.417h1.275z" />
+                  <span className="flex items-center gap-1.5 text-slate-700">
+                    <svg className="h-3.5 w-3.5 text-slate-600 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M20.583 2.25a.806.806 0 0 1 1.167 0 .806.806 0 0 1 0 1.167l-4.907 4.906h.008l-1.149 1.141L3.417 21.75c-.25.333-.834.333-1.167 0a.806.806 0 0 1 0-1.167l1.809-1.808c-.177-.327-.259-.692-.259-1.129 0-.692.353-7.091.42-7.448.093-.468.285-.828.641-1.18.28-.285.656-.517 1-.62.089-.029.521-.06.97-.077l.056-.002c.56-.017.75-.022.849-.12a.4.4 0 0 0 .085-.147c.053-.39.31-1.078.59-1.487.187-.268.576-.673.856-.88.408-.309.856-.509 1.429-.637.18-.04.432-.056.856-.044 1.113.031 1.72.108 2.225.36.7.356 1.309.977 1.649 1.685q.059.121.108.25zm-8.753 8.754H7c-.417 0-.667.25-.667.667 0 .416.334.666.666.666h.137c.167 0 .334.167.334.417v.833c0 .417.124.667.666.667.582 0 .667-.254.667-.667.006-.587 0-.833 0-.833 0-.25.167-.417.417-.417h1.275z" />
                     </svg>
+                    <span className="text-[11px] font-bold">Cabin Bag</span>
                   </span>
-
-                  {/* Checked bag */}
-                  <span className="flex items-center gap-0.5">
-                    <span className="font-semibold">{checkedBagQty}</span>
-                    <svg className="h-3.5 w-3.5 text-slate-500" viewBox="0 0 24 24" fill="currentColor">
+                  <span className="h-3 w-px bg-slate-300" />
+                  <span className="flex items-center gap-1.5 text-slate-700">
+                    <svg className="h-3.5 w-3.5 text-slate-600 shrink-0" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M15.91 5.333c-1.417 0-1.417-.166-1.417-.416v-.75c0-.25.167-.417.417-.417.583 0 .833-.417.833-.917S15.494 2 14.91 2H9.077c-.584 0-.834.417-.834.833 0 .417.25.834.75.834q.5.125.5.5v.666c0 .25-.166.417-.416.417H6.243c-1.166.083-2.083 1-2.083 2.083v11.75c0 1 .667 1.834 1.667 2 .083 0 .166.167.166.25 0 .5.334.667.834.667s.833-.167.833-.667a.18.18 0 0 1 .167-.166h8.166a.18.18 0 0 1 .167.166c0 .5.334.667.834.667s.833-.167.833-.667c0-.083.25-.25.333-.25 1-.166 1.667-1.083 1.667-2V7.333c0-1.083-.75-2-1.917-2z" />
                     </svg>
+                    <span className="text-[11px] font-bold">{checkedBagQty > 0 ? `${checkedBagQty}× Checked Bag` : "No Checked Bag"}</span>
                   </span>
-
-                  <ChevronDown className="h-3 w-3 text-slate-400" />
+                  <ChevronDown className="h-3.5 w-3.5 text-slate-400 ml-0.5" />
                 </button>
               </PopoverTrigger>
               <PopoverContent align="start" onClick={(e) => e.stopPropagation()}>

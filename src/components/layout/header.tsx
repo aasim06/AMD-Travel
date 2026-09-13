@@ -76,22 +76,9 @@ function LogoMark() {
 // ─── Currency dropdown ───────────────────────────────────────────────────────
 
 const CURRENCY_META: Record<string, { flagSvg: React.ReactNode; symbol: string; label: string; langLabel: string }> = {
-  USD: {
-    flagSvg: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30" className="h-4 w-6 overflow-hidden shrink-0">
-        <rect width="60" height="30" fill="#B22234"/>
-        {[0,1,2,3,4,5,6].map(i => <rect key={i} y={i*4+2} width="60" height="2" fill="white"/>)}
-        <rect width="24" height="16" fill="#3C3B6E"/>
-        {Array.from({length:9}).map((_,i) => (
-          <text key={i} x={3 + (i%3)*8} y={5 + Math.floor(i/3)*5} fontSize="4" fill="white">★</text>
-        ))}
-      </svg>
-    ),
-    symbol: "$", label: "US Dollar", langLabel: "English (en)",
-  },
   EUR: {
     flagSvg: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40" className="h-4 w-6 overflow-hidden shrink-0">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40" className="h-4 w-6 overflow-hidden shrink-0 rounded-xs">
         <rect width="60" height="40" fill="#003399"/>
         {Array.from({length:12}).map((_,i) => {
           const angle = (i * 30 - 90) * Math.PI / 180;
@@ -101,7 +88,64 @@ const CURRENCY_META: Record<string, { flagSvg: React.ReactNode; symbol: string; 
         })}
       </svg>
     ),
-    symbol: "€", label: "Euro", langLabel: "Deutsch (de)",
+    symbol: "€", label: "Euro", langLabel: "Europe",
+  },
+  USD: {
+    flagSvg: (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30" className="h-4 w-6 overflow-hidden shrink-0 rounded-xs">
+        <rect width="60" height="30" fill="#B22234"/>
+        {[0,1,2,3,4,5,6].map(i => <rect key={i} y={i*4+2} width="60" height="2" fill="white"/>)}
+        <rect width="24" height="16" fill="#3C3B6E"/>
+        {Array.from({length:9}).map((_,i) => (
+          <text key={i} x={3 + (i%3)*8} y={5 + Math.floor(i/3)*5} fontSize="4" fill="white">★</text>
+        ))}
+      </svg>
+    ),
+    symbol: "$", label: "US Dollar", langLabel: "United States",
+  },
+  GBP: {
+    flagSvg: (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30" className="h-4 w-6 overflow-hidden shrink-0 rounded-xs">
+        <rect width="60" height="30" fill="#012169"/>
+        <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" strokeWidth="6"/>
+        <path d="M0,0 L60,30 M60,0 L0,30" stroke="#C8102E" strokeWidth="2"/>
+        <path d="M30,0 V30 M0,15 H60" stroke="#fff" strokeWidth="10"/>
+        <path d="M30,0 V30 M0,15 H60" stroke="#C8102E" strokeWidth="6"/>
+      </svg>
+    ),
+    symbol: "£", label: "British Pound", langLabel: "United Kingdom",
+  },
+  SAR: {
+    flagSvg: (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40" className="h-4 w-6 overflow-hidden shrink-0 rounded-xs">
+        <rect width="60" height="40" fill="#006C35"/>
+        <path d="M12,25 H48 M18,22 L42,22 M16,28 H44" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" opacity="0.9"/>
+        <circle cx="30" cy="15" r="4" fill="none" stroke="#FFFFFF" strokeWidth="1.5"/>
+      </svg>
+    ),
+    symbol: "﷼", label: "Saudi Riyal", langLabel: "Saudi Arabia",
+  },
+  AED: {
+    flagSvg: (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30" className="h-4 w-6 overflow-hidden shrink-0 rounded-xs">
+        <rect width="60" height="10" y="0" fill="#00732F"/>
+        <rect width="60" height="10" y="10" fill="#FFFFFF"/>
+        <rect width="60" height="10" y="20" fill="#000000"/>
+        <rect width="18" height="30" x="0" y="0" fill="#FF0000"/>
+      </svg>
+    ),
+    symbol: "AED", label: "UAE Dirham", langLabel: "United Arab Emirates",
+  },
+  PKR: {
+    flagSvg: (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40" className="h-4 w-6 overflow-hidden shrink-0 rounded-xs">
+        <rect width="15" height="40" x="0" y="0" fill="#FFFFFF"/>
+        <rect width="45" height="40" x="15" y="0" fill="#01411C"/>
+        <path d="M42 20 A 7 7 0 1 1 35 13 A 5.5 5.5 0 1 0 42 20 Z" fill="#FFFFFF"/>
+        <polygon points="41,13 42.5,16 45.5,16 43,18 44,21 41.5,19 39,21 40,18 37.5,16 40.5,16" fill="#FFFFFF"/>
+      </svg>
+    ),
+    symbol: "Rs", label: "Pakistani Rupee", langLabel: "Pakistan",
   },
 };
 

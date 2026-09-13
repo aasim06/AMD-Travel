@@ -26,12 +26,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const gdsOffer = flightOffer.rawAmadeusOffer || flightOffer;
+
     try {
       const token = await getAmadeusToken();
       const payload = {
         data: {
           type: "flight-offers-pricing",
-          flightOffers: [flightOffer],
+          flightOffers: [gdsOffer],
         },
       };
 
