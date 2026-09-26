@@ -30,7 +30,9 @@ function generateMockFlights(
   legs?: { origin: string; destination: string; departureDate: string }[],
   adultsCount: number = 1,
   childrenCount: number = 0,
-  infantsCount: number = 0
+  infantsCount: number = 0,
+  markupType: string = "PERCENTAGE",
+  markupValue: number = 5
 ): object {
   const isRound = tripType === "round-trip";
   const isMultiCity = tripType === "multi-city" && legs && legs.length >= 2;
@@ -109,7 +111,9 @@ function generateMockFlights(
         });
       });
 
-      const totalAmount = Math.round(multiCityTotal * paxMultiplier);
+      const rawTotalAmount = Math.round(multiCityTotal * paxMultiplier);
+      const isFlat = markupType === "FLAT" || markupType === "FIXED";
+      const totalAmount = isFlat ? Math.round(rawTotalAmount + markupValue) : Math.round(rawTotalAmount * (1 + markupValue / 100));
       const perPax = Math.round(totalAmount / totalPaxCount);
 
       return {
@@ -137,7 +141,9 @@ function generateMockFlights(
 
     const baseTotal  = Math.round(c.basePrice * variation * paxMultiplier);
     const roundMult  = isRound ? 1.85 : 1;
-    const total      = Math.round(baseTotal * roundMult);
+    const rawTotal   = Math.round(baseTotal * roundMult);
+    const isFlat     = markupType === "FLAT" || markupType === "FIXED";
+    const total      = isFlat ? Math.round(rawTotal + markupValue) : Math.round(rawTotal * (1 + markupValue / 100));
     const perPax     = Math.round(total / totalPaxCount);
 
     const seg: FlightSegment = {
@@ -188,6 +194,8 @@ function generateMockFlights(
       baggageAllowance: { quantity: travelClass === "ECONOMY" ? 1 : 2, weight: 23, weightUnit: "KG" },
     };
   });
+
+  offers.sort((a, b) => parseFloat(a.price.total) - parseFloat(b.price.total));
 
   return {
     data: offers,
@@ -333,19 +341,10 @@ function mapOffer(offer: AmadeusOffer, requestedCurrency: Currency, markupType: 
   const rawTotal = parseFloat(offer.price.grandTotal ?? offer.price.total);
   const rawBase  = parseFloat(offer.price.base);
 
-  // Apply Admin Profit Markup dynamically
-  let finalTotal = rawTotal;
-  let finalBase  = rawBase;
-
-  if (markupType === "FIXED") {
-    finalTotal += markupValue;
-    finalBase  += markupValue;
-  } else {
-    // Percentage markup (e.g. +5%)
-    const pct = 1 + markupValue / 100;
-    finalTotal *= pct;
-    finalBase  *= pct;
-  }
+  // Apply Admin Profit Markup dynamically (supports both FLAT and FIXED)
+  const isFlat = markupType === "FLAT" || markupType === "FIXED";
+  let finalTotal = isFlat ? rawTotal + markupValue : rawTotal * (1 + markupValue / 100);
+  let finalBase  = isFlat ? rawBase + markupValue : rawBase * (1 + markupValue / 100);
 
   const numTravelers = offer.travelerPricings?.length || 1;
   const perPax = (finalTotal / numTravelers).toFixed(2);
@@ -392,8 +391,8 @@ function mapOffer(offer: AmadeusOffer, requestedCurrency: Currency, markupType: 
     travelerPricings: offer.travelerPricings?.map((tp) => {
       const tpTotal = parseFloat(tp.price?.total || "0");
       const tpBase = parseFloat(tp.price?.base || "0");
-      const markedTotal = markupType === "FIXED" ? tpTotal + markupValue / numTravelers : tpTotal * (1 + markupValue / 100);
-      const markedBase = markupType === "FIXED" ? tpBase + markupValue / numTravelers : tpBase * (1 + markupValue / 100);
+      const markedTotal = isFlat ? tpTotal + markupValue / numTravelers : tpTotal * (1 + markupValue / 100);
+      const markedBase = isFlat ? tpBase + markupValue / numTravelers : tpBase * (1 + markupValue / 100);
       return {
         travelerId: tp.travelerId,
         fareOption: tp.fareOption,
@@ -482,9 +481,38 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "At least 2 legs required for multi-city" }, { status: 400 });
   }
 
-  // ── Cache check ────────────────────────────────────────────────────────────
-  const cacheKey = [tripType, origin, destination, departureDate, returnDate ?? "", adults, children, infants, travelClass, currency,
-    isMultiCity ? JSON.stringify(body.legs) : ""].join(":");
+  // ── Fetch Admin Profit Markup from PostgreSQL (with route-level override) ─
+  let markupType = "PERCENTAGE";
+  let markupValue = 5;
+  try {
+    const routeRule = await prisma.flightRoute.findFirst({
+      where: {
+        origin: origin.toUpperCase(),
+        destination: destination.toUpperCase(),
+        isActive: true,
+      },
+    });
+
+    if (routeRule && routeRule.markupPercentage > 0) {
+      markupType = "PERCENTAGE";
+      markupValue = routeRule.markupPercentage;
+    } else {
+      const typeSetting = await prisma.systemSetting.findUnique({ where: { key: "markup_type" } });
+      const valSetting  = await prisma.systemSetting.findUnique({ where: { key: "markup_value" } });
+      if (typeSetting?.value) markupType = typeSetting.value;
+      if (valSetting?.value)  markupValue = parseFloat(valSetting.value);
+    }
+  } catch (err) {
+    console.warn("[Amadeus Search] Error fetching markup settings:", err);
+  }
+
+  // ── Cache check (includes markup settings so price updates are instant) ────
+  const cacheKey = [
+    tripType, origin, destination, departureDate, returnDate ?? "",
+    adults, children, infants, travelClass, currency,
+    markupType, markupValue,
+    isMultiCity ? JSON.stringify(body.legs) : ""
+  ].join(":");
   const cached = cacheGet(cacheKey);
   if (cached) {
     console.log("[Amadeus] Cache HIT:", cacheKey);
@@ -496,7 +524,8 @@ export async function POST(req: NextRequest) {
     const instantData = generateMockFlights(
       origin, destination, departureDate, returnDate,
       totalPax, travelClass, currency, tripType,
-      body.legs, adults, children, infants
+      body.legs, adults, children, infants,
+      markupType, markupValue
     );
     return NextResponse.json({ ...instantData, isPartial: true }, { headers: { "X-Data-Source": "FAST_PREVIEW" } });
   }
@@ -511,7 +540,8 @@ export async function POST(req: NextRequest) {
     const mockData = generateMockFlights(
       origin, destination, departureDate, returnDate,
       totalPax, travelClass, currency, tripType,
-      body.legs, adults, children, infants
+      body.legs, adults, children, infants,
+      markupType, markupValue
     );
     cacheSet(cacheKey, mockData);
     return NextResponse.json(mockData, { headers: { "X-Data-Source": "MOCK" } });
@@ -644,27 +674,18 @@ export async function POST(req: NextRequest) {
       const fallbackData = generateMockFlights(
         origin, destination, departureDate, returnDate,
         totalPax, travelClass, currency, tripType,
-        body.legs, adults, children, infants
+        body.legs, adults, children, infants,
+        markupType, markupValue
       );
       return NextResponse.json(fallbackData, { headers: { "X-Data-Source": "FALLBACK" } });
-    }
-
-    // ── Fetch Admin Profit Markup from PostgreSQL ─────────────────────────
-    let markupType = "PERCENTAGE";
-    let markupValue = 5;
-    try {
-      const typeSetting = await prisma.systemSetting.findUnique({ where: { key: "markup_type" } });
-      const valSetting  = await prisma.systemSetting.findUnique({ where: { key: "markup_value" } });
-      if (typeSetting?.value) markupType = typeSetting.value;
-      if (valSetting?.value)  markupValue = parseFloat(valSetting.value);
-    } catch {
-      /* default 5% */
     }
 
     const offers: FlightOffer[] = rawOffers.map((o: AmadeusOffer, idx: number) => {
       const uniqueId = o.id ? `${o.id}-${idx + 1}` : String(idx + 1);
       return mapOffer({ ...o, id: uniqueId }, currency, markupType, markupValue);
     });
+
+    offers.sort((a, b) => parseFloat(a.price.total) - parseFloat(b.price.total));
 
     const dicts = amadeusData.dictionaries ?? {};
     const response = {
@@ -686,7 +707,8 @@ export async function POST(req: NextRequest) {
     const mockData = generateMockFlights(
       origin, destination, departureDate, returnDate,
       totalPax, travelClass, currency, tripType,
-      body.legs, adults, children, infants
+      body.legs, adults, children, infants,
+      markupType, markupValue
     );
     cacheSet(cacheKey, mockData);
     return NextResponse.json(mockData, { headers: { "X-Data-Source": "FAST_FALLBACK" } });

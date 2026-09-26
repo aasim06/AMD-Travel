@@ -29,6 +29,7 @@ export default function AdminUmrahPackagesPage() {
 
   const [viewingBooking, setViewingBooking] = useState<any | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting]         = useState(false);
 
   const loadUmrahBookings = async () => {
     setIsRefreshing(true);
@@ -91,17 +92,39 @@ export default function AdminUmrahPackagesPage() {
   };
 
   const confirmDeleteBooking = async () => {
-    if (!deleteTargetId) return;
+    if (!deleteTargetId || isDeleting) return;
     const id = deleteTargetId;
-    setDeleteTargetId(null);
-
-    setUmrahBookings((prev) => prev.filter((b) => b.id !== id));
-    if (viewingBooking?.id === id) setViewingBooking(null);
+    setIsDeleting(true);
 
     try {
-      await fetch(`/api/admin/bookings?id=${id}`, { method: "DELETE" });
-    } catch (err) {
+      let res = await fetch(`/api/admin/bookings?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+
+      if (!res.ok) {
+        res = await fetch("/api/admin/bookings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "delete", id }),
+        });
+      }
+
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success !== false) {
+        setUmrahBookings((prev) => prev.filter((b) => b.id !== id && b.pnr !== id));
+        if (viewingBooking?.id === id || viewingBooking?.pnr === id) setViewingBooking(null);
+        setDeleteTargetId(null);
+      } else {
+        alert(data.error || "Failed to delete Umrah reservation. Please try again.");
+      }
+    } catch (err: any) {
       console.error("Failed to delete Umrah booking", err);
+      alert("Failed to delete Umrah reservation: " + (err?.message || "Network error"));
+    } finally {
+      setIsDeleting(false);
+      setDeleteTargetId(null);
       loadUmrahBookings();
     }
   };
@@ -520,8 +543,9 @@ export default function AdminUmrahPackagesPage() {
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal
         isOpen={!!deleteTargetId}
-        onClose={() => setDeleteTargetId(null)}
+        onClose={() => !isDeleting && setDeleteTargetId(null)}
         onConfirm={confirmDeleteBooking}
+        isLoading={isDeleting}
         title="Delete Umrah Reservation"
         description="Are you sure you want to delete this Umrah reservation? This action cannot be undone."
       />

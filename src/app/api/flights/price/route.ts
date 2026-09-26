@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { amadeusPost, getAmadeusToken, AMADEUS_BASE_URL } from "@/lib/amadeus";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,20 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // ── Fetch Admin Profit Markup from PostgreSQL ─────────────────────────────
+    let markupType = "PERCENTAGE";
+    let markupValue = 5;
+    try {
+      const typeSetting = await prisma.systemSetting.findUnique({ where: { key: "markup_type" } });
+      const valSetting  = await prisma.systemSetting.findUnique({ where: { key: "markup_value" } });
+      if (typeSetting?.value) markupType = typeSetting.value;
+      if (valSetting?.value)  markupValue = parseFloat(valSetting.value);
+    } catch {
+      /* default 5% */
+    }
+
+    const isFlat = markupType === "FLAT" || markupType === "FIXED";
 
     // Check if mock offer
     if (flightOffer.id && String(flightOffer.id).startsWith("mock-")) {
@@ -44,9 +59,28 @@ export async function POST(req: NextRequest) {
       );
 
       if (response?.data?.flightOffers) {
+        const markedFlightOffers = response.data.flightOffers.map((off: any) => {
+          const rawTotal = parseFloat(off.price?.grandTotal ?? off.price?.total ?? "0");
+          const rawBase  = parseFloat(off.price?.base ?? "0");
+          const finalTotal = isFlat ? rawTotal + markupValue : rawTotal * (1 + markupValue / 100);
+          const finalBase  = isFlat ? rawBase + markupValue : rawBase * (1 + markupValue / 100);
+          return {
+            ...off,
+            price: {
+              ...off.price,
+              total: finalTotal.toFixed(2),
+              grandTotal: finalTotal.toFixed(2),
+              base: finalBase.toFixed(2),
+            },
+          };
+        });
+
         return NextResponse.json({
           success: true,
-          data: response.data,
+          data: {
+            ...response.data,
+            flightOffers: markedFlightOffers,
+          },
           dictionaries: response.dictionaries,
         });
       }

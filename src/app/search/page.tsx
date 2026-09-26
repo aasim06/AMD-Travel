@@ -2020,7 +2020,7 @@ const LOCAL_LOGOS: Record<string, string> = {
   PF:   "/airlines/PF.png",
 };
 
-function AirlineLogo({ code }: { code: string }) {
+function AirlineLogo({ code, className = "" }: { code: string; className?: string }) {
   const urls = [
     LOCAL_LOGOS[code],
     `https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/${code}.svg`,
@@ -2040,15 +2040,15 @@ function AirlineLogo({ code }: { code: string }) {
 
   if (failed) {
     return (
-      <div className="h-7 w-12 sm:h-9 sm:w-20 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
-        <span className="text-xs sm:text-sm font-bold text-primary tracking-wide">{initials}</span>
+      <div className={`bg-primary/10 rounded flex items-center justify-center shrink-0 ${className || "h-5 w-7 sm:w-9"}`}>
+        <span className="text-[10px] sm:text-xs font-bold text-primary tracking-wide">{initials}</span>
       </div>
     );
   }
 
   return (
-    <div className="h-7 w-14 sm:h-9 sm:w-20 bg-white flex items-center justify-center shrink-0 overflow-hidden px-1">
-      <img src={urls[idx]} alt={name} className="h-6 sm:h-8 w-full object-contain" onError={handleError} />
+    <div className={`flex items-center justify-center shrink-0 overflow-hidden ${className || "h-5 w-7 sm:w-9"}`}>
+      <img src={urls[idx]} alt={name} className="h-full w-full object-contain" onError={handleError} />
     </div>
   );
 }
@@ -2122,12 +2122,12 @@ function LegRow({
         <div className="flex-1 flex flex-col items-center justify-center px-1 min-w-0">
 
           {/* Duration & Logo Row */}
-          <div className="flex items-center gap-1.5 mb-2">
-            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] sm:text-xs font-semibold whitespace-nowrap tabular-nums">
+          <div className="flex items-center justify-center gap-2 mb-2 relative">
+            <span className="relative z-10 px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] sm:text-xs font-semibold whitespace-nowrap tabular-nums shrink-0">
               {parseDuration(leg.duration)}
             </span>
-            <div className="h-5 w-7 sm:w-9 flex items-center justify-center shrink-0">
-              <AirlineLogo code={dep.carrierCode} />
+            <div className="h-5 w-7 sm:w-9 flex items-center justify-center shrink-0 overflow-hidden relative z-0">
+              <AirlineLogo code={dep.carrierCode} className="h-5 w-7 sm:w-9" />
             </div>
           </div>
 
@@ -2450,7 +2450,8 @@ function SearchContent() {
   const [fromCache, setFromCache] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [failedLegs, setFailedLegs] = useState<string[]>([]);
-  const [sortKey, setSortKey]     = useState<SortKey | OtherSort>("best");
+  const initialSort = (searchParams.get("sort") as SortKey | OtherSort) || "cheapest";
+  const [sortKey, setSortKey]     = useState<SortKey | OtherSort>(initialSort);
   const [displayCount, setDisplayCount] = useState(30);
   const initialBags = parseInt(searchParams.get("bags") ?? searchParams.get("checkedBags") ?? "0", 10);
   const [filters, setFilters]           = useState<FilterState>(() => ({
@@ -2495,7 +2496,11 @@ function SearchContent() {
     const a = [...arr];
     switch (key) {
       case "cheapest":
-        return a.sort((x, y) => parseFloat(x.price.total) - parseFloat(y.price.total));
+        return a.sort((x, y) => {
+          const diff = parseFloat(x.price.total) - parseFloat(y.price.total);
+          if (diff !== 0) return diff;
+          return totalMins(x) - totalMins(y);
+        });
       case "quickest":
         return a.sort((x, y) => totalMins(x) - totalMins(y));
       case "best": {

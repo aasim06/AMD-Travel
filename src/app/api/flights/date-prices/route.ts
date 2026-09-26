@@ -3,6 +3,7 @@ try { dns.setDefaultResultOrder("ipv4first"); } catch { /* ignore */ }
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAmadeusToken, amadeusGet } from "@/lib/amadeus";
+import { prisma } from "@/lib/prisma";
 
 // ─── Cache ────────────────────────────────────────────────────────────────────
 
@@ -106,7 +107,38 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const cacheKey = `date-prices:${origin}:${destination}:${centerDate}:${returnDate ?? ""}:${range}:${passengers}:${travelClass}:${currency}`;
+  // ── Fetch Admin Profit Markup from PostgreSQL ─────────────────────────────
+  let markupType = "PERCENTAGE";
+  let markupValue = 5;
+  try {
+    const routeRule = await prisma.flightRoute.findFirst({
+      where: {
+        origin: origin.toUpperCase(),
+        destination: destination.toUpperCase(),
+        isActive: true,
+      },
+    });
+
+    if (routeRule && routeRule.markupPercentage > 0) {
+      markupType = "PERCENTAGE";
+      markupValue = routeRule.markupPercentage;
+    } else {
+      const typeSetting = await prisma.systemSetting.findUnique({ where: { key: "markup_type" } });
+      const valSetting  = await prisma.systemSetting.findUnique({ where: { key: "markup_value" } });
+      if (typeSetting?.value) markupType = typeSetting.value;
+      if (valSetting?.value)  markupValue = parseFloat(valSetting.value);
+    }
+  } catch (err) {
+    console.warn("[date-prices] Error fetching markup settings:", err);
+  }
+
+  const isFlat = markupType === "FLAT" || markupType === "FIXED";
+  const applyDateMarkup = (p: number | null): number | null => {
+    if (p === null) return null;
+    return isFlat ? Math.round(p + markupValue) : Math.round(p * (1 + markupValue / 100));
+  };
+
+  const cacheKey = `date-prices:${origin}:${destination}:${centerDate}:${returnDate ?? ""}:${range}:${passengers}:${travelClass}:${currency}:${markupType}:${markupValue}`;
   const cached = cacheGet(cacheKey);
   if (cached) return NextResponse.json({ ...cached, cached: true });
 
@@ -123,7 +155,7 @@ export async function POST(request: NextRequest) {
     const BASE = isDomesticPk ? (75 + Math.floor(Math.random() * 20)) : (280 + Math.floor(Math.random() * 120));
     const mockResults = dates.map((date, i) => ({
       date,
-      price: i === range ? null : Math.round(BASE * (0.85 + Math.random() * 0.3)),
+      price: i === range ? null : applyDateMarkup(Math.round(BASE * (0.85 + Math.random() * 0.3))),
     }));
     const mockResponse = { dates: mockResults, _mock: true };
     cacheSet(cacheKey, mockResponse);
@@ -137,11 +169,11 @@ export async function POST(request: NextRequest) {
   // Fetch in parallel (sequential would be too slow)
   const results = await Promise.all(
     dates.map(async (date) => {
-      const price = await fetchCheapestPrice(
+      const rawPrice = await fetchCheapestPrice(
         origin, destination, date, returnDate,
         passengers, travelClass, currency, token!
       );
-      return { date, price };
+      return { date, price: applyDateMarkup(rawPrice) };
     })
   );
 

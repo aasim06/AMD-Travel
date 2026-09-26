@@ -36,7 +36,8 @@ function mapOfferToFlightOffer(
   let finalTotal = rawTotal;
   let finalBase = rawBase;
 
-  if (markupType === "FIXED") {
+  const isFlat = markupType === "FLAT" || markupType === "FIXED";
+  if (isFlat) {
     finalTotal += markupValue;
     finalBase += markupValue;
   } else {

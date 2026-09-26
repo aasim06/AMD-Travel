@@ -8,6 +8,7 @@ interface DeleteConfirmModalProps {
   onConfirm: () => void;
   title?: string;
   description?: string;
+  isLoading?: boolean;
 }
 
 export default function DeleteConfirmModal({
@@ -16,9 +17,10 @@ export default function DeleteConfirmModal({
   onConfirm,
   title = "Delete Route",
   description = "Are you sure you want to delete this route? This action cannot be undone.",
+  isLoading = false,
 }: DeleteConfirmModalProps) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} className="max-w-[400px] p-5 lg:p-8">
+    <Modal isOpen={isOpen} onClose={isLoading ? () => {} : onClose} className="max-w-[400px] p-5 lg:p-8">
       <div className="flex flex-col items-center text-center">
         {/* Warning Icon */}
         <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">
@@ -49,16 +51,30 @@ export default function DeleteConfirmModal({
         {/* Buttons */}
         <div className="flex w-full items-center gap-3">
           <button
+            type="button"
             onClick={onClose}
-            className="flex-1 inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.05] dark:hover:text-gray-200 transition-colors duration-200 cursor-pointer"
+            disabled={isLoading}
+            className="flex-1 inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.05] dark:hover:text-gray-200 transition-colors duration-200 cursor-pointer"
           >
             Cancel
           </button>
           <button
+            type="button"
             onClick={onConfirm}
-            className="flex-1 inline-flex items-center justify-center rounded-lg bg-rose-600 px-5 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-rose-700 transition-colors duration-200 cursor-pointer"
+            disabled={isLoading}
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-rose-600 px-5 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-rose-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
           >
-            Delete
+            {isLoading ? (
+              <>
+                <svg className="w-4 h-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                <span>Deleting...</span>
+              </>
+            ) : (
+              <span>Delete</span>
+            )}
           </button>
         </div>
       </div>

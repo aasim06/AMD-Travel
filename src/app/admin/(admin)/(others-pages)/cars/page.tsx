@@ -29,6 +29,7 @@ export default function AdminCarsPage() {
 
   const [viewingBooking, setViewingBooking] = useState<any | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting]         = useState(false);
 
   const loadCarBookings = async () => {
     setIsRefreshing(true);
@@ -91,17 +92,41 @@ export default function AdminCarsPage() {
   };
 
   const confirmDeleteBooking = async () => {
-    if (!deleteTargetId) return;
+    if (!deleteTargetId || isDeleting) return;
     const id = deleteTargetId;
-    setDeleteTargetId(null);
-
-    setCarBookings((prev) => prev.filter((b) => b.id !== id));
-    if (viewingBooking?.id === id) setViewingBooking(null);
+    setIsDeleting(true);
 
     try {
-      await fetch(`/api/admin/bookings?id=${id}`, { method: "DELETE" });
-    } catch (err) {
+      // Send DELETE with id in both query and body
+      let res = await fetch(`/api/admin/bookings?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+
+      // Fallback to POST with action 'delete' if DELETE is blocked
+      if (!res.ok) {
+        res = await fetch("/api/admin/bookings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "delete", id }),
+        });
+      }
+
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success !== false) {
+        setCarBookings((prev) => prev.filter((b) => b.id !== id && b.pnr !== id));
+        if (viewingBooking?.id === id || viewingBooking?.pnr === id) setViewingBooking(null);
+        setDeleteTargetId(null);
+      } else {
+        alert(data.error || "Failed to delete car reservation. Please try again.");
+      }
+    } catch (err: any) {
       console.error("Failed to delete car booking", err);
+      alert("Failed to delete car reservation: " + (err?.message || "Network error"));
+    } finally {
+      setIsDeleting(false);
+      setDeleteTargetId(null);
       loadCarBookings();
     }
   };
@@ -521,8 +546,9 @@ export default function AdminCarsPage() {
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal
         isOpen={!!deleteTargetId}
-        onClose={() => setDeleteTargetId(null)}
+        onClose={() => !isDeleting && setDeleteTargetId(null)}
         onConfirm={confirmDeleteBooking}
+        isLoading={isDeleting}
         title="Delete Car Reservation"
         description="Are you sure you want to delete this car reservation? This action cannot be undone."
       />
