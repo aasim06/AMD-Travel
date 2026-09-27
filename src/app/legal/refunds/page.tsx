@@ -152,8 +152,8 @@ const SECTIONS = [
         text: "For all refund-related enquiries, please contact our team at team@amdglobal.org or by phone at +49 69 94548001. Our team is available Monday to Saturday, 9am – 7pm CET.",
       },
       {
-        subtitle: "Registered Address",
-        text: "AMD Global Travel, Kaiserstraße 61, 60329 Frankfurt am Main, Germany.",
+        subtitle: "Registered Address & Corporate Identity",
+        text: "AMD Mobility Solutions UG (trading as AMD Global Travel), Kaiserstraße 61, 60329 Frankfurt am Main, Germany (Commercial Register: Amtsgericht Frankfurt am Main, HRB 144523, VAT ID: DE4651 13492).",
       },
     ],
   },
@@ -263,6 +263,8 @@ export default function RefundPolicyPage() {
                 This Refund Policy may be updated from time to time. Continued use of our services constitutes acceptance of the updated policy.
               </p>
               <div className="mt-3 flex items-center justify-center gap-4 text-xs">
+                <a href="/legal/impressum" className="text-primary font-semibold hover:underline">Impressum</a>
+                <span className="text-slate-200">|</span>
                 <a href="/contact" className="text-primary font-semibold hover:underline">Contact Us</a>
                 <span className="text-slate-200">|</span>
                 <a href="/legal/terms" className="text-primary font-semibold hover:underline">Terms of Service</a>

@@ -180,8 +180,8 @@ const SECTIONS = [
     title: "Contact Information",
     content: [
       {
-        subtitle: "Registered Address",
-        text: "AMD Global Travel, Kaiserstraße 61, 60329 Frankfurt am Main, Germany.",
+        subtitle: "Registered Address & Corporate Identity",
+        text: "AMD Mobility Solutions UG (trading as AMD Global Travel), Kaiserstraße 61, 60329 Frankfurt am Main, Germany (Commercial Register: Amtsgericht Frankfurt am Main, HRB 144523, VAT ID: DE4651 13492).",
       },
       {
         subtitle: "Get In Touch",
@@ -299,6 +299,8 @@ export default function TermsOfServicePage() {
                 These Terms of Service were last updated in January 2025. AMD Global Travel reserves the right to update these terms at any time. Your continued use of our services constitutes acceptance of any changes.
               </p>
               <div className="mt-3 flex items-center justify-center gap-4 text-xs">
+                <a href="/legal/impressum" className="text-primary font-semibold hover:underline">Impressum</a>
+                <span className="text-slate-200">|</span>
                 <a href="/contact" className="text-primary font-semibold hover:underline">Contact Us</a>
                 <span className="text-slate-200">|</span>
                 <a href="/legal/privacy" className="text-primary font-semibold hover:underline">Privacy Policy</a>

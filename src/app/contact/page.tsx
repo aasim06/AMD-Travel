@@ -199,6 +199,10 @@ export default function ContactPage() {
                 <div>
                   <p className="text-sm font-semibold text-slate-700">Kaiserstraße 61</p>
                   <p className="text-xs text-slate-400">60329 Frankfurt am Main, Germany</p>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    <span className="font-medium text-slate-700">AMD Mobility Solutions UG</span>
+                    <span className="block text-[10px] text-slate-400">HRB 144523 · USt-IdNr.: DE4651 13492</span>
+                  </p>
                 </div>
                 <a href="https://maps.google.com/?q=Kaiserstraße+61,+60329+Frankfurt+am+Main,+Germany"
                   target="_blank" rel="noopener noreferrer"

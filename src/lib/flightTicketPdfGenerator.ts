@@ -509,7 +509,7 @@ export async function generateFlightTicketPdf({
   doc.setFontSize(6.5);
   doc.setTextColor(148, 163, 184);
   doc.text(
-    "AMD Global Travel GmbH · Frankfurt am Main, Germany · www.amdglobal.de · support@amdglobal.de",
+    "AMD Mobility Solutions UG (HRB 144523, USt-IdNr.: DE4651 13492) · Kaiserstraße 61, 60329 Frankfurt am Main · www.amdglobal.de",
     W / 2,
     y + 11,
     { align: "center" }

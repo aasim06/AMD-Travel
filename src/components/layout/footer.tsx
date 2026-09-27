@@ -106,6 +106,10 @@ export function Footer() {
               <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
               <span>Kaiserstraße 61, 60329 Frankfurt am Main, Germany</span>
             </div>
+            <div className="mt-1.5 text-[11px] text-muted-foreground/85 pl-6">
+              <span className="font-semibold text-foreground/80">AMD Mobility Solutions UG</span>
+              <span className="block text-[10px] text-muted-foreground/75 font-mono">HRB 144523 · USt-IdNr.: DE4651 13492</span>
+            </div>
             <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
               <Phone className="h-4 w-4 shrink-0 text-primary" />
               <a href="tel:+496994548001" className="hover:text-primary transition-colors">
@@ -182,6 +186,11 @@ export function Footer() {
               Legal
             </h3>
             <ul className="mt-4 space-y-2 text-sm">
+              <li>
+                <Link href="/legal/impressum" className="text-muted-foreground hover:text-primary transition-colors font-medium">
+                  Impressum (Legal Notice)
+                </Link>
+              </li>
               <li>
                 <Link href="/legal/privacy" className="text-muted-foreground hover:text-primary transition-colors">
                   Privacy Policy
@@ -289,8 +298,20 @@ export function Footer() {
         </div>
 
         <div className="mt-10 border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <p>© {year} AMD Global Travel. All rights reserved.</p>
-          <p className="text-[11px]">Built for global travelers, powered by AMD Travel.</p>
+          <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-center sm:text-left">
+            <p>© {year} AMD Global Travel. All rights reserved.</p>
+            <span className="hidden sm:inline text-border">•</span>
+            <p className="text-[11px] text-muted-foreground/80">
+              Operated by AMD Mobility Solutions UG (HRB 144523, USt-IdNr.: DE4651 13492)
+            </p>
+          </div>
+          <div className="flex items-center gap-3 text-[11px]">
+            <Link href="/legal/impressum" className="hover:text-primary transition-colors font-medium">
+              Impressum
+            </Link>
+            <span>•</span>
+            <p>Built for global travelers, powered by AMD Travel.</p>
+          </div>
         </div>
       </div>
     </footer>

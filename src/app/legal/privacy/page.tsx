@@ -153,7 +153,7 @@ const SECTIONS = [
     content: [
       {
         subtitle: "Data Controller",
-        text: "AMD Global Travel, Kaiserstraße 61, 60329 Frankfurt am Main, Germany is the data controller responsible for your personal information.",
+        text: "AMD Mobility Solutions UG (trading as AMD Global Travel), Kaiserstraße 61, 60329 Frankfurt am Main, Germany (Commercial Register: Amtsgericht Frankfurt am Main, HRB 144523, VAT ID: DE4651 13492) is the data controller responsible for your personal information.",
       },
       {
         subtitle: "Get In Touch",
@@ -274,6 +274,8 @@ export default function PrivacyPolicyPage() {
                 Continued use of our services after changes constitutes acceptance of the updated policy.
               </p>
               <div className="mt-3 flex items-center justify-center gap-4 text-xs">
+                <a href="/legal/impressum" className="text-primary font-semibold hover:underline">Impressum</a>
+                <span className="text-slate-200">|</span>
                 <a href="/contact" className="text-primary font-semibold hover:underline">Contact Us</a>
                 <span className="text-slate-200">|</span>
                 <a href="/legal/terms" className="text-primary font-semibold hover:underline">Terms of Service</a>

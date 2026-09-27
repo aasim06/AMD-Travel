@@ -186,8 +186,8 @@ const SECTIONS = [
         text: "If you have any questions about our use of cookies, please contact us at team@amdglobal.org or by phone at +49 69 94548001.",
       },
       {
-        subtitle: "Registered Address",
-        text: "AMD Global Travel, Kaiserstraße 61, 60329 Frankfurt am Main, Germany.",
+        subtitle: "Registered Address & Corporate Identity",
+        text: "AMD Mobility Solutions UG (trading as AMD Global Travel), Kaiserstraße 61, 60329 Frankfurt am Main, Germany (Commercial Register: Amtsgericht Frankfurt am Main, HRB 144523, VAT ID: DE4651 13492).",
       },
     ],
   },
@@ -336,6 +336,8 @@ export default function CookiePolicyPage() {
                 This Cookie Policy may be updated from time to time. Continued use of our services constitutes acceptance of the updated policy.
               </p>
               <div className="mt-3 flex items-center justify-center gap-4 text-xs">
+                <a href="/legal/impressum" className="text-primary font-semibold hover:underline">Impressum</a>
+                <span className="text-slate-200">|</span>
                 <a href="/contact" className="text-primary font-semibold hover:underline">Contact Us</a>
                 <span className="text-slate-200">|</span>
                 <a href="/legal/privacy" className="text-primary font-semibold hover:underline">Privacy Policy</a>

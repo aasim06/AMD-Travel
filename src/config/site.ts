@@ -66,11 +66,20 @@ export const siteConfig = {
       { label: "My Bookings", href: "/bookings" },
     ],
     footerLegal: [
+      { label: "Impressum", href: "/legal/impressum" },
       { label: "Privacy Policy", href: "/legal/privacy" },
       { label: "Terms of Service", href: "/legal/terms" },
       { label: "Refund Policy", href: "/legal/refunds" },
       { label: "Cookie Policy", href: "/legal/cookies" },
     ],
+  },
+
+  company: {
+    legalName: "AMD Mobility Solutions UG",
+    tradeName: "AMD Global Travel",
+    commercialRegister: "HRB 144523",
+    registerCourt: "Amtsgericht Frankfurt am Main",
+    vatId: "DE4651 13492", // USt-IdNr.
   },
 
   payments: {
