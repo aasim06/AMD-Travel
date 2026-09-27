@@ -106,10 +106,6 @@ export function Footer() {
               <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
               <span>Kaiserstraße 61, 60329 Frankfurt am Main, Germany</span>
             </div>
-            <div className="mt-1.5 text-[11px] text-muted-foreground/85 pl-6">
-              <span className="font-semibold text-foreground/80">AMD Mobility Solutions UG</span>
-              <span className="block text-[10px] text-muted-foreground/75 font-mono">HRB 144523 · USt-IdNr.: DE4651 13492</span>
-            </div>
             <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
               <Phone className="h-4 w-4 shrink-0 text-primary" />
               <a href="tel:+496994548001" className="hover:text-primary transition-colors">
