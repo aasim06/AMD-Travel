@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Mail, Phone, MapPin, Globe, Camera, Briefcase, X, MessageCircle, ArrowRight } from "lucide-react";
+import { Mail, Phone, MapPin, Globe, Camera, Briefcase, X, MessageCircle, ArrowRight, Building2, ShieldCheck } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { useCurrency } from "@/context/currency-context";
 import { TrustSeals } from "@/components/ui/trust-seals";
@@ -293,7 +293,53 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
+        {/* Prominent Official Corporate Registration Badge */}
+        <div className="mt-8 pt-6 border-t border-border">
+          <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/50 p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="h-11 w-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
+                <Building2 className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
+                    Official Registered Entity
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                    <ShieldCheck className="h-3 w-3" />
+                    Verified Commercial Register
+                  </span>
+                </div>
+                <h4 className="text-sm sm:text-base font-extrabold text-foreground tracking-tight">
+                  AMD Mobility Solutions UG <span className="font-normal text-xs text-muted-foreground">(haftungsbeschränkt)</span>
+                </h4>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Handelsregister Amtsgericht Frankfurt am Main · Kaiserstraße 61, 60329 Frankfurt am Main, Germany
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 text-xs">
+              <div className="bg-white dark:bg-slate-800 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs flex items-center gap-2">
+                <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Reg. (HRB):</span>
+                <span className="font-extrabold text-foreground font-mono text-sm">HRB 144523</span>
+              </div>
+              <div className="bg-white dark:bg-slate-800 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs flex items-center gap-2">
+                <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">USt-IdNr.:</span>
+                <span className="font-extrabold text-foreground font-mono text-sm">DE4651 13492</span>
+              </div>
+              <Link
+                href="/legal/impressum"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-primary-foreground font-bold text-xs hover:bg-primary/90 transition-all shadow-xs"
+              >
+                <span>Impressum</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
           <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-center sm:text-left">
             <p>© {year} AMD Global Travel. All rights reserved.</p>
             <span className="hidden sm:inline text-border">•</span>
