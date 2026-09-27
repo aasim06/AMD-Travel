@@ -59,6 +59,10 @@ const SECTIONS = [
         subtitle: "Umsatzsteuer-Identifikationsnummer (USt-IdNr.)",
         text: "DE4651 13492 (gemäß § 27 a Umsatzsteuergesetz)",
       },
+      {
+        subtitle: "IATA-Akkreditierung (IATA Accreditation)",
+        text: "Akkreditierte IATA-Reiseagentur (International Air Transport Association Accredited Agent) für autorisierte Flugreservierungen und GDS-Ticketierung.",
+      },
     ],
   },
   {
@@ -229,6 +233,9 @@ export default function ImpressumPage() {
                 </p>
                 <p>
                   <strong>USt-IdNr.:</strong> DE4651 13492
+                </p>
+                <p>
+                  <strong>IATA-Akkreditierung:</strong> Offiziell lizensierte IATA-Agentur (Accredited Agent)
                 </p>
                 <p>
                   <strong>Sitz der Gesellschaft:</strong> Kaiserstraße 61, 60329 Frankfurt am Main, Deutschland

@@ -2,6 +2,7 @@
 
 import React from "react";
 import { ShieldCheck, Lock, Zap, Headset, Award, CheckCircle2 } from "lucide-react";
+import { IataLogo } from "@/components/ui/iata-badge";
 
 interface TrustSealsProps {
   variant?: "full" | "compact" | "banner";
@@ -13,12 +14,12 @@ export function TrustSeals({ variant = "full", className = "" }: TrustSealsProps
     return (
       <div className={`grid grid-cols-2 gap-3 p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 ${className}`}>
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-600 shrink-0">
-            <ShieldCheck className="h-4.5 w-4.5" />
+          <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-white border border-slate-200 shadow-2xs shrink-0 p-1">
+            <IataLogo className="h-5 w-auto" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-800 leading-none">IATA Certified</p>
-            <p className="text-[10px] text-slate-500 mt-0.5">Verified Agency</p>
+            <p className="text-xs font-bold text-slate-800 leading-none">IATA Accredited</p>
+            <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">Licensed Agency</p>
           </div>
         </div>
 
@@ -60,7 +61,9 @@ export function TrustSeals({ variant = "full", className = "" }: TrustSealsProps
       <div className={`w-full bg-slate-900 border-y border-slate-800 text-white py-4 ${className}`}>
         <div className="container flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <ShieldCheck className="h-5 w-5 text-emerald-400" />
+            <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-white p-1 shrink-0">
+              <IataLogo className="h-5 w-auto" />
+            </div>
             <div>
               <span className="text-xs font-bold block text-white">IATA Accredited Agency</span>
               <span className="text-[10px] text-slate-400">Official Flight Booking Partner</span>
@@ -112,17 +115,17 @@ export function TrustSeals({ variant = "full", className = "" }: TrustSealsProps
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {/* Card 1 */}
           <div className="flex items-start gap-4 p-5 rounded-2xl bg-card border border-border shadow-sm hover:shadow-md transition-all">
-            <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-emerald-500/10 text-emerald-600 shrink-0">
-              <ShieldCheck className="h-6 w-6" />
+            <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-white border border-slate-200 shadow-2xs shrink-0 p-2">
+              <IataLogo className="h-7 w-auto" />
             </div>
             <div>
-              <h4 className="font-bold text-sm text-foreground font-heading">IATA Authorized Agency</h4>
+              <h4 className="font-bold text-sm text-foreground font-heading">IATA Accredited Agency</h4>
               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                 Direct integration with global airline GDS systems for verified fares.
               </p>
               <div className="flex items-center gap-1 mt-2 text-[11px] font-semibold text-emerald-600">
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>Verified Partner</span>
+                <span>Officially Licensed Agent</span>
               </div>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { Mail, Phone, MapPin, Globe, Camera, Briefcase, X, MessageCircle, ArrowR
 import { siteConfig } from "@/config/site";
 import { useCurrency } from "@/context/currency-context";
 import { TrustSeals } from "@/components/ui/trust-seals";
+import { IataLogo } from "@/components/ui/iata-badge";
 
 export function Footer() {
   const { t } = useCurrency();
@@ -320,6 +321,10 @@ export function Footer() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 text-xs">
+              <div className="bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs flex items-center gap-2">
+                <IataLogo className="h-4.5 w-auto" />
+                <span className="font-extrabold text-[#004E81] text-xs tracking-tight">Accredited Agent</span>
+              </div>
               <div className="bg-white dark:bg-slate-800 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs flex items-center gap-2">
                 <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Reg. (HRB):</span>
                 <span className="font-extrabold text-foreground font-mono text-sm">HRB 144523</span>

@@ -4,6 +4,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Plane, User, Printer, ShieldCheck, CheckCircle2, Globe, Package, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { IataLogo } from "@/components/ui/iata-badge";
 
 export interface BookingTicketData {
   id: string;
@@ -66,6 +67,10 @@ export function TicketModal({ open, onOpenChange, booking }: TicketModalProps) {
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
               Official E-Ticket & Receipt
             </p>
+            <div className="bg-white px-2 py-0.5 rounded-md border border-slate-200 shadow-2xs hidden sm:flex items-center gap-1.5 ml-1">
+              <IataLogo className="h-3.5 w-auto" />
+              <span className="text-[10px] font-extrabold text-[#004E81]">Accredited</span>
+            </div>
           </div>
           <Button
             size="sm"

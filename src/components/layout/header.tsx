@@ -30,6 +30,7 @@ import {
 import { siteConfig } from "@/config/site";
 import { useCurrency } from "@/context/currency-context";
 import type { CurrencyCode } from "@/lib/currency";
+import { IataBadge } from "@/components/ui/iata-badge";
 
 // ─── Drawer nav items ─────────────────────────────────────────────────────────
 
@@ -370,6 +371,9 @@ export function Header() {
               <Menu className="h-5 w-5" />
             </button>
             <LogoMark />
+            <div className="hidden sm:block">
+              <IataBadge variant="header" />
+            </div>
           </div>
 
           {/* Right: currency + user account */}
@@ -412,7 +416,10 @@ export function Header() {
       >
         {/* Drawer header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-border shrink-0">
-          <LogoMark />
+          <div className="flex flex-col gap-1.5">
+            <LogoMark />
+            <IataBadge variant="header" className="w-fit" />
+          </div>
           <button
             onClick={() => setDrawerOpen(false)}
             aria-label="Close menu"

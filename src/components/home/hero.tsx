@@ -8,6 +8,7 @@ import { Typewriter } from "@/components/ui/typewriter";
 import { Globe } from "@/components/magicui/globe";
 import { useCurrency } from "@/context/currency-context";
 import { StarsBackground } from "@/components/ui/stars-background";
+import { IataLogo } from "@/components/ui/iata-badge";
 
 const FLIGHTS_WORDS_EN = ["100s Of Airlines.", "Best Ticket Prices.", "Top Global Routes.", "Exclusive Flight Deals."];
 const FLIGHTS_WORDS_DE = ["100+ Fluggesellschaften.", "Beste Ticketpreise.", "Top Globale Routen.", "Exklusive Flugangebote."];
@@ -157,6 +158,24 @@ export function Hero({ initialCategory = "flights" }: { initialCategory?: Catego
             {/* Search form — contained white card */}
             <div id="hero-search" className="bg-white rounded-3xl border border-slate-100 overflow-visible p-3.5 sm:p-6 animate-fade-in relative z-20" style={{ boxShadow: 'rgba(0, 0, 0, 0.1) 0px 10px 50px' }}>
               <FlightSearchForm />
+            </div>
+
+            {/* Trust badge row under search */}
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-5 text-white/85 text-xs px-2 pt-0.5">
+              <div className="flex items-center gap-2 font-medium bg-white/10 backdrop-blur-xs px-2.5 py-1 rounded-full border border-white/10 shadow-xs">
+                <div className="bg-white px-1.5 py-0.5 rounded shadow-2xs">
+                  <IataLogo className="h-3 w-auto" />
+                </div>
+                <span className="text-[11px] font-semibold text-white">IATA Accredited Agency</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] text-white/75">
+                <span className="text-emerald-400 font-bold">✓</span>
+                <span>Verified Direct Airline GDS Fares</span>
+              </div>
+              <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-white/75">
+                <span className="text-amber-400 font-bold">⚡</span>
+                <span>Instant E-Ticket Delivery</span>
+              </div>
             </div>
           </div>
 
